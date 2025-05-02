@@ -1,0 +1,363 @@
+import { v4 as uuidv4 } from "uuid";
+import Booking from "../models/booking.model.js";
+import Room from "../models/room.model.js";
+import User from "../models/user.model.js";
+import { sendBookingConfirmationEmail } from "../utils/send-email.js";
+import BookingSession from "../models/BookingSession.model.js";
+import generateAndUploadQRCode from "../utils/generateAndUploadQRCode.js";
+import { differenceInCalendarDays } from "date-fns";
+import mongoose from "mongoose";
+
+const createBooking = async (req, res) => {
+  const { bookingSessionId, specialRequests } = req.body;
+  console.log("sessionId: ", bookingSessionId, specialRequests);
+  console.log("request body: ", req.body);
+
+  let guestUserId = null;
+
+  if (!bookingSessionId) {
+    return res.status(400).json({ error: "bookingSessionId is required" });
+  }
+
+  try {
+    if (bookingSessionId) {
+      console.log("Received bookingSessionId: ", bookingSessionId);
+    } else {
+      console.log("No bookingSessionId found.");
+    }
+
+    const session = await BookingSession.findOne({
+      sessionId: bookingSessionId,
+    });
+
+    if (!session) {
+      return res.status(404).json({ error: "Booking session not found" });
+    }
+    console.log("Booking session data: ", session); // Ensure session data is correct
+
+    if (session.guestDetails) {
+      guestUserId = session.guestDetails._id;
+    }
+
+   const {
+     roomId,
+     checkInDate,
+     checkOutDate,
+     userId,
+     totalGuest,
+     totalPrice,
+     paymentMethod,
+     paymentStatus,
+     paymentIntentId,
+     breakfastIncluded,
+     contactName,
+     contactEmail,
+     contactNumber,
+     guestDetails, // Add this
+   } = session;
+    
+
+    if (new Date(checkOutDate) <= new Date(checkInDate)) {
+      return res
+        .status(400)
+        .json({ error: "Check-out date must be after check-in date" });
+    }
+
+    const bookingReference = uuidv4(); // Unique reference
+
+    // Find rooms using the roomId array
+    const rooms = await Room.find({ _id: { $in: roomId } });
+    if (rooms.length !== roomId.length) {
+      return res.status(404).json({ error: "One or more rooms not found" });
+    }
+
+    // Check if the rooms are available for the selected dates
+    for (let room of rooms) {
+      const checkIn = new Date(checkInDate);
+      const checkOut = new Date(checkOutDate);
+
+      const overlappingBooking = await Booking.findOne({
+        room: room._id,
+        startDate: { $lt: checkOut },
+        endDate: { $gt: checkIn },
+      });
+
+      if (overlappingBooking) {
+        return res.status(400).json({
+          error: `Room ${room.roomNumber} is already booked for the selected dates`,
+        });
+      }
+    }
+
+    // Proceed with booking for each room
+    const user = userId ? await User.findById(userId) : null;
+
+    const newBooking = new Booking({
+      userEmail: contactEmail || (user ? user.email : null),
+      bookingCreatedByUser: userId || guestUserId,
+      userType: userId ? "user" : "guest",
+      room: rooms.map((room) => room._id), // Store all room IDs
+      startDate: checkInDate,
+      endDate: checkOutDate,
+      totalGuests: totalGuest,
+      breakfastIncluded,
+      totalPrice,
+      bookingReference,
+      specialRequests,
+      paymentMethod,
+      paymentStatus,
+      paymentIntentId,
+      contactName: contactName || guestDetails?.contactName || null,
+      contactEmail: contactEmail || guestDetails?.contactEmail || null,
+      contactNumber: contactNumber || guestDetails?.contactNumber || null,
+    });
+
+    await newBooking.save();
+
+    // Add booking to rooms' bookings array
+    for (let room of rooms) {
+      room.bookings.push(newBooking._id);
+      await room.save();
+    }
+
+    if (userId && !user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const roomDetails = rooms.map(room => ({
+      roomType: room.roomType,
+      roomNumber: room.roomNumber
+    }));// get each room details
+    const { adults, children } = totalGuest;
+
+    const qrCodeData = {
+      bookingReference,
+      checkInDate,
+      checkOutDate,
+      rooms: roomDetails.map(({ roomType, roomNumber }) => ({
+        roomType,
+        roomNumber,
+      })),
+    };
+    
+    const qrCodePublicURLfromCloudinary  = await generateAndUploadQRCode(qrCodeData);
+
+    const bookingData = {
+      username: user?.username || contactName,
+      bookingReference,
+      roomDetail: roomDetails,
+      checkInDate,
+      checkOutDate,
+      breakfastIncluded,
+      adults,
+      children,
+      totalPrice,
+      qrCodeImageURL: qrCodePublicURLfromCloudinary,
+    };
+
+    newBooking.qrCodeImageURL = qrCodePublicURLfromCloudinary;
+
+    await newBooking.save();
+
+    const emailToSend =
+      user?.email || contactEmail || session?.guestDetails?.contactEmail;
+
+    if (emailToSend && qrCodePublicURLfromCloudinary) {
+      await sendBookingConfirmationEmail(emailToSend, bookingData);
+    }
+
+    res.status(201).json({ newBooking, qrCodePublicURLfromCloudinary });
+  } catch (error) {
+    console.error("Error creating booking:", error.message);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+const getBookingByUser = async (req, res) => {
+  const userId = req.user._id;
+  console.log("userId: ", userId);
+
+  try {
+    // Fetch all bookings created by the user with userType 'user'
+    const userBookingInformation = await Booking.find({
+      userType: "user",
+      bookingCreatedByUser: new mongoose.Types.ObjectId(userId),
+  }).sort({ createdAt: -1 });
+
+    console.log(userBookingInformation);
+
+    if (!userBookingInformation || userBookingInformation.length === 0) {
+      return res.status(400).json({ error: "Booking Not Found!" });
+    }
+
+    // Extract all roomIds from the bookings
+    const roomIds = userBookingInformation.flatMap((booking) => booking.room);
+    console.log(roomIds);
+
+    // Fetch room details for all roomIds concurrently
+    const rooms = await Room.find({ _id: { $in: roomIds } });
+
+    const roomsTypeMap = rooms.reduce((acc, room) => {
+      acc[room._id] = room.roomType
+      return acc;
+    }, {})
+
+    console.log(roomsTypeMap);
+
+   const bookingDetails = userBookingInformation.map((booking) => {
+     const roomType = booking.room?.map(id => {
+      const key = id.toString()
+      return roomsTypeMap[key]
+     }) // Optional chaining for safety
+     return {
+       ...booking.toObject(),
+       roomType: roomType || "unknown",
+     };
+   });
+
+    console.log(bookingDetails);
+    res.status(200).json(bookingDetails);
+  } catch (error) {
+    console.log("Error in getBookingByUser: ", error.message);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+
+const createBookingSession = async (req, res) => {
+  // 1) Pull body
+  const {
+    userEmail,
+    userType,
+    roomId,
+    checkInDate,
+    checkOutDate,
+    totalGuest,
+    totalPrice,
+    // new guest fields:
+    contactName,
+    contactEmail,
+    contactNumber,
+    additionalDetails,
+  } = req.body;
+
+  console.log({
+    roomId,
+    checkInDate,
+    checkOutDate,
+    totalGuest,
+    totalPrice,
+  });
+
+  console.log(userEmail);
+
+
+  // 2) Core validation
+  if (
+    !roomId ||
+    !checkInDate ||
+    !checkOutDate ||
+    totalGuest?.adults == null ||
+    totalGuest?.children == null ||
+    !totalPrice
+  ) {
+    return res
+      .status(400)
+      .json({ error: "Please provide all required fields" });
+  }
+
+  // 3) If this is a guest (no userId), require the contact info
+  if (userType === "Guest Booking") {
+    if (!contactName || !contactEmail || !contactNumber) {
+      return res.status(400).json({
+        error:
+          "Guest bookings require contactName, contactEmail and contactNumber",
+      });
+    }
+  }
+
+  try {
+    const sessionId = uuidv4();
+
+    const userId = await User.findOne({ email: userEmail }).select("_id").lean();//convert to object instead of mongodb docs
+
+    const rangebetweenCheckInCheckOutDate = differenceInCalendarDays(
+      new Date(checkOutDate),
+      new Date(checkInDate)
+    )
+    const actualtotalPrice = rangebetweenCheckInCheckOutDate * totalPrice; 
+
+    // 4) Build the document
+    const session = new BookingSession({
+      sessionId,
+      userId: userId ? userId : undefined, // null for one-time guests
+      roomId,
+      checkInDate,
+      checkOutDate,
+      totalGuest,
+      totalPrice: actualtotalPrice,
+      // only include guestDetails when userId is null
+      ...(userId
+        ? {}
+        : {
+            guestDetails: {
+              contactName,
+              contactEmail,
+              contactNumber,
+              additionalDetails: additionalDetails || undefined,
+            },
+          }),
+    });
+
+    await session.save();
+
+    res.status(201).json({ sessionId });
+  } catch (error) {
+    console.error("Error in createBookingSession:", error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+const getBookingSession = async (req, res) => {
+  const { sessionId } = req.params;
+
+  try {
+    const getSession = await BookingSession.findOne({ sessionId });
+    console.log(getSession);
+
+    if (!getSession) {
+      return res.status(404).json({ error: "Session not found or expired" });
+    }
+
+    // Convert Mongoose doc to plain object
+    const sessionObject = getSession.toObject();
+
+    let customerName = null;
+
+    if (sessionObject.userId) {
+      // Session belongs to a logged-in user
+      const user = await User.findById(sessionObject.userId).select("name");
+      customerName = user?.name || null;
+    } else if (sessionObject.guestDetails?.contactName) {
+      // Session belongs to a guest
+      customerName = sessionObject.guestDetails.contactName;
+    }
+
+    const session = {
+      ...sessionObject,
+      customerName,
+    };
+
+    res.status(200).json({ session });
+  } catch (error) {
+    console.error("Error in getBookingSession: ", error.message);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export default {
+  createBooking,
+  createBookingSession,
+  getBookingSession,
+  getBookingByUser
+};

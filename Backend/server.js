@@ -1,0 +1,58 @@
+import express from "express";
+import fileupload from "express-fileupload"; //express-file
+import dotenv from "dotenv";
+import cors from "cors";
+import cookieParser from "cookie-parser";
+import path from "path";
+import { connnectDB } from "./config/db.js";
+import usersRoute from "./Routes/users.route.js";
+import roomRoute from "./Routes/room.route.js";
+import facilityRoute from "./Routes/facility.route.js";
+import adminRoute from "./Routes/admin.route.js";
+import bookingRoute from "./Routes/bookings.route.js";
+import statisticRoute from "./Routes/statistic.route.js";
+import refreshTokenRoute from "./Routes/refreshToken.route.js";
+import checkoutRoute from "./Routes/checkout.route.js";
+
+dotenv.config();
+
+const app = express();
+app.use(
+  cors({
+    origin: "http://localhost:3000",
+    credentials: true,
+  })
+);
+app.use(cookieParser());
+
+app.use(express.json());
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
+
+const PORT = process.env.PORT || 5000;
+
+const __dirname = path.resolve();
+
+app.use(
+    fileupload({
+        useTempFiles: true,
+        tempFileDir: path.join(__dirname, "temp"),
+        createParentPath: true,
+        limits: {
+            fileSize: 10 * 1024 * 1024, // 10MB
+        },
+    }
+))
+
+app.use("/api/users", usersRoute);
+app.use("/api/rooms", roomRoute);
+app.use("/api/facilities", facilityRoute);
+app.use("/api/admin", adminRoute);
+app.use("/api/bookings", bookingRoute);
+app.use("/api/statistic", statisticRoute);
+app.use("/api/refreshToken", refreshTokenRoute);
+app.use("/api/checkout", checkoutRoute);
+
+app.listen(PORT, () => {
+    console.log("Server is running on port", PORT);
+    connnectDB();
+})

@@ -1,0 +1,157 @@
+"use client";
+import { Link, NavLink, useNavigate } from "react-router-dom";
+import list from "@/constant/navBarList";
+import { Loader, ShieldUser } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import useAuthStore from "@/stores/useAuthStore";
+import { useEffect, useState } from "react";
+import axiosInstance from "@/lib/axios";
+import useToast from "@/hooks/useToast";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
+const Navbar = () => {
+  const { setOpenLoginPopup, logout } = useAuthStore();
+  const { user } = useAuthStore();
+  const [isLoading, setIsLoading] = useState(true);
+  const { showToast } = useToast();
+  const navigate = useNavigate();
+  const userData = localStorage.getItem("user");
+  const userDetails = userData ? JSON.parse(userData) : {};
+  const [navbar, setNavbar] = useState(false);
+  const scrollHeader = () => {
+    if (window.scrollY > 10) {
+      setNavbar(true);
+    } else {
+      setNavbar(false);
+    }
+  };
+
+  console.log(user?.role);
+  useEffect(() => {
+    window.addEventListener("scroll", scrollHeader);
+
+    return () => {
+      window.removeEventListener("scroll", scrollHeader);
+    };
+  }, []);
+  
+
+  const handleLogout = async () => {
+    setIsLoading(true);
+    try {
+      const { data } = await axiosInstance.post("/api/users/logout");
+      if (data.error) {
+        showToast("error", data.error.message);
+      } else {
+        logout();
+        localStorage.removeItem("user");
+        showToast("success", data.message);
+        navigate("/");
+      }
+    } catch (error: any) {
+      showToast("error", error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (!isLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <Loader size={24} className="animate-spin" />
+      </div>
+    );
+  }
+
+  return (
+    <nav
+      className={`fixed top-0 z-50 m-0 w-full overflow-visible p-4 transition-all duration-600 ${navbar ? "animate-fadeInDown overflow-hidden bg-[#3d60ca] shadow-md" : "animate-fadeInUp overflow-hidden bg-transparent"}`}
+    >
+      <ul className="flex items-center justify-center gap-[3rem]">
+        {list.map((link) => (
+          <li key={link.to} className="group relative cursor-pointer">
+            <NavLink
+              to={link.to}
+              // note:
+              //after:w-0 is the initial value of the underline position
+              //group-hover:after:left-0 start from left to full
+              //grou-hover:after-w-full start from 0 to full
+              //after:origin-center start from the middle to the both side
+              className={({ isActive }) => {
+                return `relative text-[1rem] font-medium ${navbar ? "text-white" : "text-gray-900"} font-extrabold after:absolute after:-bottom-1 after:left-0 after:h-[3px] after:w-0 after:bg-blue-400 after:transition-all after:duration-500 after:content-[''] ${isActive ? "after:w-full" : "after:left-1/2"} group:hover:transition-all group-hover:text-blue-400 group-hover:duration-400 group-hover:after:left-0 group-hover:after:w-full group-hover:after:origin-center group-hover:after:scale-x-100`;
+              }}
+            >
+              {link.label}
+            </NavLink>
+          </li>
+        ))}
+      </ul>
+
+      {!user ? (
+        <div className="group absolute top-3 right-0 mr-[50px] flex items-center justify-center rounded-xl border-3 border-white transition-all duration-300 hover:border-blue-500 focus:ring-0 focus:outline-none">
+          <button
+            className={`group:hover:transition-colors group:hover:duration:500 group:hover:ease-in-out flex cursor-pointer items-center gap-2 px-3 py-1 font-bold text-white group-hover:rounded-xl ${navbar && "bg-transparent"} duration-300 group-hover:text-blue-500`}
+            onClick={() => setOpenLoginPopup(true)}
+          >
+            <ShieldUser />
+            <span>Login</span>
+          </button>
+        </div>
+      ) : (
+        <div className="absolute top-3 right-0 mr-[50px] flex items-center justify-center focus:ring-0 focus:outline-none">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="flex cursor-pointer outline-none focus-visible:ring-0">
+                {userDetails?.state?.user && (
+                  <Avatar>
+                    <AvatarImage src={userDetails?.state?.user?.profilePic} />
+                    <AvatarFallback>
+                      {userDetails?.state?.user?.username
+                        ?.charAt(0)
+                        .toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                )}
+                <span className="mr-3 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text pl-2 text-2xl font-semibold text-transparent">
+                  {userDetails?.state?.user?.username}
+                </span>
+              </button>
+            </DropdownMenuTrigger>
+            {/* Dropdown menu content */}
+            <DropdownMenuContent
+              align="end"
+              sideOffset={8}
+              className="z-[100] max-h-[300px] w-[160px] overflow-auto rounded-md border bg-white shadow-lg"
+            >
+              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className="cursor-pointer">
+                <Link to={"/display-booking"}>
+                  <span>View Booking</span>
+                </Link>
+              </DropdownMenuItem>
+              {(user.role === "admin" || user.role === "superadmin") && (
+                <DropdownMenuItem>Admin</DropdownMenuItem>
+              )}
+              <DropdownMenuItem
+                onClick={handleLogout}
+                className="cursor-pointer"
+              >
+                Logout
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      )}
+    </nav>
+  );
+};
+
+export default Navbar;

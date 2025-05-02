@@ -1,0 +1,43 @@
+import Carousel from "../layout/components/carousel-section/Carousel";
+import SearchBar from "@/layout/components/search-bar/SearchBar";
+import HomepageAboutUs from "@/layout/components/introduction/HomepageAboutUs";
+import HoverCard from "@/layout/components/grid-section/HoverCard";
+import GridList from "@/layout/components/grid-section/GridList";
+import images from "@/constant/carouselImageList";
+import service from "../constant/serviceList";
+import breakfastList from "@/constant/breakfastList";
+import LocationSection from "@/layout/components/map/LocationSection";
+
+const Homepage = () => {
+
+  return (
+    <div>
+      <Carousel images={images} />
+      <div className="h-45 bg-cyan-400/10">
+        <div className="translate-y-10">
+          <SearchBar />
+        </div>
+      </div>
+      <div>
+        <HomepageAboutUs />
+      </div>
+      <div className="flex items-center justify-center bg-gradient-to-b from-transparent to-cyan-500/20 px-5 py-10 text-center text-gray-800 md:flex md:flex-row md:items-center">
+        <HoverCard list={service} title="Explore Our Elegant Amenities" />
+      </div>
+      <div className="flex items-center justify-center bg-gradient-to-b from-cyan-500/20 to-transparent px-5 py-10 text-center md:flex md:flex-row md:items-center">
+        <GridList
+          title="Breakfast, Included With Your Stay"
+          list={breakfastList}
+          getName={item => item.name}//loop inside the component in the map function to get the list name
+          getImage={item => item.image}//loop inside the component in the map function to get the list image
+        />
+      </div>
+
+      <div className="flex items-center justify-center bg-gradient-to-b from-transparent to-cyan-500/20 text-center md:flex md:flex-row md:items-center">
+        <LocationSection title="Our Location" />
+      </div>
+    </div>
+  );
+};
+
+export default Homepage;
