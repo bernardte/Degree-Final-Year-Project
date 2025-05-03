@@ -56,7 +56,7 @@ const getMostBookingRoom = async (req, res) => {
         $sort: { bookingsCount: -1 },
       },
       {
-        $limit: 4, 
+        $limit: 4,
       },
     ]);
 
@@ -67,7 +67,6 @@ const getMostBookingRoom = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
-
 
 const getOneRoomPerType = async (req, res) => {
   try {
@@ -142,7 +141,7 @@ const filterRooms = async (req, res) => {
       }).select("room");
 
       const bookedRoomIds = new Set(
-        overlappingBookings.flatMap((b) => b.room.map((id) => id.toString()))//ensure to get each individual room ID
+        overlappingBookings.flatMap((b) => b.room.map((id) => id.toString())) //ensure to get each individual room ID
       );
 
       // Filter out rooms that are booked or don't meet guest capacity
@@ -162,12 +161,13 @@ const filterRooms = async (req, res) => {
   }
 };
 
-
 const searchAvailableRooms = async (req, res) => {
   const { checkInDate, checkOutDate, adults, children } = req.body;
 
   if (!checkInDate || !checkOutDate) {
-    return res.status(400).json({ error: "Check-in and check-out dates are required." });
+    return res
+      .status(400)
+      .json({ error: "Check-in and check-out dates are required." });
   }
 
   try {
@@ -191,7 +191,9 @@ const searchAvailableRooms = async (req, res) => {
 
     const unavailableRoomIds = new Set();
     availability.forEach((entry) => {
-      entry.unavailableRooms.forEach((roomId) => unavailableRoomIds.add(roomId.toString()));
+      entry.unavailableRooms.forEach((roomId) =>
+        unavailableRoomIds.add(roomId.toString())
+      );
     });
 
     const allUnavailable = new Set([...bookedRoomIds, ...unavailableRoomIds]);
@@ -210,11 +212,14 @@ const searchAvailableRooms = async (req, res) => {
 };
 
 const roomReview = async (req, res) => {
-  const { roomId } = req.params;
-  const { rating, comment } = req.body;
+  const roomId = req.params.roomId;
+  const { rating, comment, bookingReference } = req.body;
   const userId = req.user._id;
-  const userProfilePic = req.user.profilePic;
   const username = req.user.username;
+
+  console.log("User:", username);
+  console.log("User ID:", userId);
+  console.log("Room ID:", roomId);
 
   if (!comment || !rating) {
     return res.status(400).json({ error: "Comment and rating are required" });
@@ -224,28 +229,51 @@ const roomReview = async (req, res) => {
     return res.status(400).json({ error: "Rating must be between 1 and 5" });
   }
 
-  const room = await Room.findById(roomId);
-  if (!room) {
-    return res.status(404).json({ error: "Room not found" });
-  }
-
-  if (!rating || !comment) {
-    return res.status(400).json({ error: "Rating and comment are required" });
-  }
-
   try {
-    const review = { userId, rating, comment, userProfilePic, username };
+    const room = await Room.findById(roomId);
+
+    if (!room) {
+      return res.status(404).json({ error: "Room not found" });
+    }
+
+    // Check if user already reviewed this room
+    const alreadyReviewed = room.reviews.some(
+      (review) =>
+        String(review.user) === String(userId) &&
+        review.bookingReference === bookingReference
+    );
+
+    console.log(alreadyReviewed);
+
+    if (alreadyReviewed) {
+      return res
+        .status(400)
+        .json({ error: "You have already reviewed this room." });
+    }
+
+    // Create and add review
+    const review = {
+      user: userId,
+      rating,
+      comment,
+      username,
+      bookingReference,
+      createdAt: new Date(),
+    };
+
     room.reviews.push(review);
+
+    //Recalculate average rating
     room.rating =
-      room.reviews.length > 0
-        ? room.reviews.reduce((acc, review) => acc + review.rating, 0) /
-          room.reviews.length
-        : 0;
+      room.reviews.reduce((acc, review) => acc + review.rating, 0) /
+      room.reviews.length;
+
     await room.save();
-    res.status(200).json(review);
+
+    return res.status(200).json(review);
   } catch (error) {
-    console.log("Error in reviewRoom: ", error.message);
-    res.status(500).json({ error: error.message });
+    console.log("Error in roomReview:", error.message);
+    return res.status(500).json({ error: error.message });
   }
 };
 

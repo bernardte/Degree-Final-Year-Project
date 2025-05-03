@@ -181,6 +181,19 @@
     animation: fadeInDown 0.5s ease-in-out forwards;
   }
 
+  @keyframes pulse-scale {
+    0%, 100% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.1);
+    }
+  }
+
+  .animate-pulse-scale{
+    animation: pulse-scale 1.5s ease-in-out infinite
+  }
+
 }
 
 @layer base {

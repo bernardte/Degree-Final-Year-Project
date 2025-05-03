@@ -11,12 +11,20 @@ const roomSchema = mongoose.Schema(
     roomName: {
       type: String,
       required: true,
-      trim: true
+      trim: true,
     },
     roomType: {
       type: String,
       required: true,
-      enum: ["double bed", "balcony", "single", "double", "sea view", "deluxe", "deluxe twin"],
+      enum: [
+        "double bed",
+        "balcony",
+        "single",
+        "double",
+        "sea view",
+        "deluxe",
+        "deluxe twin",
+      ],
     },
     description: {
       type: String,
@@ -65,6 +73,8 @@ const roomSchema = mongoose.Schema(
     reviews: [
       {
         user: { type: mongoose.Schema.Types.ObjectId, ref: "user" },
+        username: { type: String },
+        bookingReference: { type: String },
         rating: { type: Number, min: 1, max: 5 },
         comment: { type: String },
         createdAt: { type: Date, default: Date.now },

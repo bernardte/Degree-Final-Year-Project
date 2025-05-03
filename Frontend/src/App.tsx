@@ -77,7 +77,6 @@ const App = () => {
               </RouteProvider>
             }
           />
-
         {/* Catch-all route */}
         <Route path="*" element={<PageNotFound />} />
       </Routes>
