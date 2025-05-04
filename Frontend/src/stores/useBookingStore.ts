@@ -26,7 +26,7 @@ const useBookingStore = create<BookingStore>((set) => ({
       })
       .catch((error: any) => {
         console.log("Error in fetch booking", error.message);
-        set({ error: error.message });
+        set({ error: error?.response?.data?.error });
       })
       .finally(() => set({ isLoading: false }));
   },

@@ -1,4 +1,5 @@
 import useToast from "@/hooks/useToast";
+import ReviewList from "@/layout/components/review-component/ReviewList";
 import RoomInformationSkeleton from "@/layout/components/skeletons/RoomInformationSkeleton";
 import useRoomStore from "@/stores/useRoomStore";
 import { useEffect } from "react";
@@ -26,16 +27,16 @@ const RoomInformationPage = () => {
     return <div>Room not found</div>;
   }
 
+
   return (
-    <div className="inset-0 flex min-h-screen items-center bg-gradient-to-b from-cyan-100 via-white to-sky-100">
+    <><div className="inset-0 flex min-h-screen items-center bg-gradient-to-b from-cyan-100 via-white to-sky-100">
       <div className="flex h-full w-full flex-col md:flex-row">
         {/* Image Section */}
         <div className="mx-10 h-[300px] w-full md:h-auto md:w-1/2">
           <img
             src={room.images?.[0] || "/placeholder.jpg"}
             alt={room.roomName}
-            className="h-full w-full rounded-2xl object-cover"
-          />
+            className="h-full w-full rounded-2xl object-cover" />
         </div>
 
         {/* Info Section */}
@@ -79,7 +80,11 @@ const RoomInformationPage = () => {
         </div>
       </div>
     </div>
+    <ReviewList reviews={room.reviews ?? []} />
+    </>
   );
+
+
 };
 
 export default RoomInformationPage;

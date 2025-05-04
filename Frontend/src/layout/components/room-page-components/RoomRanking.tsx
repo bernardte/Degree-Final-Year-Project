@@ -7,7 +7,7 @@ import RoomCarouselSkeleton from "../skeletons/RoomCarouselSkeleton"; // adjust 
 import useToast from "@/hooks/useToast";
 
 const RoomRanking = () => {
-  const { fetchRoomRanking, MostBookingRoom, isLoading, error } = useRoomStore(
+  const { fetchRoomRanking, mostBookingRoom, isLoading, error } = useRoomStore(
     (state) => state,
   );
   const { showToast } = useToast();
@@ -21,6 +21,7 @@ const RoomRanking = () => {
     return;
   }
 
+  console.log(mostBookingRoom);
   return (
     <section className="mx-auto max-w-6xl px-4 py-10">
       <h2 className="mb-10 bg-gradient-to-r from-cyan-500 to-blue-600 bg-clip-text pb-2 text-center text-5xl font-bold text-transparent">
@@ -38,7 +39,7 @@ const RoomRanking = () => {
           768: { slidesPerView: 2 },
           1024: { slidesPerView: 3 },
         }}
-        className="pb-12 rounded-2xl"
+        className="rounded-2xl pb-12"
       >
         {isLoading
           ? Array(3)
@@ -48,9 +49,9 @@ const RoomRanking = () => {
                   <RoomCarouselSkeleton />
                 </SwiperSlide>
               ))
-          : MostBookingRoom.map((room, index) => (
+          : mostBookingRoom.map((room, index) => (
               <SwiperSlide key={room._id} className="h-full rounded-2xl">
-                <div className="rounded-2xl overflow-hidden bg-white shadow-xl h-full flex flex-col justify-between transition-transform duration-300 hover:scale-[1.02] hover:shadow-2xl">
+                <div className="flex h-full flex-col justify-between overflow-hidden rounded-2xl bg-white shadow-xl transition-transform duration-300 hover:scale-[1.02] hover:shadow-2xl">
                   <div className="relative">
                     <img
                       src={room.images}
@@ -67,7 +68,7 @@ const RoomRanking = () => {
                     </h3>
                     <div className="flex justify-between text-sm text-gray-600">
                       <span className="font-semibold text-yellow-500">
-                        ⭐ 5
+                        ⭐{room.rating?.toFixed(1) || "No ratings yet"}
                       </span>
                       <span className="font-semibold text-gray-800">
                         RM {room.pricePerNight}/night

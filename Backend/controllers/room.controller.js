@@ -28,10 +28,10 @@ const getRoomById = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
-
 const getMostBookingRoom = async (req, res) => {
   try {
     const mostBookingRoom = await Room.aggregate([
+      // Lookup bookings (optional, since you already store booking references)
       {
         $lookup: {
           from: "bookings",
@@ -40,6 +40,22 @@ const getMostBookingRoom = async (req, res) => {
           as: "bookings",
         },
       },
+
+      // Add bookings count and average rating
+      {
+        $addFields: {
+          bookingsCount: { $size: "$bookings" },
+          averageRating: {
+            $cond: [
+              { $gt: [{ $size: "$reviews" }, 0] },
+              { $avg: "$reviews.rating" },
+              null,
+            ],
+          },
+        },
+      },
+
+      // Project the fields you want to return
       {
         $project: {
           roomNumber: 1,
@@ -49,12 +65,18 @@ const getMostBookingRoom = async (req, res) => {
           capacity: 1,
           amenities: 1,
           images: 1,
-          bookingsCount: { $size: "$bookings" },
+          bookingsCount: 1,
+          reviews: 1,
+          averageRating: 1,
         },
       },
+
+      // Sort by bookings count
       {
         $sort: { bookingsCount: -1 },
       },
+
+      // Limit to top 4 rooms
       {
         $limit: 4,
       },
@@ -63,7 +85,7 @@ const getMostBookingRoom = async (req, res) => {
     res.status(200).json(mostBookingRoom);
     console.log(mostBookingRoom);
   } catch (error) {
-    console.log("Error in getMostBookingRoom:", error.message); // Updated function name in log
+    console.log("Error in getMostBookingRoom:", error.message);
     res.status(500).json({ error: error.message });
   }
 };
@@ -265,8 +287,10 @@ const roomReview = async (req, res) => {
 
     //Recalculate average rating
     room.rating =
-      room.reviews.reduce((acc, review) => acc + review.rating, 0) /
-      room.reviews.length;
+      room.reviews.rating.reduce((acc, review) => acc + review.rating, 0) /
+      room.reviews.length + 1;
+
+    console.log(room.rating);
 
     await room.save();
 

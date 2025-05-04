@@ -4,7 +4,7 @@ import { Room } from "@/types/interface.type";
 
 interface roomStore {
   rooms: Room[];
-  MostBookingRoom: Room[]
+  mostBookingRoom: Room[]
   room: Room;
   filterRoom: Room[];
   isLoading: boolean;
@@ -30,7 +30,7 @@ interface roomStore {
 
 const useRoomStore = create<roomStore>((set) => ({
   rooms: [],
-  MostBookingRoom: [],
+  mostBookingRoom: [],
   room: {} as Room,
   filterRoom: [],
   isLoading: false,
@@ -121,7 +121,7 @@ const useRoomStore = create<roomStore>((set) => ({
     set({ isLoading: true, error: null })
     try {
       const response = await axiosInstance.get("/api/rooms/most-booking-room");
-      set({ MostBookingRoom: response?.data });
+      set({ mostBookingRoom: response?.data });
       
     } catch (error: any) {
       console.log("Error in fetchRoomRanking: ", error?.response?.data?.error)

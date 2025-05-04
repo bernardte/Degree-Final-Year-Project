@@ -4,7 +4,6 @@ import useBookingStore from "@/stores/useBookingStore";
 import { formatDateInBookingCheckOut } from "@/utils/formatDate";
 import { capitalize } from "lodash";
 import { Loader, Calendar, Users, BedDouble, Star, ArrowRight } from "lucide-react";
-import useToast from "@/hooks/useToast";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -16,9 +15,8 @@ import { useNavigate } from "react-router-dom";
 import RateReviewDialog from "@/layout/components/review-component/RateReviewDialog";
 
 const BookingDisplayPage = () => {
-  const { error, fetchBooking, isLoading, bookingInformation } =
+  const { fetchBooking, isLoading, bookingInformation } =
     useBookingStore((state) => state);
-  const { showToast } = useToast();
   const [loadingTarget, setLoadingTarget] = useState<string | null>(null);
   const navigate = useNavigate();
 
@@ -58,14 +56,6 @@ const BookingDisplayPage = () => {
         <Loader className="mx-auto animate-spin text-blue-500" />
       </div>
     );
-  if (error) {
-    showToast("error", error);
-    return (
-      <div className="pt-10 text-center text-red-500">
-        An error occurred. Please try again later.
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-white bg-gradient-to-b from-sky-100 via-blue-200 to-white font-['Inter']">
@@ -97,7 +87,6 @@ const BookingDisplayPage = () => {
           </BreadcrumbLink>
         </BreadcrumbList>
       </Breadcrumb>
-
       <main className="mx-auto mt-10 max-w-4xl px-4">
         <motion.h1
           className="font-bold bg-gradient-to-r mb-12 from-blue-600 to-sky-500 bg-clip-text text-center text-3xl text-transparent drop-shadow-sm"
@@ -107,7 +96,6 @@ const BookingDisplayPage = () => {
         >
           Booking Details
         </motion.h1>
-        
 
         {bookingInformation && bookingInformation.length > 0 ? (
           bookingInformation.map((booking) => {
@@ -215,7 +203,7 @@ const BookingDisplayPage = () => {
                               {types.map((t, i) => (
                                 <span
                                   key={i}
-                                  className="rounded bg-blue-100 px-3 py-1 text-sm text-blue-800"
+                                  className="rounded bg-blue-100 px-3 py-1 text-sm text-blue-800 capitalize"
                                 >
                                   {t}
                                 </span>
@@ -227,6 +215,7 @@ const BookingDisplayPage = () => {
 
                       <div className="flex flex-col items-center justify-between gap-4 pt-6 md:flex-row">
                         <div className="text-3xl font-bold text-blue-700">
+                          <span className="text-2xl">Total: </span>
                           RM {booking.totalPrice.toFixed(2)}
                         </div>
                         <motion.button className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 to-sky-500 px-6 py-3 font-semibold text-white">
@@ -238,7 +227,7 @@ const BookingDisplayPage = () => {
                       {new Date(formatDateInBookingCheckOut(booking.endDate)) <
                         new Date() && (
                         <motion.div
-                          className="mt-8 border-t border-emerald-50 pt-6"
+                          className="border-t border-emerald-50 pt-6"
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: 0.4, type: "spring" }}
@@ -328,7 +317,7 @@ const BookingDisplayPage = () => {
         ) : (
           <div className="text-center">
             <div className="mx-auto max-w-md rounded-xl bg-white p-8 shadow-lg">
-              <div className="text-6xl text-blue-300">🌊</div>
+              <div className="text-6xl text-blue-300 animate-pulse">🌊</div>
               <h3 className="mt-4 text-xl font-semibold text-blue-800">
                 No Active Bookings
               </h3>

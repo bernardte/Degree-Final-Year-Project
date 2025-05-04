@@ -70,6 +70,11 @@ const roomSchema = mongoose.Schema(
         ref: "booking",
       },
     ],
+    // average rating
+    rating: {
+      type: Number,
+      default: 0,
+    },
     reviews: [
       {
         user: { type: mongoose.Schema.Types.ObjectId, ref: "user" },

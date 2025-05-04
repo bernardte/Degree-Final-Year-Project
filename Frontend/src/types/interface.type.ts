@@ -35,6 +35,7 @@ export interface Room {
     children?: number;
   };
   bookings: Bookings[];
+  rating: number;
   reviews: Reviews[];
   createdAt: string;
   updatedAt: string;
@@ -54,11 +55,11 @@ export enum Amenity {
 }
 
 
-interface Reviews {
+export interface Reviews {
     rating: number;
     comment: string;
     createdAt: string;
-    user: User;
+    username: String;
 }
 
 export interface Bookings {
