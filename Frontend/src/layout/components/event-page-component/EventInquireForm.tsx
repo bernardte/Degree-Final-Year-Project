@@ -1,109 +1,322 @@
 import { DayPicker } from "react-day-picker";
-import { useState } from "react";
-import { CalendarDays } from "lucide-react";
-import { 
-    Select, 
-    SelectContent,  
-    SelectItem, 
-    SelectTrigger, 
-    SelectValue 
+import { useState, FormEvent } from "react";
+import { CalendarDays, UserRound, Mail, Phone, Users } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import "react-day-picker/dist/style.css";
 import useIsSmallScreen from "@/hooks/useIsSmallScreen";
-import { formatDate } from "@/utils/formatDate";
+import { formatDateInBookingCheckOut } from "@/utils/formatDate";
+import { motion } from "framer-motion";
+import { phoneNumberValidation } from "@/utils/phoneNumberValidation";
+import { emailValidation } from "@/utils/emailValidation";
+import { formatMalaysianPhoneNumber } from "@/utils/formatPhoneNumber";
+import useToast from "@/hooks/useToast";
+import axiosInstance from "@/lib/axios";
 
-  const  EventInquireForm = ({ title }: { title: string }) => {
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
-  const [openDatePicker, setOpenDatePicker] = useState<boolean>(false);
+type FormData = {
+  name: string;
+  email: string;
+  phone: string;
+  guests: number;
+  eventType: string;
+  date: Date | undefined;
+  message: string;
+};
+
+type FormErrors = {
+  [K in keyof FormData]?: string;
+};
+
+const EventInquireForm = ({ title }: { title: string }) => {
+  const [formData, setFormData] = useState<FormData>({
+    name: "",
+    email: "",
+    phone: "",
+    guests: 1,
+    eventType: "",
+    date: undefined,
+    message: "",
+  });
+  const [openDatePicker, setOpenDatePicker] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState<FormErrors>({});
   const isSmallScreen = useIsSmallScreen();
+  const { showToast } = useToast();
+
+  const validateForm = (): FormErrors => {
+    const newErrors: FormErrors = {};
+    if (!formData.name.trim()) newErrors.name = "Name is required";
+    if (emailValidation(formData.email)) newErrors.email = "Invalid email format";
+    if (!formData.phone) {
+      newErrors.phone = "Phone number is required";
+    } else if (phoneNumberValidation(formData.phone)) {
+      newErrors.phone = "Invalid phone number format";
+    }
+    if (formData.guests < 1) newErrors.guests = "At least 1 guest required";
+    if (!formData.eventType) newErrors.eventType = "Event type is required";
+    if (!formData.date) newErrors.date = "Date is required";
+    return newErrors;
+  };
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    const validationErrors = validateForm();
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
+
+    try{
+      setIsSubmitting(true);
+      const response = await axiosInstance.post("/api/event/event-enquiry", formData);
+      if(response.data){
+        showToast("success", "successfully send!")
+      }
+
+      setFormData({ 
+        message: "",
+        name: "",
+        email: "",
+        phone: "",
+        guests: 1,
+        eventType: "",
+        date: undefined,
+      });
+      
+    }catch(error: any){
+      console.log('Error in EventInquireForm: ', error?.response?.data?.error);
+      showToast("error", error?.response?.data?.error);
+    }finally{
+      setIsSubmitting(false);
+    }
+  };
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatMalaysianPhoneNumber(e.target.value);
+    setFormData({ ...formData, phone: formatted });
+  };
 
   return (
     <section className="flex py-12">
-      <div className="mx-auto max-w-3xl px-4">
-        <form className="space-y-6 rounded-3xl border border-blue-400 bg-gray-100/40 p-10 shadow-xl">
-          <h2 className="mb-6 text-center text-2xl font-semibold text-gray-600">
-            {title}
-          </h2>
-          <input
-            type="text"
-            placeholder="Full Name"
-            className="w-full rounded-xl border p-3"
-            required
-          />
-          <input
-            type="email"
-            placeholder="Email"
-            className="w-full rounded-xl border p-3"
-            required
-          />
-          <input
-            type="tel"
-            placeholder="Phone Number"
-            className="w-full rounded-xl border p-3"
-          />
-          <Select>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select Events" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="wedding">wedding</SelectItem>
-              <SelectItem value="party">party</SelectItem>
-              <SelectItem value="meeting">meeting</SelectItem>
-            </SelectContent>
-          </Select>
-          <div
-            className="relative flex cursor-pointer items-center justify-between rounded-lg border border-gray-300 px-4 py-2 transition hover:border-blue-500"
-            onClick={() => setOpenDatePicker(!openDatePicker)}
-          >
-            <span className="text-md text-gray-400">
-              {selectedDate ? formatDate(selectedDate) : "Select Event Date"}
-            </span>
-            <CalendarDays className="text-gray-500" />
+      <div className="mx-auto w-full max-w-3xl px-4">
+        <span className="flex justify-center pb-10 font-semibold bg-gradient-to-r from-blue-500 to-sky-600 bg-clip-text text-center text-3xl text-transparent">
+          {title}
+        </span>
+        <motion.form
+          onSubmit={handleSubmit}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-6 rounded-[2.5rem] border-4 border-white/80 bg-gradient-to-br from-white to-blue-50/50 p-8 shadow-2xl shadow-blue-200/30 backdrop-blur-sm transition-all duration-300 hover:shadow-blue-300/40"
+        >
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            {/* Name Input */}
+            <div className="relative">
+              <UserRound className="absolute top-1/2 left-4 h-5 w-5 -translate-y-1/2 text-blue-600/80" />
+              <input
+                type="text"
+                aria-label="Full Name"
+                placeholder="Full Name *"
+                value={formData.name}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
+                className={`w-full rounded-2xl border-2 ${errors.name ? "border-red-300" : "border-blue-100/80"} bg-white/90 py-3.5 pr-6 pl-12 text-gray-700 transition-all duration-300 placeholder:text-blue-300/90 focus:border-blue-400 focus:ring-4 focus:ring-blue-100/60`}
+              />
+              {errors.name && (
+                <span className="absolute -bottom-5 left-0 text-sm text-red-500">
+                  {errors.name}
+                </span>
+              )}
+            </div>
+
+            {/* Email Input */}
+            <div className="relative">
+              <Mail className="absolute top-1/2 left-4 h-5 w-5 -translate-y-1/2 text-blue-600/80" />
+              <input
+                type="email"
+                placeholder="Email *"
+                value={formData.email}
+                onChange={(e) =>
+                  setFormData({ ...formData, email: e.target.value })
+                }
+                className={`w-full rounded-2xl border-2 ${errors.email ? "border-red-300" : "border-blue-100/80"} bg-white/90 py-3.5 pr-6 pl-12 text-gray-700 transition-all duration-300 placeholder:text-blue-300/90 focus:border-blue-400 focus:ring-4 focus:ring-blue-100/60`}
+              />
+              {errors.email && (
+                <span className="absolute -bottom-5 left-0 text-sm text-red-500">
+                  {errors.email}
+                </span>
+              )}
+            </div>
+
+            {/* Phone Input */}
+            <div className="relative">
+              <Phone className="absolute top-1/2 left-4 h-5 w-5 -translate-y-1/2 text-blue-600/80" />
+              <input
+                type="tel"
+                placeholder="Phone Number"
+                value={formData.phone}
+                onChange={handlePhoneChange}
+                className={`w-full rounded-2xl border-2 ${errors.phone ? "border-red-300" : "border-blue-100/80"} bg-white/90 py-3.5 pr-6 pl-12 text-gray-700 transition-all duration-300 placeholder:text-blue-300/90 focus:border-blue-400 focus:ring-4 focus:ring-blue-100/60`}
+              />
+              {errors.phone && (
+                <span className="absolute -bottom-5 left-0 text-sm text-red-500">
+                  {errors.phone}
+                </span>
+              )}
+            </div>
+
+            {/* Guests Input */}
+            <div className="relative">
+              <Users className="absolute top-1/2 left-4 h-5 w-5 -translate-y-1/2 text-blue-600/80" />
+              <input
+                type="number"
+                min={1}
+                placeholder="Total Guests *"
+                value={formData.guests}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    guests: Math.max(1, parseInt(e.target.value)),
+                  })
+                }
+                className={`w-full rounded-2xl border-2 ${errors.guests ? "border-red-300" : "border-blue-100/80"} bg-white/90 py-3.5 pr-6 pl-12 text-gray-700 transition-all duration-300 placeholder:text-blue-300/90 focus:border-blue-400 focus:ring-4 focus:ring-blue-100/60`}
+              />
+              {errors.guests && (
+                <span className="absolute -bottom-5 left-0 text-sm text-red-500">
+                  {errors.guests}
+                </span>
+              )}
+            </div>
           </div>
-          {openDatePicker && (
-            <DayPicker
-              selected={selectedDate}
-              onSelect={setSelectedDate}
-              mode="single"
-              numberOfMonths={isSmallScreen ? 1 : 2}
-              disabled={(day) =>
-                day < new Date(new Date().setHours(0, 0, 0, 0))
+
+          {/* Event Type Select */}
+          <div className="relative">
+            <Select
+              value={formData.eventType}
+              onValueChange={(value) =>
+                setFormData({ ...formData, eventType: value })
               }
-              defaultMonth={new Date()}
-              classNames={{
-                months:
-                  "sm:flex gap-6 bg-zinc-100 p-4 rounded-xl transition-all duration-200 absolute",
-                month: "w-full",
-                caption: "text-center font-semibold mb-2",
-                table: "w-full border-collapse",
-                head_row: "text-gray-500",
-                head_cell: "text-xs font-medium text-center py-1",
-                row: "text-center",
-                cell: "p-1",
-                day: "w-10 h-10 rounded-full hover:bg-blue-100 transition",
-                day_selected: "bg-blue-600 text-white",
-                day_today: "border border-blue-500",
-                day_range_middle: "bg-blue-100",
-                day_range_start: "bg-blue-600 text-white",
-                day_range_end: "bg-blue-600 text-white",
-              }}
+            >
+              <SelectTrigger
+                className={`w-full rounded-2xl border-2 ${errors.eventType ? "border-red-300" : "border-blue-100/80"} bg-white/90 py-6 pr-4 pl-5 text-gray-700 transition-all duration-300 hover:border-blue-400 focus:ring-4 focus:ring-blue-100/60`}
+              >
+                <SelectValue placeholder="Select Event Type *" />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl border-blue-100/80 bg-white/95 backdrop-blur-sm">
+                <SelectItem value="wedding">wedding</SelectItem>
+                <SelectItem value="party">party</SelectItem>
+                <SelectItem value="meeting">meeting</SelectItem>
+              </SelectContent>
+            </Select>
+            {errors.eventType && (
+              <span className="absolute -bottom-5 left-0 text-sm text-red-500">
+                {errors.eventType}
+              </span>
+            )}
+          </div>
+
+          {/* Date Picker */}
+          <div className="relative">
+            <div
+              className={`group relative flex cursor-pointer items-center justify-between rounded-2xl border-2 ${errors.date ? "border-red-300" : "border-blue-100/80"} bg-white/90 px-5 py-3.5 transition-all duration-300 hover:border-blue-400`}
+              onClick={() => setOpenDatePicker(!openDatePicker)}
+            >
+              <span
+                className={`text-md ${errors.date ? "text-red-400" : formData.date ? "text-gray-700" : "text-blue-300/90"}`}
+              >
+                {formData.date
+                  ? formatDateInBookingCheckOut(formData.date)
+                  : "Select Event Date *"}
+              </span>
+              <CalendarDays className="h-5 w-5 text-blue-600/80 transition-colors duration-300 group-hover:text-blue-500" />
+            </div>
+            {errors.date && (
+              <span className="absolute -bottom-5 left-0 text-sm text-red-500">
+                {errors.date?.toString()}
+              </span>
+            )}
+
+            {openDatePicker && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="absolute z-10 mt-3 w-full"
+              >
+                <DayPicker
+                  selected={formData.date}
+                  onSelect={(date) => {
+                    setFormData({ ...formData, date });
+                    setOpenDatePicker(false);
+                  }}
+                  mode="single"
+                  numberOfMonths={isSmallScreen ? 1 : 2}
+                  disabled={(day) =>
+                    day < new Date(new Date().setHours(0, 0, 0, 0))
+                  }
+                  defaultMonth={new Date()}
+                  classNames={{
+                    months:
+                      "flex gap-6 bg-white/95 p-6 rounded-2xl shadow-xl border-2 border-blue-100 backdrop-blur-sm",
+                    month: "w-full",
+                    caption: "text-center font-bold mb-4 text-blue-600/90",
+                    nav_button: "hover:bg-blue-50/80 rounded-lg p-2",
+                    nav_button_previous: "absolute left-4",
+                    nav_button_next: "absolute right-4",
+                    table: "w-full border-collapse",
+                    head_row: "text-blue-500/80",
+                    head_cell: "text-sm font-semibold text-center py-2.5",
+                    row: "text-center",
+                    cell: "p-1",
+                    day: "mx-auto h-10 w-10 rounded-full font-medium transition-colors hover:bg-blue-100/60",
+                    day_selected: "!bg-blue-600/90 text-white font-semibold",
+                    day_today: "border-2 border-blue-400/50",
+                    day_disabled: "text-gray-300 hover:bg-transparent",
+                  }}
+                />
+              </motion.div>
+            )}
+          </div>
+
+          {/* Message Textarea */}
+          <div className="relative">
+            <textarea
+              placeholder="Additional Requirement (Optional)"
+              value={formData.message}
+              onChange={(e) =>
+                setFormData({ ...formData, message: e.target.value })
+              }
+              className="w-full rounded-2xl border-2 border-blue-100/80 bg-white/90 px-5 py-3.5 text-gray-700 transition-all duration-300 placeholder:text-blue-300/90 focus:border-blue-400 focus:ring-4 focus:ring-blue-100/60"
+              rows={4}
             />
-          )}
-          <textarea
-            placeholder="Additional Info"
-            className="w-full rounded-xl border p-3"
-            rows={4}
-          />
-          <button
+          </div>
+
+          {/* Submit Button */}
+          <motion.button
             type="submit"
-            className="w-full rounded-xl bg-blue-600 py-3 text-white transition hover:bg-blue-700"
+            disabled={isSubmitting}
+            whileHover={{ scale: isSubmitting ? 1 : 1.02 }}
+            whileTap={{ scale: isSubmitting ? 1 : 0.98 }}
+            className="w-full rounded-2xl bg-gradient-to-br from-blue-600/95 to-blue-500 py-4.5 text-lg font-bold text-white shadow-lg shadow-blue-300/40 transition-all duration-300 hover:shadow-blue-400/50 disabled:opacity-70"
           >
-            Book Now
-          </button>
-        </form>
+            {isSubmitting ? (
+              <div className="flex items-center justify-center gap-2">
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                Processing...
+              </div>
+            ) : (
+              "Enquire Now"
+            )}
+          </motion.button>
+        </motion.form>
       </div>
     </section>
   );
-}
+};
 
 export default EventInquireForm;
+

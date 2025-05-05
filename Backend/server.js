@@ -13,6 +13,7 @@ import bookingRoute from "./Routes/bookings.route.js";
 import statisticRoute from "./Routes/statistic.route.js";
 import refreshTokenRoute from "./Routes/refreshToken.route.js";
 import checkoutRoute from "./Routes/checkout.route.js";
+import eventRoute from "./Routes/event.route.js";
 
 dotenv.config();
 
@@ -51,6 +52,7 @@ app.use("/api/bookings", bookingRoute);
 app.use("/api/statistic", statisticRoute);
 app.use("/api/refreshToken", refreshTokenRoute);
 app.use("/api/checkout", checkoutRoute);
+app.use("/api/event", eventRoute);
 
 app.listen(PORT, () => {
     console.log("Server is running on port", PORT);

@@ -3,6 +3,8 @@ import useToast from "@/hooks/useToast";
 import axiosInstance from "@/lib/axios";
 import useAuthStore from "@/stores/useAuthStore";
 import { Room } from "@/types/interface.type";
+import { emailValidation } from "@/utils/emailValidation";
+import { phoneNumberValidation } from "@/utils/phoneNumberValidation";
 import { motion } from "framer-motion";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
@@ -12,12 +14,23 @@ interface OneTimeBookingProps {
   selectedRoom: Room[];
 }
 
+interface FormData {
+  contactName: string;
+  contactEmail: string;
+  contactNumber: string;
+};
+
+type FormErrors = {
+  //Putting "?:" mean not always have errors
+  [K in keyof FormData]?: string
+};
 
 const OneTimeBookingForm = ({ selectedRoom }: OneTimeBookingProps) => {
     const [contactName, setContactName] = useState<string>("");
     const [contactEmail, setContactEmail] = useState<string>("");
     const [contactNumber, setContactNumber] = useState<string>("");
     const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+    const [errors, setErrors] = useState<FormErrors>({});
     const [loading, setLoading] = useState<boolean>(false);
     const { getParam } = useQueryParams();
     const checkInDate = getParam("checkInDate");
@@ -29,8 +42,35 @@ const OneTimeBookingForm = ({ selectedRoom }: OneTimeBookingProps) => {
     const { showToast } = useToast();
     const { user } = useAuthStore();
 
+    const handleError = (): FormErrors => {
+      const newError: FormErrors = {};
+      if(!contactName){
+        newError.contactName = "Please enter your name";
+      }
+
+      if(!contactEmail){
+        newError.contactEmail = "Please enter your email";
+      }else if(emailValidation(contactEmail)){
+        newError.contactEmail = "Invalid email format";
+      }
+
+      if(!contactNumber){
+        newError.contactNumber = "Please enter your phone number";
+      }else if(phoneNumberValidation(contactNumber)){
+        newError.contactNumber = "Invalid phone number format";
+      }
+
+      return newError;
+    }
+
     const handleBookingSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        const validateForm = handleError();
+        if(Object.keys(validateForm).length > 0){
+          setErrors(validateForm);
+          return;
+        }
+
         // Close the modal after submission
         setIsModalOpen(false);
         try {
@@ -120,6 +160,11 @@ const OneTimeBookingForm = ({ selectedRoom }: OneTimeBookingProps) => {
                     className="mt-1 w-full rounded-md border border-gray-300 p-2 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200"
                     required
                   />
+                  {errors.contactName && (
+                    <span className="absolute -bottom-5 left-0 text-sm text-red-500">
+                      {errors.contactName}
+                    </span>
+                  )}
                 </div>
 
                 {/* Email */}
@@ -134,6 +179,11 @@ const OneTimeBookingForm = ({ selectedRoom }: OneTimeBookingProps) => {
                     className="mt-1 w-full rounded-md border border-gray-300 p-2 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200"
                     required
                   />
+                  {errors.contactEmail && (
+                    <span className="absolute -bottom-5 left-0 text-sm text-red-500">
+                      {errors.contactEmail}
+                    </span>
+                  )}
                 </div>
 
                 {/* Phone Number */}
@@ -148,6 +198,11 @@ const OneTimeBookingForm = ({ selectedRoom }: OneTimeBookingProps) => {
                     className="mt-1 w-full rounded-md border border-gray-300 p-2 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200"
                     required
                   />
+                  {errors.contactNumber && (
+                    <span className="absolute -bottom-5 left-0 text-sm text-red-500">
+                      {errors.contactNumber}
+                    </span>
+                  )}
                 </div>
                 {/* Optional Account Creation
                 <div className="mt-4 flex items-center gap-2">
