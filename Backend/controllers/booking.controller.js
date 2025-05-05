@@ -20,12 +20,6 @@ const createBooking = async (req, res) => {
   }
 
   try {
-    if (bookingSessionId) {
-      console.log("Received bookingSessionId: ", bookingSessionId);
-    } else {
-      console.log("No bookingSessionId found.");
-    }
-
     const session = await BookingSession.findOne({
       sessionId: bookingSessionId,
     });
@@ -53,7 +47,7 @@ const createBooking = async (req, res) => {
      contactName,
      contactEmail,
      contactNumber,
-     guestDetails, // Add this
+     guestDetails,
    } = session;
     
 
