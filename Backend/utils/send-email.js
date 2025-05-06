@@ -7,12 +7,11 @@ dotenv.config();
 export const sendBookingConfirmationEmail = async (userEmail, bookingData) => {
     try {
         const mailOptions = {
-          from: process.env.EMAIL_USER,
-          to: userEmail,
+          from: `"The Seraphine Hotel" <${process.env.EMAIL_USER}>`, 
+          to: userEmail, 
           subject: "Booking Confirmation",
           html: generateBookingEmailHTML(bookingData),
         };
-
         transporter.sendMail(mailOptions, (error, info) => {
           if (error) {
             console.error("Error sending email:", error);

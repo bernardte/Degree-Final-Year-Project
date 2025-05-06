@@ -4,9 +4,21 @@ import { useState } from "react";
 import useToast from "@/hooks/useToast";
 import { Link } from "react-router";
 import useAuthStore from "@/stores/useAuthStore";
+import { emailValidation } from "@/utils/emailValidation";
+
+interface FormData {
+  name: string;
+  username: string;
+  email: string;
+  password: string;
+}
+
+type FormError = {
+  [k in keyof FormData]?: string;
+};
 
 const SignupPagePopUp = () => {
-  const [input, setInput] = useState({
+  const [input, setInput] = useState<FormData>({
     name: "",
     username: "",
     email: "",
@@ -15,39 +27,59 @@ const SignupPagePopUp = () => {
 
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<FormError>({});
   const { showToast } = useToast();
   const { setOpenLoginPopup } = useAuthStore();
 
+  const handleError = (): FormError => {
+    const error: FormError = {};
+
+    if (!input.name) {
+      error.name = "Full name is required";
+    }
+
+    if (!input.email) {
+      error.email = "Email is required";
+    } else if (!emailValidation(input.email)) {
+      error.email = "Invalid email format";
+    }
+
+    if (!input.username) {
+      error.username = "Username is required";
+    }
+
+    if (!input.password) {
+      error.password = "Password is required";
+    }
+
+    return error;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const formValidation = handleError();
+
+    if (Object.keys(formValidation).length > 0) {
+      setError(formValidation);
+      return;
+    }
+
     try {
       setIsLoading(true);
-      await axiosInstance.post("/api/users/signup", {
-        name: input.name,
-        username: input.username,
-        email: input.email,
-        password: input.password,
-      });
 
+      await axiosInstance.post("/api/users/signup", input);
 
       showToast("success", "Signup successful!");
-      setInput({
-        name: "",
-        username: "",
-        email: "",
-        password: "",
-      });
-      setIsLoading(false);
-      
+      setInput({ name: "", username: "", email: "", password: "" });
+      setError({});
     } catch (error: any) {
-     const errorMessage =
-       error?.response?.data?.message ||
-       error?.response?.data?.error ||
-       error?.message ||
-       "An unexpected error occurred during signup.";
-
-     showToast("error", errorMessage);
-     setIsLoading(false);
+      const errorMessage =
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error?.message ||
+        "An unexpected error occurred during signup.";
+      showToast("error", errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -55,54 +87,88 @@ const SignupPagePopUp = () => {
 
   return (
     <div
-      className="fixed z-50 top-0 w-full h-full flex items-center justify-center bg-[rgba(0,0,0,0.5)]"
-      onClick={() => setOpenLoginPopup(false)} // close popup on background click
+      className="fixed top-0 z-50 flex h-full w-full items-center justify-center bg-[rgba(0,0,0,0.5)]"
+      onClick={() => setOpenLoginPopup(false)}
     >
       <div
         className="w-full max-w-md rounded-2xl bg-white p-10 shadow-xl/30"
-        onClick={(e) => e.stopPropagation()} // prevent popup closing on background click
+        onClick={(e) => e.stopPropagation()}
       >
         <h2 className="mb-6 text-center text-3xl font-bold text-blue-700">
           Create an Account
         </h2>
-        <form className="space-y-5">
-          <div>
+        <form className="space-y-6" onSubmit={handleSubmit}>
+          {/* Name */}
+          <div className="relative">
             <label className="mb-1 block text-sm font-medium text-gray-700">
               Full Name
             </label>
             <input
               type="text"
               placeholder="Full Name"
-              className="w-full rounded-xl border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              className={`mt-1 w-full rounded-md border p-2 shadow-sm focus:ring ${
+                error.name
+                  ? "border-red-500 focus:border-red-500 focus:ring-red-200"
+                  : "border-gray-300 focus:border-blue-500 focus:ring-blue-200"
+              }`}
               value={input.name}
               onChange={(e) => setInput({ ...input, name: e.target.value })}
             />
+            {error.name && (
+              <span className="absolute -bottom-5 left-0 text-sm text-red-500">
+                {error.name}
+              </span>
+            )}
           </div>
-          <div>
+
+          {/* Username */}
+          <div className="relative">
             <label className="mb-1 block text-sm font-medium text-gray-700">
               Username
             </label>
             <input
               type="text"
               placeholder="Username"
-              className="w-full rounded-xl border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              className={`mt-1 w-full rounded-md border p-2 shadow-sm focus:ring ${
+                error.username
+                  ? "border-red-500 focus:border-red-500 focus:ring-red-200"
+                  : "border-gray-300 focus:border-blue-500 focus:ring-blue-200"
+              }`}
               value={input.username}
               onChange={(e) => setInput({ ...input, username: e.target.value })}
             />
+            {error.username && (
+              <span className="absolute -bottom-5 left-0 text-sm text-red-500">
+                {error.username}
+              </span>
+            )}
           </div>
-          <div>
+
+          {/* Email */}
+          <div className="relative">
             <label className="mb-1 block text-sm font-medium text-gray-700">
               Email
             </label>
             <input
-              type="email"
+              type="text"
               placeholder="you@example.com"
-              className="w-full rounded-xl border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              className={`mt-1 w-full rounded-md border p-2 shadow-sm focus:ring ${
+                error.email
+                  ? "border-red-500 focus:border-red-500 focus:ring-red-200"
+                  : "border-gray-300 focus:border-blue-500 focus:ring-blue-200"
+              }`}
               value={input.email}
               onChange={(e) => setInput({ ...input, email: e.target.value })}
             />
+            {error.email && (
+              <span className="absolute -bottom-5 left-0 text-sm text-red-500">
+                {error.email}
+              </span>
+            )}
           </div>
-          <div>
+
+          {/* Password */}
+          <div className="relative">
             <label className="mb-1 block text-sm font-medium text-gray-700">
               Password
             </label>
@@ -110,7 +176,11 @@ const SignupPagePopUp = () => {
               <input
                 type={showPassword ? "text" : "password"}
                 placeholder={showPassword ? "abc1234" : "••••••••"}
-                className="w-full rounded-xl border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                className={`mt-1 w-full rounded-md border p-2 shadow-sm focus:ring ${
+                  error.password
+                    ? "border-red-500 focus:border-red-500 focus:ring-red-200"
+                    : "border-gray-300 focus:border-blue-500 focus:ring-blue-200"
+                }`}
                 value={input.password}
                 onChange={(e) =>
                   setInput({ ...input, password: e.target.value })
@@ -127,16 +197,23 @@ const SignupPagePopUp = () => {
                   onClick={() => setShowPassword(!showPassword)}
                 />
               )}
+              {error.password && (
+                <span className="absolute -bottom-5 left-0 text-sm text-red-500">
+                  {error.password}
+                </span>
+              )}
             </div>
           </div>
+
+          {/* Submit */}
           <button
             type="submit"
             className="w-full cursor-pointer rounded-xl bg-blue-600 py-2 font-semibold text-white transition duration-300 hover:bg-blue-700"
-            onClick={handleSubmit}
           >
             {isLoading ? <Loader2 className="m-auto animate-spin" /> : "Signup"}
           </button>
         </form>
+
         <p className="mt-4 text-center text-sm text-gray-600">
           Already have an account?{" "}
           <Link

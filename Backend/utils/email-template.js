@@ -103,7 +103,7 @@ export const generateBookingEmailHTML = ({
                       ${
                         breakfastIncluded
                           ? "✓ Breakfast included"
-                          : "No breakfast"
+                          : "No breakfast included"
                       }
                     </div>
                   </div>

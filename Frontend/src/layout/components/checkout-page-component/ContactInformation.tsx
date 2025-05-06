@@ -9,6 +9,7 @@ import { motion } from "framer-motion";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { formatMalaysianPhoneNumber } from "@/utils/formatPhoneNumber";
 
 interface OneTimeBookingProps {
   selectedRoom: Room[];
@@ -149,7 +150,7 @@ const OneTimeBookingForm = ({ selectedRoom }: OneTimeBookingProps) => {
               </h2>
               <form onSubmit={handleBookingSubmit} className="grid gap-4">
                 {/* Name */}
-                <div>
+                <div className="relative mb-3">
                   <label className="block text-sm font-medium text-gray-700">
                     Full Name <span className="text-red-500">*</span>
                   </label>
@@ -157,8 +158,11 @@ const OneTimeBookingForm = ({ selectedRoom }: OneTimeBookingProps) => {
                     type="text"
                     value={contactName}
                     onChange={(e) => setContactName(e.target.value)}
-                    className="mt-1 w-full rounded-md border border-gray-300 p-2 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200"
-                    required
+                    className={`mt-1 w-full rounded-md border p-2 shadow-sm focus:ring ${
+                      errors.contactName
+                        ? "border-red-500 focus:border-red-500 focus:ring-red-200"
+                        : "border-gray-300 focus:border-blue-500 focus:ring-blue-200"
+                    }`}
                   />
                   {errors.contactName && (
                     <span className="absolute -bottom-5 left-0 text-sm text-red-500">
@@ -168,16 +172,19 @@ const OneTimeBookingForm = ({ selectedRoom }: OneTimeBookingProps) => {
                 </div>
 
                 {/* Email */}
-                <div>
+                <div className="relative mb-3">
                   <label className="block text-sm font-medium text-gray-700">
                     Email Address <span className="text-red-500">*</span>
                   </label>
                   <input
-                    type="email"
+                    type="text"
                     value={contactEmail}
                     onChange={(e) => setContactEmail(e.target.value)}
-                    className="mt-1 w-full rounded-md border border-gray-300 p-2 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200"
-                    required
+                    className={`mt-1 w-full rounded-md border p-2 shadow-sm focus:ring ${
+                      errors.contactName
+                        ? "border-red-500 focus:border-red-500 focus:ring-red-200"
+                        : "border-gray-300 focus:border-blue-500 focus:ring-blue-200"
+                    }`}
                   />
                   {errors.contactEmail && (
                     <span className="absolute -bottom-5 left-0 text-sm text-red-500">
@@ -187,16 +194,19 @@ const OneTimeBookingForm = ({ selectedRoom }: OneTimeBookingProps) => {
                 </div>
 
                 {/* Phone Number */}
-                <div>
+                <div className="relative mb-3">
                   <label className="block text-sm font-medium text-gray-700">
                     Contact Number <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="tel"
-                    value={contactNumber}
+                    value={formatMalaysianPhoneNumber(contactNumber)}
                     onChange={(e) => setContactNumber(e.target.value)}
-                    className="mt-1 w-full rounded-md border border-gray-300 p-2 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200"
-                    required
+                    className={`mt-1 w-full rounded-md border p-2 shadow-sm focus:ring ${
+                      errors.contactName
+                        ? "border-red-500 focus:border-red-500 focus:ring-red-200"
+                        : "border-gray-300 focus:border-blue-500 focus:ring-blue-200"
+                    }`}
                   />
                   {errors.contactNumber && (
                     <span className="absolute -bottom-5 left-0 text-sm text-red-500">

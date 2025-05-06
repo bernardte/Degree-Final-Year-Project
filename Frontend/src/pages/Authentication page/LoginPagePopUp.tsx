@@ -4,6 +4,16 @@ import { Eye, EyeOff, Loader2 } from "lucide-react";
 import useAuthStore from "@/stores/useAuthStore";
 import useToast from "@/hooks/useToast";
 import { Link, useNavigate } from "react-router-dom";
+import { emailValidation } from "@/utils/emailValidation";
+
+interface FormData {
+  email: string;
+  password: string;
+}
+
+type FormError = {
+  [k in keyof FormData ]?: string
+}
 
 const LoginPagePopUp = () => {
   const [input, setInput] = useState({ email: "", password: "" });
@@ -15,13 +25,35 @@ const LoginPagePopUp = () => {
   const { showToast } = useToast();
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const [ error, setError ] = useState<FormError>({});
 
   useEffect(() => {
     if (inputRef.current) inputRef.current.focus();
   }, []);
 
+  const handleError = (): FormError => {
+    const errror: FormError = {};
+    if (!input.email) {
+      errror.email = 'Email is required';
+    } else if (emailValidation(input.email)) {
+      errror.email = 'Invalid email format';
+    }
+
+    if (!input.password) {
+      errror.password = 'Password is required';
+    }
+
+    return errror;
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const validateForm = handleError();
+    if (Object.keys(validateForm).length > 0){
+      setError(validateForm);
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -79,21 +111,30 @@ const LoginPagePopUp = () => {
           Welcome Back
         </h2>
         <form className="space-y-5" onSubmit={handleSubmit}>
-          <div>
+          <div className="relative">
             <label className="mb-1 block text-sm font-medium text-gray-700">
               Email
             </label>
             <input
               ref={inputRef}
-              type="email"
+              type="text"
               placeholder="you@example.com"
-              className="w-full rounded-xl border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              className={`mt-1 w-full rounded-md border p-2 shadow-sm focus:ring ${
+                error.email
+                  ? "border-red-500 focus:border-red-500 focus:ring-red-200"
+                  : "border-gray-300 focus:border-blue-500 focus:ring-blue-200"
+              }`}
               value={input.email}
               onChange={(e) => setInput({ ...input, email: e.target.value })}
             />
+            {error.email && (
+              <span className="absolute -bottom-5 left-0 text-sm text-red-500">
+                {error.email}
+              </span>
+            )}
           </div>
 
-          <div>
+          <div className="relative mt-6">
             <label className="mb-1 block text-sm font-medium text-gray-700">
               Password
             </label>
@@ -101,7 +142,11 @@ const LoginPagePopUp = () => {
               <input
                 type={showPassword ? "text" : "password"}
                 placeholder={showPassword ? "abc1234" : "••••••••"}
-                className="w-full rounded-xl border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                className={`mt-1 w-full rounded-md border p-2 shadow-sm focus:ring ${
+                  error.password
+                    ? "border-red-500 focus:border-red-500 focus:ring-red-200"
+                    : "border-gray-300 focus:border-blue-500 focus:ring-blue-200"
+                }`}
                 value={input.password}
                 onChange={(e) =>
                   setInput({ ...input, password: e.target.value })
@@ -118,12 +163,17 @@ const LoginPagePopUp = () => {
                   onClick={() => setShowPassword(!showPassword)}
                 />
               )}
+              {error.password && (
+                <span className="absolute -bottom-5 left-0 text-sm text-red-500">
+                  {error.password}
+                </span>
+              )}
             </div>
           </div>
 
           <button
             type="submit"
-            className="w-full cursor-pointer rounded-xl bg-blue-600 py-2 font-semibold text-white transition duration-300 hover:bg-blue-700"
+            className="mt-3 w-full cursor-pointer rounded-xl bg-blue-600 py-2 font-semibold text-white transition duration-300 hover:bg-blue-700"
           >
             {isLoading ? <Loader2 className="m-auto animate-spin" /> : "Login"}
           </button>

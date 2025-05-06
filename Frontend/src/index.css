@@ -3,7 +3,6 @@
 @import "swiper/css";
 @import "swiper/css/navigation";
 
-
 @custom-variant dark (&:is(.dark *));
 :root {
   --radius: 1rem;
@@ -204,7 +203,6 @@
     @apply bg-background text-foreground;
   }
 }
-
 
 @layer components{
   .status-pill {
