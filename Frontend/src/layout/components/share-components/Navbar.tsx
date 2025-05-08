@@ -1,4 +1,3 @@
-"use client";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import list from "@/constant/navBarList";
 import { Loader, ShieldUser } from "lucide-react";
@@ -137,8 +136,8 @@ const Navbar = () => {
                   <span>View Booking</span>
                 </Link>
               </DropdownMenuItem>
-              {(user.role === "admin" || user.role === "superadmin") && (
-                <DropdownMenuItem>Admin</DropdownMenuItem>
+              {(user.role === "admin" || user.role === "manager") && (
+                <DropdownMenuItem>Admin Portal</DropdownMenuItem>
               )}
               <DropdownMenuItem
                 onClick={handleLogout}

@@ -5,6 +5,7 @@ import { validateRoomType } from "../validation/roomType.js";
 import Booking from "../models/booking.model.js";
 import Room from "../models/room.model.js";
 import RoomAvailability from "../models/roomAvailability.model.js";
+import Event from  "../models/event.model.js";
 
 // create room by admin panel
 const addRoom = async (req, res) => {
@@ -339,6 +340,20 @@ const filterAvailableRoomsForAdmin = async (req, res) => {
   }
 };
 
+const getAllEventsQuery = async (req, res) => {
+  try {
+    const events = await Event.find();
+
+    if(!events){
+      return res.status(404).json({ error: "No events found" });
+    }
+    
+    res.status(200).json(events);
+  } catch (error) {
+    console.log("Error in getAllEventsQuery: ", error.message);
+    res.ststus(500).json({ error: error.message });
+  }
+}
 
 export default {
   addRoom,
@@ -351,4 +366,5 @@ export default {
   getBookingByUserId,
   filterBookingsByPaymentStatusAndBookingStatus,
   filterAvailableRoomsForAdmin,
+  getAllEventsQuery,
 };
