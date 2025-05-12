@@ -1,11 +1,11 @@
 const verifyRoles = (req, res, next) => {
   const isAdmin = req.user.role === "admin";
-  const isManager = req.user.role === "manager";
+  const isSuperAdmin = req.user.role === "superAdmin";;
 
-  if (!isAdmin || !isManager) {
+  if (!isAdmin && !isSuperAdmin) {
     return res
       .status(401)
-      .json({ message: "Access denied, only admin or manager can access" });
+      .json({ message: "Access denied, only admin or superAdmin can access" });
   }
   next();
 };

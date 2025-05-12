@@ -7,26 +7,30 @@ const hasPermission = (role, resource, action) => {
 }
 
 /**
- * @param {string} role - the user's role, e.g. { "users", "admin", "manager" }
+ * @param {string} role - the user's role, e.g. { "user", "admin", "manager" }
  * @param {string} resource - the resource the user is trying to access, e.g. { "users" , "booking", "rooms", "amenities", "events"}
  * @param {string} action - the action the user is trying to perform, e.g. { update, delete, create, view, view_all }
  */
-
 const accessControl = (resource, action) => {
     return (req, res, next) =>{
         const role = req.user.role;
+
         if (!hasPermission(role, resource, action)) {
             return res.status(403).send({ message: "Access denied: insufficient permissions" });
         }
 
         // Check if the policy allows the action for the user role
-        const resourcePolicy = policies[resource];  
+        const resourcePolicy = policies[resource]; 
+        //* this is more dynamic with "[]"(dynamic access), 
+        //* able to get the key with different name instead of use "."(static access) to access the object.
         if(!resourcePolicy){
             return res.status(404).send({ message: `Access denied: no policy for resource "${resource}"` });
         }
 
         //check if the policies with the resources have the specific action("view", "delete", "create", "update", "view_all")
         const actionPolicy = resourcePolicy[action];
+        //* this is more dynamic with "[]"(dynamic access), 
+        //* able to get the key with different name instead of use "."(static access) to access the object.
         if(!actionPolicy){
             return res.status(404).send({ message: `Access denied: no policy for action "${action}" on "${resource}"`});
         }

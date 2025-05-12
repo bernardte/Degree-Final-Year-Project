@@ -12,6 +12,7 @@ export interface User {
 };
 
 export interface Room {
+  flatMap(arg0: () => any): import("react").ReactNode;
   filter: any;
   map(arg0: (room: any) => void): any;
   _id: string;
@@ -65,6 +66,9 @@ export interface Reviews {
 export interface Bookings {
   _id: string;
   bookingCreatedByUser: User;
+  contactName: string;
+  contactEmail: string;
+  contactNumber: string;
   room: Room;
   roomType: string;
   startDate: Date;
@@ -76,13 +80,14 @@ export interface Bookings {
   totalPrice: number;
   BookingDate: Date;
   status: "confirmed" | "pending" | "canceled" | "completed";
-  paymentMedhod: "card" | "grabpay" | "fpx";
+  paymentMethod: "card" | "grabpay" | "fpx";
   paymentStatus: "paid" | "unpaid";
   specialRequests?: string;
   bookingReference: string;
   createdAt: Date;
   updatedAt: Date;
   qrCodeImageURL: string;
+  userType: string;
 }
 
 export interface BookingSession {
@@ -126,4 +131,11 @@ export interface Facility {
   openTime: string;
   closeTime: string;
   image: string;
+}
+
+export interface Statistic {
+  totalBooking: number;
+  totalUsers: number;
+  totalRoom: number;
+  totalRoomAvailable: number;
 }

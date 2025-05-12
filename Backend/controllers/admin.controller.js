@@ -6,6 +6,67 @@ import Booking from "../models/booking.model.js";
 import Room from "../models/room.model.js";
 import RoomAvailability from "../models/roomAvailability.model.js";
 import Event from  "../models/event.model.js";
+import User from "../models/user.model.js";
+
+
+const getUser = async (req, res) => {
+  try {
+    const users = await User.find().select("-password");
+
+    if (!users) {
+      return res.status(400).json({ error: "users not found" });
+    }
+    res.status(200).json(users);
+  } catch (error) {
+    console.log("Error in getUser: ", error.message);
+    res.status(500).json({ error: error.message });
+  }
+}
+
+
+const updateUserRole = async (req, res) => {
+  const { newRole, userId } = req.body;
+  const currentLoginUserId = req.user._id;
+  try {
+    if (!userId || !newRole) {
+      return res
+        .status(400)
+        .json({ error: "User ID and new role cannot be empty" });
+    }
+
+    //prevent update own role
+    if (currentLoginUserId.toString() === userId) {
+      return res.status(400).json({ error: "Cannot update your own role" });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Prevent updating if the new role is the same as current
+    if (user.role === newRole) {
+      return res
+        .status(400)
+        .json({ error: "New role is the same as the current role" });
+    }
+
+    if (newRole === "superAdmin" || req.user.role === newRole) {
+      return res.status(403).json({
+        error:
+          "Access denied: You do not have sufficient permission to assign the 'Super Admin' role.",
+      });
+    }
+
+    user.role = newRole;
+    await user.save();
+    return res.status(200).json({ message: `User role updated to ${newRole}` });
+  } catch (error) {
+    console.log("Error in updateUserRole: ", error.message);
+    res.status(500).json({ error: error.message });
+  }
+};
+
 
 // create room by admin panel
 const addRoom = async (req, res) => {
@@ -169,10 +230,14 @@ const updatePaymentStatus = async (req, res) => {
 //use in admin panel to get all bookings
 const getAllBookings = async (req, res) => {
     try {
-        const bookings = await Booking.find().populate("room", "roomType pricePerNight"); // Populate the room field with roomType and pricePerNight
+        const bookings = await Booking.find()
+        .populate("room", "roomType pricePerNight") // Populate the room field with roomType and pricePerNight
+        .populate("bookingCreatedByUser", "name email");
+
         if (!bookings || bookings.length === 0) {
             return res.status(404).json({ error: "No bookings found" });
         }
+
         res.status(200).json(bookings);
     } catch (error) {
         console.error("Error fetching all bookings: ", error.message);
@@ -356,6 +421,8 @@ const getAllEventsQuery = async (req, res) => {
 }
 
 export default {
+  getUser,
+  updateUserRole,
   addRoom,
   updateRoom,
   deleteRoom,

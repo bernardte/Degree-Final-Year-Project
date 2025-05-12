@@ -8,7 +8,7 @@ const permissions = {
     events: ["view_all"],
   },
 
-  manager: {
+  superAdmin: {
     profile: ["update", "view"],
     users: ["update", "view", "delete"],
     booking: ["view_all", "view", "cancel_any", "update_booking_status"],

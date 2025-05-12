@@ -6,6 +6,7 @@ interface authStore {
   isAuthenticated: boolean;
   isAuthLoading: boolean; //for refresh token use purpose
   isAdmin: boolean;
+  isAdminVerified: boolean;
   showLoginPopup: boolean;
   showSignupPopup: boolean;
   user: User | null;
@@ -13,6 +14,7 @@ interface authStore {
   roles: string | null;
   setIsAuthenticated: (authentication: boolean) => void;
   setAuthLoading: (loading: boolean) => void;
+  setIsAdminVerified: (verification: boolean) => void;
   setOpenLoginPopup: (open: boolean) => void;
   setOpenSignupPopup: (open: boolean) => void;
   setIsAdmin: (verifyAdmin: boolean) => void;
@@ -26,6 +28,7 @@ const useAuthStore = create<authStore>()(
       (set) => ({
         isAuthenticated: false,
         isAdmin: false,
+        isAdminVerified: false,
         isAuthLoading: false,
         showLoginPopup: false,
         showSignupPopup: false,
@@ -34,10 +37,15 @@ const useAuthStore = create<authStore>()(
         roles: null,
 
         setIsAuthenticated: (authentication) =>
-          set({ isAuthenticated: authentication }, false, "SET_AUTHENTICATED"),
+          set({ isAuthenticated: authentication }),
 
         setAuthLoading: (loading) =>
           set({ isAuthLoading: loading }, false, "SET_LOADING"),
+
+        setIsAdminVerified: (verification) => {
+          set({ isAdminVerified: verification }, false, "SET_ADMIN_VERIFICATION")
+          localStorage.setItem("admin-verified", String(verification));
+        },
 
         setIsAdmin: (verifyAdmin) =>
           set({ isAdmin: verifyAdmin }, false, "SET_ADMIN"),

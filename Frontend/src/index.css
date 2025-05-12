@@ -193,6 +193,80 @@
     animation: pulse-scale 1.5s ease-in-out infinite
   }
 
+   /* Status Code Pulse Animation */
+   @keyframes statusPulse {
+    0%, 100% { 
+      transform: scale(1); 
+      opacity: 1; 
+    }
+    50% { 
+      transform: scale(1.05); 
+      opacity: 0.8; 
+    }
+  }
+  
+  /* Floating Animation */
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+
+  /* Card Rise Animation */
+  @keyframes cardRise {
+    0% { 
+      transform: translateY(30px) rotateX(45deg); 
+      opacity: 0; 
+    }
+    100% { 
+      transform: translateY(0) rotateX(0); 
+      opacity: 1; 
+    }
+  }
+
+  /* Animation Classes */
+  .animate-status-pulse {
+    animation: statusPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+
+  .animate-card-rise {
+    animation: cardRise 0.5s ease-out forwards;
+  }
+
+  /* Animation Delays */
+  .delay-100 {
+    animation-delay: 100ms;
+  }
+
+  .delay-150 {
+    animation-delay: 150ms;
+  }
+
+  .delay-200 {
+    animation-delay: 200ms;
+  }
+
+  .delay-300 {
+    animation-delay: 300ms;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0) translateX(0); }
+    25% { transform: translateY(-20px) translateX(10px); }
+    50% { transform: translateY(10px) translateX(-10px); }
+    75% { transform: translateY(-10px) translateX(5px); }
+  }
+  
+  @keyframes float-delayed {
+    0%, 100% { transform: translateY(0) translateX(0); }
+    25% { transform: translateY(15px) translateX(-10px); }
+    50% { transform: translateY(-10px) translateX(5px); }
+    75% { transform: translateY(5px) translateX(-5px); }
+  }
+
 }
 
 @layer base {

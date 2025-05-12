@@ -4,13 +4,16 @@ import axiosInstance from "@/lib/axios";
 
 interface BookingStore {
   bookingInformation: Bookings[];
+  bookings: Bookings[];
   isLoading: boolean;
   error: string | null;
   fetchBooking: () => Promise<void>;
+  fetchAllBooking: () => Promise<void>;
 }
 
 const useBookingStore = create<BookingStore>((set) => ({
   bookingInformation: [],
+  bookings: [],
   isLoading: false,
   error: null,
   fetchBooking: async () => {
@@ -30,6 +33,16 @@ const useBookingStore = create<BookingStore>((set) => ({
       })
       .finally(() => set({ isLoading: false }));
   },
+
+  fetchAllBooking: async () => {
+    set({ isLoading: true, error: null });
+    axiosInstance.get("/api/admin/get-all-bookings")
+    .then((response) => {
+      set({ bookings: response?.data })
+    })
+    .catch(error => set({ error: error?.response?.data?.error || error?.response?.data?.message }))
+    .finally(() => set({ isLoading: false }));
+  }
 }));
 
 export default useBookingStore;

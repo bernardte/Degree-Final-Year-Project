@@ -8,6 +8,7 @@ import {
   InputOTPSlot,
 } from "@/components/ui/input-otp";
 import { Loader2 } from "lucide-react";
+import useAuthStore from "@/stores/useAuthStore";
 
 const VerifyAdminOtpPage = () => {
   const location = useLocation();
@@ -15,6 +16,7 @@ const VerifyAdminOtpPage = () => {
   const { showToast } = useToast();
   const [otp, setOtp] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const { setIsAdminVerified } = useAuthStore();
   const email = location.state?.email;
 
   const handleVerify = async () => {
@@ -32,16 +34,19 @@ const VerifyAdminOtpPage = () => {
 
       if (response.data?.error) {
         showToast("error", response.data.error.message);
+        setIsAdminVerified(false)
         return;
       }
 
       showToast("success", "Admin verified successfully.");
+      setIsAdminVerified(true)
       navigate("/loading");
     } catch (err: any) {
       showToast(
         "error",
         err?.response?.data?.message || "OTP verification failed",
       );
+      setIsAdminVerified(false);
     } finally {
       setIsLoading(false);
     }
@@ -93,7 +98,7 @@ const VerifyAdminOtpPage = () => {
               className="cursor-pointer pt-3 text-center text-sm text-blue-500 hover:underline hover:underline-offset-4"
               onClick={() => navigate("/")}
             >
-              Back to homepage?
+              Login as a user?
             </span>
           </div>
         </div>

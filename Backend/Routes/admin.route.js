@@ -6,6 +6,11 @@ import accessControl from "../middleware/accessControl.js";
 const router = express.Router();
 
 router.use(protectRoute, verifyRoles); // Protect all routes with authentication middleware
+
+//users
+router.get("/get-user", accessControl("users", "view"), adminControllers.getUser);
+router.patch("/update-user-role", accessControl("assignRole", "update"), adminControllers.updateUserRole);
+
 // room 
 router.post("/add-room", accessControl("rooms", "create_room"),adminControllers.addRoom);
 router.put("/update-room/:roomId", accessControl("rooms", "update_room"),adminControllers.updateRoom);

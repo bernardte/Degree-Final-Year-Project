@@ -17,6 +17,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const Navbar = () => {
   const { setOpenLoginPopup, logout } = useAuthStore();
+  const isAdminVerified = localStorage.getItem("admin-verified");
+  console.log(isAdminVerified);
   const { user } = useAuthStore();
   const [isLoading, setIsLoading] = useState(true);
   const { showToast } = useToast();
@@ -136,9 +138,12 @@ const Navbar = () => {
                   <span>View Booking</span>
                 </Link>
               </DropdownMenuItem>
-              {(user.role === "admin" || user.role === "manager") && (
-                <DropdownMenuItem>Admin Portal</DropdownMenuItem>
-              )}
+              {(user.role === "admin" || user.role === "superAdmin") &&
+                (!!isAdminVerified) && (
+                  <DropdownMenuItem>
+                    <Link to={"/admin-portal"}>Admin Portal</Link>
+                  </DropdownMenuItem>
+                )}
               <DropdownMenuItem
                 onClick={handleLogout}
                 className="cursor-pointer"

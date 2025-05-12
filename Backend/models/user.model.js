@@ -12,7 +12,7 @@ const usersSchema = mongoose.Schema({
     },
     role: {
         type: String,
-        enum: ["admin", "user", "manager"],
+        enum: ["admin", "user", "superAdmin"],
         default: "user"
     },
     isOTPVerified: {

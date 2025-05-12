@@ -1,18 +1,15 @@
 import useAuthStore from "@/stores/useAuthStore";
-import React from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, Outlet } from "react-router-dom";
 
-interface RouteProviderProps{
-    children: React.ReactNode
-}
-const RouteProvider = ({ children }: RouteProviderProps) => {
+
+const RouteProvider = () => {
 
     const { user } = useAuthStore();
 
     if(!user) return <Navigate to={"/"} replace/>
 
 
-  return <>{children}</>;
+  return <Outlet />;
 };
 
 export default RouteProvider;

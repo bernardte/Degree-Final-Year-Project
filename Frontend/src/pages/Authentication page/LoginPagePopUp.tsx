@@ -73,9 +73,9 @@ const LoginPagePopUp = () => {
       console.log(data.role);
       login(data, data.token, data.role); // Store user data
       setIsAuthenticated(true);
-      setIsAdmin(data.role === "admin" || data.role === "superadmin");
+      setIsAdmin(data.role === "admin" || data.role === "superAdmin");
 
-      if (data.role === "admin" || data.role === "superadmin" && !data.isOTPVerified) {
+      if (data.role === "admin" || data.role === "superAdmin" && !data.isOTPVerified) {
         showToast("info", "Please verify OTP to continue as admin.");
         navigate("/verify-admin-otp", {
           state: { email: input.email }, // pass email for the OTP page
@@ -154,12 +154,12 @@ const LoginPagePopUp = () => {
               />
               {!showPassword ? (
                 <Eye
-                  className="absolute top-2 right-0 mr-4 cursor-pointer"
+                  className="absolute top-3 right-0 mr-4 cursor-pointer"
                   onClick={() => setShowPassword(!showPassword)}
                 />
               ) : (
                 <EyeOff
-                  className="absolute top-2 right-0 mr-4 cursor-pointer"
+                  className="absolute top-3 right-0 mr-4 cursor-pointer"
                   onClick={() => setShowPassword(!showPassword)}
                 />
               )}

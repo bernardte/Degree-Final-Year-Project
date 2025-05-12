@@ -19,6 +19,9 @@ import RouteProvider from "@/provider/RouteProvider";
 import PaymentSuccess from "./layout/components/payment-transaction/PaymentSuccess";
 import PaymentCancelled from "./layout/components/payment-transaction/PaymentCancelled";
 import BookingDisplayPage from "./pages/Booking display page/BookingDisplayPage";
+import AdminMainPage from "./pages/Admin main page/AdminMainPage";
+import UnauthorizedPage from "./pages/401-unauthorized-page/UnauthorizedPage";
+import RoleBasedProvider from "./provider/RoleBasedProvider";
 
 const App = () => {
   const { user, showLoginPopup, showSignupPopup } = useAuthStore();
@@ -31,6 +34,7 @@ const App = () => {
       {showSignupPopup && !user && <SignupPagePopUp />}
 
       <Routes>
+        <Route path="/unauthorized" element={<UnauthorizedPage />} />
         <Route path="/" element={<Navigate to="/home" replace />} />
 
         {/* Public routes */}
@@ -52,31 +56,22 @@ const App = () => {
           <Route path="facilities" element={<FacilitiesPage />} />
           <Route path="event" element={<EventPage />} />
           <Route path="contact-us" element={<ContactUsPage />} />
-          <Route
-            path="/verify-admin-otp"
-            element={
-              <RouteProvider>
-                <VerifyAdminOtpPage />
-              </RouteProvider>
-            }
-          />
-          <Route
-            path="/loading"
-            element={
-              <RouteProvider>
-                <LoadingScreen />
-              </RouteProvider>
-            }
-          />
         </Route>
-        <Route 
-            path="/display-booking" 
-            element={
-              <RouteProvider>
-                <BookingDisplayPage />
-              </RouteProvider>
-            }
-          />
+
+        {/* User Login Route */}
+        <Route element={<RouteProvider />}>
+          <Route path="/loading" element={<LoadingScreen />} />
+          <Route path="/display-booking" element={<BookingDisplayPage />} />
+        </Route>
+
+        {/* Admin and Manager Routes */}
+        <Route
+          element={<RoleBasedProvider allowedRoles={["admin", "superAdmin"]} />}
+        >
+          <Route path="verify-admin-otp" element={<VerifyAdminOtpPage />} />
+          <Route path="admin-portal" element={<AdminMainPage />} />
+        </Route>
+
         {/* Catch-all route */}
         <Route path="*" element={<PageNotFound />} />
       </Routes>

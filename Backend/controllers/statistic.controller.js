@@ -1,44 +1,48 @@
-import RoomAvailability from "../models/roomAvailability.model.js";
 import Booking from "../models/booking.model.js";
 import User from "../models/user.model.js";
 import Room from "../models/room.model.js";
 
 const getStatistic = async (req, res) => {
   try {
+    const today = new Date(); // Get today's date
 
-    const totalRoom = await Room.countDocuments(); // Total number of rooms
-    const roomAvailabilityRecords = await RoomAvailability.countDocuments(); // Total number of available rooms
+    // 1. Get all rooms
+    const totalRoom = await Room.find().countDocuments();
 
-    const totalUnavailableRooms = roomAvailabilityRecords.reduce(
-      (total, record) => {
-        return total + record.unavailableRooms.length; // Sum the available rooms from all records
-      },
-      0
+    // 2. Get all bookings overlapping with today
+    const overlappingBookings = await Booking.find({
+      startDate: { $lte: today },
+      endDate: { $gte: today },
+    });
+
+    console.log(overlappingBookings);
+
+    // 3. Get the IDs of all currently booked rooms
+    const bookedRoomIds = overlappingBookings.map((booking) =>
+      booking.room.toString()
     );
 
-    const totalRoomAvailable = totalRoom - totalUnavailableRooms; // Total available rooms = Total rooms - Unavailable rooms
-    
-    const [
-      totalBooking,
-      totalUsers,
-      bookingUser,
-    ] = await Promise.all([
+    console.log(bookedRoomIds);
+    const uniqueBookedRoomIds = [...new Set(bookedRoomIds)]; // Remove duplicates
+
+    // 4. Calculate available rooms
+    const totalRoomAvailable = totalRoom - uniqueBookedRoomIds.length;
+
+    // 5. Other statistics
+    const [totalBooking, totalUsers] = await Promise.all([
       Booking.countDocuments(),
       User.countDocuments(),
-      Booking.distinct("bookingCreatedByUser") // Gets an array of unique user IDs which in booking collection
     ]);
 
-    const totalBookingUser = bookingUser.length; // Count of unique users who made bookings
-
+    // 6. Respond with statistics
     res.status(200).json({
       totalBooking,
       totalUsers,
       totalRoom,
       totalRoomAvailable,
-      totalBookingUser,
     });
   } catch (error) {
-    console.log("Error in getStatistic: ", error.message);
+    console.error("Error in getStatistic:", error.message);
     res.status(500).json({ error: error.message });
   }
 };

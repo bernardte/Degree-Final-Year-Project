@@ -1,69 +1,67 @@
 // Role check helpers
+const isSuperAdmin = (req) => req.user.role === "superAdmin";
 const isAdmin = (req) => req.user.role === "admin";
-const isManager = (req) => req.user.role === "manager";
 const isUser = (req) => req.user.role === "user";
-const isAdminOrManager = (req) => isAdmin(req) || isManager(req);
+const isSuperAdminOrAdmin = (req) => isSuperAdmin(req) || isAdmin(req);
 
 const policies = {
   profile: {
-    update: isAdminOrManager,
-    view: isAdminOrManager,
+    update: isSuperAdminOrAdmin,
+    view: isSuperAdminOrAdmin,
   },
 
   users: {
-    delete: isManager,
-    view: isAdminOrManager,
-    update: isAdminOrManager,
+    delete: isSuperAdmin,
+    view: isSuperAdminOrAdmin,
+    update: isSuperAdminOrAdmin,
   },
 
   booking: {
-    view_all: isAdminOrManager,
-    view: isAdminOrManager,
-    update_booking_status: isAdminOrManager,
-    cancel_any: isManager,
+    view_all: isSuperAdminOrAdmin,
+    view: isSuperAdminOrAdmin,
+    update_booking_status: isSuperAdminOrAdmin,
+    cancel_any: isSuperAdmin,
     view_own: isUser,
   },
 
   rooms: {
-    view_all: isManager,
-    create_room: isManager,
-    delete_room: isManager,
-    update_room: isManager,
+    view_all: isSuperAdmin,
+    create_room: isSuperAdmin,
+    delete_room: isSuperAdmin,
+    update_room: isSuperAdmin,
   },
 
   payments: {
-    view_all: isAdminOrManager,
-    update_payment_status: isAdminOrManager,
-    approve_refund: isManager,//todo: haven't create yet
+    view_all: isSuperAdminOrAdmin,
+    update_payment_status: isSuperAdminOrAdmin,
+    approve_refund: isSuperAdmin, //todo: haven't created yet
   },
 
   reports: {
-    view: isAdminOrManager,
-    generate: isAdminOrManager,
+    view: isSuperAdminOrAdmin,
+    generate: isSuperAdminOrAdmin,
   },
 
   assignRole: {
-    update: isManager,
-    delete: isManager,
-    create: isManager,
+    update: isSuperAdmin,
+    delete: isSuperAdmin,
+    create: isSuperAdmin,
   },
 
   amenities: {
-    view_all: isManager,
-    create: isManager,
-    update: isManager,
-    delete: isManager,
+    view_all: isSuperAdmin,
+    create: isSuperAdmin,
+    update: isSuperAdmin,
+    delete: isSuperAdmin,
   },
 
   events: {
-    view_all: isAdminOrManager,
+    view_all: isSuperAdminOrAdmin,
   },
 
   rateAndReview: {
     create: isUser,
   },
-
-
 };
 
 export default policies;
