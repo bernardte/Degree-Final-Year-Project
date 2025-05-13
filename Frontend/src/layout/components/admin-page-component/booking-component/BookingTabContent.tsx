@@ -43,7 +43,7 @@ const BookingTabContent = () => {
 
         {/* Booking Table Section */}
         <CardContent className="mt-4">
-          <div className="rounded-xl border border-blue-200 bg-white/70 p-2 shadow-inner backdrop-blur">
+          <div className="overflow-hidden rounded-lg border border-blue-200 bg-white/70 p-2 shadow-inner backdrop-blur">
             <div className="w-full overflow-x-auto">
               <BookingTable />
             </div>

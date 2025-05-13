@@ -40,10 +40,10 @@ const Navbar = () => {
     };
   }, []);
 
-  if (!isLoading) {
+  if (isLoading) {
     return (
       <div className="flex h-screen items-center justify-center">
-        <Loader size={24} className="animate-spin" />
+        <Loader size={24} className="animate-spin text-blue-500" />
       </div>
     );
   }

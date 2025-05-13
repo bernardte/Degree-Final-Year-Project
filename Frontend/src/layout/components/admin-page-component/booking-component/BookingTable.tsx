@@ -1,36 +1,90 @@
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useState } from "react";
 import useBookingStore from "@/stores/useBookingStore";
 import formatCurrency from "@/utils/formatCurrency";
-import { formatDateInBookingCheckOut } from "@/utils/formatDate";
-import { Clock, Mail, User, UserRoundCog } from "lucide-react";
 import ActionButton from "../../share-components/ActionButton";
+import useToast from "@/hooks/useToast";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { formatDateInBookingCheckOut } from "@/utils/formatDate";
+import { Clock, Loader2, Mail, User, UserRoundCog } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import axiosInstance from "@/lib/axios";
 
 const BookingTable = () => {
-    const { bookings } = useBookingStore((state) => state);
+    const { bookings, isLoading, error } = useBookingStore((state) => state);
+    const [ status, setStatus ] = useState<{[key: string]: string}>({});
+    const { fetchAllBooking } = useBookingStore();
+    const { showToast } = useToast();
+    const handleStatusChange = (bookingId: string, newStatus: string) => {
+      setStatus((prev) => ({...prev, [bookingId]: newStatus}))
+    }
 
-    const handleEdit = async () => {
-      throw new Error("Function not implemented.");
+    const handleEdit = async (bookingId: string) => {
+      const updateStatus = status[bookingId];
+      try {
+
+        const response = await axiosInstance.patch(
+          "/api/admin/update-booking/" + bookingId, { status: updateStatus }
+        );
+
+        if(response?.data){
+          showToast("success", response?.data?.message)
+          fetchAllBooking();
+        }
+        
+      } catch (error: any) {
+        const message =
+          error?.response?.data?.error || error?.response?.data?.message;
+        if(message.includes("Access Denied")){
+          showToast("warn", error?.response?.data?.message)
+          return;
+        }
+
+        showToast("error", error?.response?.data?.error)
+      }
     };
   
     const handleDelete = async () => {
       throw new Error("Function not implemented.");
     };
+
+    
+    if (isLoading) {
+      return (
+        <div className="flex h-64 items-center justify-center">
+          <Loader2 className="h-10 w-10 animate-spin text-blue-500" />
+        </div>
+      );
+    }
+
+    if (error) {
+      return (
+        <div className="text-center text-red-500">
+          Failed to load booking. Please try again later.
+        </div>
+      );
+    }
   
     return (
       <div className="overflow-x-auto">
-        <Table className="w-full table-auto border border-zinc-200 text-sm text-zinc-700">
+        <Table className="w-full table-auto overflow-hidden rounded-lg border border-zinc-200 text-sm text-zinc-700">
           <TableHeader className="sticky top-0 z-10 bg-blue-100 text-xs tracking-wider text-zinc-700 uppercase">
             <TableRow>
+              <TableHead className="min-w-[80px] text-center">Index</TableHead>
               <TableHead className="min-w-[160px]">Fullname</TableHead>
-              <TableHead className="min-w-[180px]">Booking Reference</TableHead>
-              <TableHead className="min-w-[200px]">Email</TableHead>
-              <TableHead className="min-w-[150px]">Check In</TableHead>
-              <TableHead className="min-w-[150px]">Check Out</TableHead>
+              <TableHead className="min-w-[180px] text-center">
+                Booking Reference
+              </TableHead>
+              <TableHead className="min-w-[200px] text-center">Email</TableHead>
+              <TableHead className="min-w-[150px]">Check In Date</TableHead>
+              <TableHead className="min-w-[150px]">Check Out Date</TableHead>
               <TableHead className="min-w-[120px]">User Type</TableHead>
               <TableHead className="min-w-[180px]">Room Type</TableHead>
               <TableHead className="min-w-[100px]">Total Price</TableHead>
               <TableHead className="min-w-[140px]">Payment Method</TableHead>
               <TableHead className="min-w-[120px]">Payment Status</TableHead>
+              <TableHead className="min-w-[120px] text-center">
+                Status
+              </TableHead>
               <TableHead className="min-w-[120px] text-center">
                 Actions
               </TableHead>
@@ -58,6 +112,7 @@ const BookingTable = () => {
                     index % 2 === 0 ? "bg-white" : "bg-blue-50/50"
                   } border-b border-zinc-200`}
                 >
+                  <TableCell className="text-center">{index + 1}</TableCell>
                   <TableCell>
                     <span className="inline-flex items-center gap-1 text-zinc-700">
                       <User className="h-4 w-4 text-blue-400 opacity-60" />
@@ -106,17 +161,57 @@ const BookingTable = () => {
                     </span>
                   </TableCell>
                   <TableCell>
-                    <span className="inline-flex items-center gap-1 text-center text-zinc-700 uppercase">
+                    <span
+                      className={`inline-flex items-center gap-1 text-center uppercase ${booking?.paymentMethod === "grabpay" ? "text-emerald-500" : booking?.paymentMethod === "fpx" ? "text-blue-700" : "text-zinc-700"}`}
+                    >
                       {booking?.paymentMethod}
                     </span>
                   </TableCell>
                   <TableCell>
-                    <span className="inline-flex items-center gap-1 text-center text-zinc-700 capitalize">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-green-300 px-2 py-1 text-center text-emerald-700 capitalize">
                       {booking?.paymentStatus}
                     </span>
                   </TableCell>
+                  <TableCell>
+                    <Select
+                      value={status[booking._id] || booking?.status}
+                      onValueChange={(value) =>
+                        handleStatusChange(booking._id, value)
+                      }
+                    >
+                      <SelectTrigger className={`w-[140px]`}>
+                        <SelectValue placeholder="Select role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pending" className="capitalize">
+                          <span className="text-amber-300 capitalize">
+                            pending
+                          </span>
+                        </SelectItem>
+                        <SelectItem value="cancelled" className="capitalize">
+                          <span className="text-rose-500 capitalize">
+                            cancelled
+                          </span>
+                        </SelectItem>
+                        <SelectItem value="completed" className="capitalize">
+                          <span className="text-emerald-500 capitalize">
+                            completed
+                          </span>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </TableCell>
                   <TableCell className="text-right text-blue-500">
-                   <ActionButton onEdit={() => handleEdit()} onDelete={() => handleDelete}/>
+                    <ActionButton
+                      onEdit={() => handleEdit(booking._id)}
+                      editLabel={
+                        status[booking._id] &&
+                        status[booking._id] !== booking.status
+                          ? "Save"
+                          : "Edit"
+                      }
+                      onDelete={() => handleDelete}
+                    />
                   </TableCell>
                 </TableRow>
               ))}

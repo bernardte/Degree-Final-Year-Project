@@ -72,14 +72,15 @@ const UsersTable = () => {
 
   return (
     <div className="overflow-x-auto">
-      <Table className="min-w-full border border-zinc-200 text-sm text-zinc-700">
+      <Table className="min-w-full border rounded-lg overflow-hidden border-zinc-200 text-sm text-zinc-700">
         <TableHeader className="sticky top-0 z-10 bg-blue-100 text-xs tracking-wider text-zinc-700 uppercase">
           <TableRow>
+            <TableHead>Index</TableHead>
             <TableHead className="w-[60px]"></TableHead>
             <TableHead className="min-w-[160px]">Fullname</TableHead>
             <TableHead className="min-w-[160px]">Username</TableHead>
-            <TableHead className="min-w-[160px]">Email</TableHead>
-            <TableHead className="min-w-[160px]">Role</TableHead>
+            <TableHead className="min-w-[160px] text-center">Email</TableHead>
+            <TableHead className="min-w-[160px] text-center">Role</TableHead>
             <TableHead className="text-center">Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -91,6 +92,7 @@ const UsersTable = () => {
                 index % 2 === 0 ? "bg-white" : "bg-blue-50/50"
               } border-b border-zinc-200`}
             >
+              <TableCell className="text-center">{index + 1}</TableCell>
               <TableCell>
                 <img
                   src={
@@ -131,13 +133,17 @@ const UsersTable = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="user" className="capitalize">
-                      <span className="capitalize">user</span>
+                      <span className="capitalize text-gray-700">user</span>
                     </SelectItem>
                     <SelectItem value="admin" className="capitalize">
-                      <span className="capitalize">admin</span>
+                      <span className="text-blue-600 capitalize">
+                        admin
+                      </span>
                     </SelectItem>
                     <SelectItem value="superAdmin" className="capitalize">
-                      <span className="capitalize">super admin</span>
+                      <span className="text-red-600 capitalize">
+                        super admin
+                      </span>
                     </SelectItem>
                   </SelectContent>
                 </Select>

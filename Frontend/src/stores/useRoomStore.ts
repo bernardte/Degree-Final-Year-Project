@@ -4,7 +4,7 @@ import { Room } from "@/types/interface.type";
 
 interface roomStore {
   rooms: Room[];
-  mostBookingRoom: Room[]
+  mostBookingRoom: Room[];
   room: Room;
   filterRoom: Room[];
   isLoading: boolean;
@@ -15,8 +15,14 @@ interface roomStore {
     adults: number;
     children: number;
   };
+  removeRoomById: (roomId: string) => void;
   setRooms: (rooms: Room[]) => void;
-  setSearchParams: (params: { checkInDate: string; checkOutDate: string; adults: number; children: number }) => void;
+  setSearchParams: (params: {
+    checkInDate: string;
+    checkOutDate: string;
+    adults: number;
+    children: number;
+  }) => void;
   fetchRooms: () => Promise<void>;
   fetchEachRoomsType: () => Promise<void>;
   fetchRoomById: (id: string | undefined) => Promise<void>;
@@ -115,6 +121,13 @@ const useRoomStore = create<roomStore>((set) => ({
 
   setRooms: (rooms) => {
     set({ filterRoom: rooms });
+  },
+
+  removeRoomById: (roomId) => {
+    set((prevState) => ({
+      rooms: prevState.rooms.filter((room) => room._id !== roomId),
+      filterRoom: prevState.rooms.filter(room => room._id !== roomId)
+    }))
   },
 
   fetchRoomRanking: async () => {

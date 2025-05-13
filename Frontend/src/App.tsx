@@ -23,6 +23,7 @@ import AdminMainPage from "./pages/Admin main page/AdminMainPage";
 import UnauthorizedPage from "./pages/401-unauthorized-page/UnauthorizedPage";
 import RoleBasedProvider from "./provider/RoleBasedProvider";
 import AdminPageMainLayout from "./layout/AdminPageMainLayout";
+import AdminRoomPage from "./pages/Admin room page/AdminRoomPage";
 
 const App = () => {
   const { user, showLoginPopup, showSignupPopup } = useAuthStore();
@@ -72,6 +73,7 @@ const App = () => {
           <Route element={<AdminPageMainLayout />}>
             <Route path="/verify-admin-otp" element={<VerifyAdminOtpPage />} />
             <Route path="/admin-portal" element={<AdminMainPage />} />
+            <Route path="/admin-room" element={<AdminRoomPage />} />
           </Route>
         </Route>
 

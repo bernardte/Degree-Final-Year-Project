@@ -14,7 +14,7 @@ router.patch("/update-user-role", accessControl("assignRole", "update"), adminCo
 // room 
 router.post("/add-room", accessControl("rooms", "create_room"),adminControllers.addRoom);
 router.put("/update-room/:roomId", accessControl("rooms", "update_room"),adminControllers.updateRoom);
-router.delete("/delete-room/:roomId", adminControllers.deleteRoom);
+router.delete("/delete-room/:roomId", accessControl("rooms", "delete_room"), adminControllers.deleteRoom);
 
 //booking
 router.delete("/delete-booking/:bookingId", accessControl("booking", "cancel_any"),adminControllers.deleteBooking); // Delete a booking by ID

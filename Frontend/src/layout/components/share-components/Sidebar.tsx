@@ -11,17 +11,22 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import useHandleLogout from "@/hooks/useHandleLogout";
 import { Link, useNavigate } from "react-router-dom";
+import useAuthStore from "@/stores/useAuthStore";
 
 const Sidebar = () => {
-  const [open, setOpen] = useState<boolean>(true);
-  const [selected, setSelected] = useState<string>("Dashboard");
+  const [open, setOpen] = useState<boolean>(() => {
+    return localStorage.getItem("sidebar") === "false" ? false : true;
+  });
+  const [selected, setSelected] = useState<string>(() => {
+    return localStorage.getItem("selectedSidebarOption") || "Dashboard";
+  });
   const { handleLogout } = useHandleLogout();
   const navigate = useNavigate();
 
   return (
     <motion.nav
       layout
-      className="boder-slate-300 sticky top-0 h-screen shrink-0 border-r bg-white p-2"
+      className="border-slate-300 sticky top-0 h-screen shrink-0 border-r bg-white p-2"
       style={{
         width: open ? "225px" : "fit-content",
       }}
@@ -47,7 +52,7 @@ const Sidebar = () => {
           IconColor="text-indigo-500"
           selected={selected}
           setSelected={setSelected}
-          link={() => navigate("/room")}
+          link={() => navigate("/admin-room")}
           open={open}
         />
         <Option
@@ -57,7 +62,7 @@ const Sidebar = () => {
           IconColor="text-amber-600"
           selected={selected}
           setSelected={setSelected}
-          link={() => navigate("/event")}
+          link={() => navigate("/admin-event")}
           open={open}
         />
         <Option
@@ -67,7 +72,7 @@ const Sidebar = () => {
           titleColor="text-rose-700"
           IconColor="text-rose-600"
           setSelected={setSelected}
-          link={() => navigate("/notification")}
+          link={() => navigate("/admin-notification")}
           open={open}
           notify={3}
         />
@@ -90,6 +95,7 @@ const Sidebar = () => {
 export default Sidebar;
 
 const TitleSection = ({ open }: { open: boolean }) => {
+  const { user } = useAuthStore();
   return (
     <div className="mb-3 border-b border-slate-300 pb-3">
       <div className="flex cursor-pointer items-center justify-between rounded-md transition-colors hover:bg-slate-100">
@@ -102,10 +108,21 @@ const TitleSection = ({ open }: { open: boolean }) => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.125 }}
             >
-              <span className="block text-xs font-semibold">
-                Tom Is Loading
-              </span>
-              <span className="block text-xs text-slate-500">Pro Plan</span>
+              {user ? (
+                <>
+                  <span className="block text-xs font-semibold">
+                    {user.username}
+                  </span>
+                  <span className="block text-xs text-slate-500 capitalize">
+                    {user.role === "superAdmin" ? "Super Admin" : user.role}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span className="block w-[100px] animate-pulse bg-slate-500"></span>
+                  <span className="block w-[100px] animate-pulse bg-slate-500"></span>
+                </>
+              )}
             </motion.div>
           )}
         </div>
@@ -118,7 +135,10 @@ const TitleSection = ({ open }: { open: boolean }) => {
 const Logo = () => {
   return (
     <motion.div className="grid size-10 shrink-0 place-content-center rounded-md bg-blue-200">
-      <Link to="/">
+      <Link
+        to="/"
+        onClick={() => localStorage.removeItem("selectedSidebarOption")}
+      >
         <svg
           width="50"
           height="20"
@@ -163,8 +183,10 @@ const Option = ({
       className={`relative flex h-12 w-full cursor-pointer items-center rounded-md transition-colors ${selected === title ? "bg-indigo-100 text-indigo-800" : "text-slate-500 hover:bg-slate-100"}`}
       onClick={() => {
         setSelected(title);
+        localStorage.setItem("selectedSidebarOption", title);
         if (link) link();
       }}
+      aria-label={`Go to ${title}`}
     >
       <motion.div
         layout
@@ -208,7 +230,13 @@ const ToggleClose = ({
   return (
     <motion.button
       layout
-      onClick={() => setOpen((prev) => !prev)}
+      onClick={() => {
+        setOpen((prev) => {
+          const next = !prev;
+          localStorage.setItem("sidebar", JSON.stringify(next));
+          return next;
+        });
+      }}
       className="absolute right-0 bottom-0 left-0 cursor-pointer border-t border-slate-300 transition-colors hover:bg-slate-100"
     >
       <div className="flex items-center p-2">

@@ -189,22 +189,40 @@ const updateRoom = async (req, res) => {
 
 const deleteRoom = async (req, res) => {
   const { roomId } = req.params;
+
   if (!roomId) {
     return res.status(400).json({ error: "Please provide a room ID" });
   }
 
   try {
+    // Check if the room exists
     const room = await Room.findById(roomId);
     if (!room) {
       return res.status(404).json({ error: "Room not found" });
     }
-    const imgId = availableRoom.images.split("/").pop().split(".")[0];
+
+    // Optional: Check if this room is associated with any booking
+    const existingBooking = await Booking.findOne({ room: room._id });
+    if (existingBooking) {
+      return res
+        .status(400)
+        .json({ error: "Cannot delete room that is already booked" });
+    }
+
+    // Extract image ID from image URL
+    const imageUrl = room.images; // Assuming it's a single URL. Adjust if it's an array
+    const imgId = imageUrl.split("/").pop().split(".")[0];
+
+    // Delete image from Cloudinary
     await cloudinary.uploader.destroy(imgId);
+
+    // Delete the room from DB
     await Room.findByIdAndDelete(roomId);
+
     res.status(200).json({ message: "Room deleted successfully" });
   } catch (error) {
-    console.log("Error in deleteRoom: ", error.message);
-    res.status(500).json({ error: error.message });
+    console.error("Error in deleteRoom: ", error.message);
+    res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -281,9 +299,10 @@ const updateBookingStatus = async (req, res) => {
 
       booking.status = status; // Update the booking status
       await booking.save(); // Save the updated booking status
+      return res.status(200).json({ message: `successfully update to ${status}` })
     } catch (error) {
         console.error("Error updating booking: ", error.message);
-        res.status(500).json({ error: error.message });
+        return res.status(500).json({ error: error.message });
     }
 }
 
