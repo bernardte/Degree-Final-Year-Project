@@ -6,7 +6,7 @@ const router = express.Router();
 
 router.get("/getUserProfile", protectRoute, userControllers.getUserProfile);
 router.post("/signup", userControllers.signupUser);
-router.post("/verify-otp", userControllers.verifyOTP);
+router.post("/verify-otp", protectRoute , userControllers.verifyOTP);
 router.post("/login", userControllers.loginUser);
 router.post("/logout", userControllers.logoutUser);
 router.put("/updateProfile/:id", protectRoute, userControllers.updateUserProfile);

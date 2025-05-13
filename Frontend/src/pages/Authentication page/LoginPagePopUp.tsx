@@ -77,9 +77,10 @@ const LoginPagePopUp = () => {
 
       if (data.role === "admin" || data.role === "superAdmin" && !data.isOTPVerified) {
         showToast("info", "Please verify OTP to continue as admin.");
-        navigate("/verify-admin-otp", {
-          state: { email: input.email }, // pass email for the OTP page
-        });
+        navigate("/verify-admin-otp");
+        // navigate("/verify-admin-otp", {
+        //   state: { email: input.email }, // pass email for the OTP page
+        // });
       } else {
         showToast("success", "Login successful");
         setInput({ email: "", password: "" });

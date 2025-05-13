@@ -22,6 +22,7 @@ import BookingDisplayPage from "./pages/Booking display page/BookingDisplayPage"
 import AdminMainPage from "./pages/Admin main page/AdminMainPage";
 import UnauthorizedPage from "./pages/401-unauthorized-page/UnauthorizedPage";
 import RoleBasedProvider from "./provider/RoleBasedProvider";
+import AdminPageMainLayout from "./layout/AdminPageMainLayout";
 
 const App = () => {
   const { user, showLoginPopup, showSignupPopup } = useAuthStore();
@@ -68,8 +69,10 @@ const App = () => {
         <Route
           element={<RoleBasedProvider allowedRoles={["admin", "superAdmin"]} />}
         >
-          <Route path="verify-admin-otp" element={<VerifyAdminOtpPage />} />
-          <Route path="admin-portal" element={<AdminMainPage />} />
+          <Route element={<AdminPageMainLayout />}>
+            <Route path="/verify-admin-otp" element={<VerifyAdminOtpPage />} />
+            <Route path="/admin-portal" element={<AdminMainPage />} />
+          </Route>
         </Route>
 
         {/* Catch-all route */}

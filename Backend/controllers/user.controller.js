@@ -169,12 +169,13 @@ const updateUserProfile = async (req, res) => {
 
 // TODO: must change otp after have admin controller
 const verifyOTP = async (req, res) => {
-  const { otp, email } = req.body;
+  const { otp } = req.body;
+  const loginUserId = req.user._id
   console.log(otp);
   const tempOTP = process.env.TEMPORARY_OTP;
 
-  if (!email || !otp)
-    return res.status(400).json({ error: "Email and OTP are required" });
+  if (!otp)
+    return res.status(400).json({ error: "OTP are required" });
 
   // temporary otp
   //check if the otp is valid
@@ -183,7 +184,7 @@ const verifyOTP = async (req, res) => {
   }
 
   try {
-    const user = await User.findOne({ email });
+    const user = await User.findById({ _id: loginUserId });
 
     if (!user) {
       return res.status(400).json({ error: "User not found" });

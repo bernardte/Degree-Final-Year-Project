@@ -62,7 +62,7 @@ const UsersTable = () => {
       const message = error?.response?.data?.error || error?.response?.data?.message;
     
       if (message.includes("Access denied")) {
-        showToast("error", message);
+        showToast("warn", message);
         return;
       }
     

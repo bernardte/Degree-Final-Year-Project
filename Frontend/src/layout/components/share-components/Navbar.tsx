@@ -1,4 +1,4 @@
-import { Link, NavLink, useNavigate } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 import list from "@/constant/navBarList";
 import { Loader, ShieldUser } from "lucide-react";
 import {
@@ -11,21 +11,18 @@ import {
 } from "@/components/ui/dropdown-menu";
 import useAuthStore from "@/stores/useAuthStore";
 import { useEffect, useState } from "react";
-import axiosInstance from "@/lib/axios";
-import useToast from "@/hooks/useToast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import useHandleLogout from "@/hooks/useHandleLogout";
 
 const Navbar = () => {
-  const { setOpenLoginPopup, logout } = useAuthStore();
+  const { setOpenLoginPopup } = useAuthStore();
   const isAdminVerified = localStorage.getItem("admin-verified");
   console.log(isAdminVerified);
   const { user } = useAuthStore();
-  const [isLoading, setIsLoading] = useState(true);
-  const { showToast } = useToast();
-  const navigate = useNavigate();
   const userData = localStorage.getItem("user");
   const userDetails = userData ? JSON.parse(userData) : {};
   const [navbar, setNavbar] = useState(false);
+  const { handleLogout, isLoading } = useHandleLogout();
   const scrollHeader = () => {
     if (window.scrollY > 10) {
       setNavbar(true);
@@ -42,26 +39,6 @@ const Navbar = () => {
       window.removeEventListener("scroll", scrollHeader);
     };
   }, []);
-  
-
-  const handleLogout = async () => {
-    setIsLoading(true);
-    try {
-      const { data } = await axiosInstance.post("/api/users/logout");
-      if (data.error) {
-        showToast("error", data.error.message);
-      } else {
-        logout();
-        localStorage.removeItem("user");
-        showToast("success", data.message);
-        navigate("/");
-      }
-    } catch (error: any) {
-      showToast("error", error.message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   if (!isLoading) {
     return (

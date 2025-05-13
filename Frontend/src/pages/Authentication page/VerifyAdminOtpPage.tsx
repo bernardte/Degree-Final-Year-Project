@@ -11,13 +11,11 @@ import { Loader2 } from "lucide-react";
 import useAuthStore from "@/stores/useAuthStore";
 
 const VerifyAdminOtpPage = () => {
-  const location = useLocation();
   const navigate = useNavigate();
   const { showToast } = useToast();
   const [otp, setOtp] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const { setIsAdminVerified } = useAuthStore();
-  const email = location.state?.email;
 
   const handleVerify = async () => {
     if (!otp || otp.length < 6) {
@@ -28,7 +26,6 @@ const VerifyAdminOtpPage = () => {
     setIsLoading(true);
     try {
       const response = await axiosInstance.post("/api/users/verify-otp", {
-        email,
         otp,
       });
 
