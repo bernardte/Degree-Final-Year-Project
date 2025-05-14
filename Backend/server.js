@@ -14,9 +14,10 @@ import statisticRoute from "./Routes/statistic.route.js";
 import refreshTokenRoute from "./Routes/refreshToken.route.js";
 import checkoutRoute from "./Routes/checkout.route.js";
 import eventRoute from "./Routes/event.route.js";
+import bookingStatusUpdater from "./cronjob/bookingStatusUpdater.js";
+
 
 dotenv.config();
-
 const app = express();
 app.use(
   cors({
@@ -54,7 +55,8 @@ app.use("/api/refreshToken", refreshTokenRoute);
 app.use("/api/checkout", checkoutRoute);
 app.use("/api/event", eventRoute);
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
     console.log("Server is running on port", PORT);
-    connnectDB();
+    await connnectDB();
+    bookingStatusUpdater.start();
 })

@@ -1,40 +1,30 @@
+import EventTable from "@/layout/components/admin-page-component/Event-component/EventTable";
+import useEventsStore from "@/stores/useEventsStore";
 import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { PlusCircle } from "lucide-react";
-import RoomTable from "@/layout/components/admin-page-component/Room-component/RoomTable";
-import useRoomStore from "@/stores/useRoomStore";
 import { useEffect } from "react";
 
-// Animation constants
+// Animation variants
 const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { duration: 0.5 } },
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0, transition: { staggerChildren: 0.1 } }
 };
 
 const headerVariants = {
-  hidden: { y: -20, opacity: 0 },
-  visible: { y: 0, opacity: 1, transition: { duration: 0.4 } },
+    hidden: { opacity: 0, y: -20 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.5 } }
 };
 
 const cardVariants = {
-  hidden: { scale: 0.95, opacity: 0 },
-  visible: {
-    scale: 1,
-    opacity: 1,
-    transition: {
-      type: "spring",
-      stiffness: 100,
-      delay: 0.2,
-    },
-  },
+    hidden: { opacity: 0, scale: 0.95 },
+    visible: { opacity: 1, scale: 1, transition: { duration: 0.4 } }
 };
 
-const AdminRoomPage = () => {
-    const { fetchRooms, isLoading, error, rooms } = useRoomStore();
-    useEffect(() => {
-      fetchRooms();
-    }, [fetchRooms]);
+const AdminEventsPage = () => {
+    const { events, isLoading, error, fetchAllEvents } = useEventsStore();
 
+    useEffect(() => {
+        fetchAllEvents();
+    }, [fetchAllEvents])
 
     return (
         <motion.div
@@ -54,7 +44,7 @@ const AdminRoomPage = () => {
                 animate={{ opacity: 1, x: 0 }}
                 className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-3xl font-bold text-transparent drop-shadow-sm pb-3"
             >
-                Room Management
+                Events Management
             </motion.h1>
             <motion.p
                 initial={{ opacity: 0, x: -20 }}
@@ -62,25 +52,9 @@ const AdminRoomPage = () => {
                 transition={{ delay: 0.2 }}
                 className="text-md text-gray-600"
             >
-                Manage room listings, availability, and configurations
+                Manage event listings, availability, and configurations
             </motion.p>
             </div>
-
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-            <Button
-                variant="default"
-                className="flex items-center gap-2 transition-all hover:shadow-md"
-            >
-                <motion.span
-                animate={{ rotate: 0 }}
-                whileHover={{ rotate: 90 }}
-                transition={{ type: "spring" }}
-                >
-                <PlusCircle className="h-5 w-5" />
-                </motion.span>
-                <span className="font-semibold">Add New Room</span>
-            </Button>
-            </motion.div>
         </motion.div>
 
         {/* Table card */}
@@ -93,7 +67,7 @@ const AdminRoomPage = () => {
             }}
         >
             <div className="before:animate-shine relative overflow-hidden rounded-lg before:absolute before:inset-0 before:-translate-x-full before:bg-gradient-to-r before:from-transparent before:via-white/20 before:to-transparent">
-                <RoomTable isLoading={isLoading} rooms={rooms} error={error}/>
+                <EventTable isLoading={isLoading} events={events} error={error}/>
             </div>
 
             {/* Pagination section */}
@@ -103,7 +77,7 @@ const AdminRoomPage = () => {
             transition={{ delay: 0.4 }}
             className="mt-6 flex items-center justify-between border-t border-gray-100 pt-4"
             >
-            <span className="text-sm text-gray-500">Showing {rooms.length} results</span>
+            <span className="text-sm text-gray-500">Showing {events.length} results</span>
             <div className="flex space-x-2">{/* Pagination controls */}</div>
             </motion.div>
         </motion.div>
@@ -111,4 +85,4 @@ const AdminRoomPage = () => {
     );
 };
 
-export default AdminRoomPage;
+export default AdminEventsPage;

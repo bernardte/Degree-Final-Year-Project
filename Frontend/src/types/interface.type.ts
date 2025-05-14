@@ -79,7 +79,7 @@ export interface Bookings {
   };
   totalPrice: number;
   BookingDate: Date;
-  status: "confirmed" | "pending" | "canceled" | "completed";
+  status: "confirmed" | "pending" | "cancelled" | "completed";
   paymentMethod: "card" | "grabpay" | "fpx";
   paymentStatus: "paid" | "unpaid";
   specialRequests?: string;
@@ -138,4 +138,13 @@ export interface Statistic {
   totalUsers: number;
   totalRoom: number;
   totalRoomAvailable: number;
+}
+
+export interface Event {
+  _id: string,
+  phoneNumber: string,
+  email: string,
+  eventType: string,
+  eventDate: string,
+  additionalInfo?: string,
 }

@@ -179,13 +179,18 @@ const BookingTable = () => {
                         handleStatusChange(booking._id, value)
                       }
                     >
-                      <SelectTrigger className={`w-[140px]`}>
-                        <SelectValue placeholder="Select role" />
+                      <SelectTrigger className="w-[140px]">
+                        <SelectValue placeholder="Select status" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="pending" className="capitalize">
                           <span className="text-amber-300 capitalize">
                             pending
+                          </span>
+                        </SelectItem>
+                        <SelectItem value="confirmed" className="capitalize">
+                          <span className="text-blue-500 capitalize">
+                            confirmed
                           </span>
                         </SelectItem>
                         <SelectItem value="cancelled" className="capitalize">

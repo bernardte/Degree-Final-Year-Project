@@ -1,9 +1,18 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { motion } from "framer-motion";
 import { CalendarClock } from "lucide-react";
 import BookingTable from "./BookingTable";
+import useBookingStore from "@/stores/useBookingStore";
 
 const BookingTabContent = () => {
+  const { bookings } = useBookingStore();
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 30 }}
@@ -51,28 +60,46 @@ const BookingTabContent = () => {
 
           {/* Status Summary */}
           <div className="mt-6 flex flex-wrap gap-4">
-            {["Pending", "Cancel"].map((status, index) => (
-              <motion.div
-                key={status}
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{
-                  type: "spring",
-                  delay: 0.5 + index * 0.1,
-                  stiffness: 100,
-                  damping: 12,
-                }}
-                className="rounded-lg border border-blue-200 bg-gradient-to-br from-blue-100 via-white to-blue-50 px-4 py-2 shadow-sm backdrop-blur-sm"
-              >
-                <span className="flex items-center gap-2 text-sm font-medium text-blue-800">
-                  <span className="h-2 w-2 animate-pulse rounded-full bg-blue-500" />
-                  {status} Bookings
-                  <span className="text-blue-600">
-                    ({Math.floor(Math.random() * 50)})
+            {["Pending", "Confirmed", "Cancelled", "Completed"].map(
+              (status, index) => (
+                <motion.div
+                  key={status}
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{
+                    type: "spring",
+                    delay: 0.5 + index * 0.1,
+                    stiffness: 100,
+                    damping: 12,
+                  }}
+                  className="rounded-lg border border-blue-200 bg-gradient-to-br from-blue-100 via-white to-blue-50 px-4 py-2 shadow-sm backdrop-blur-sm"
+                >
+                  <span
+                    className={`flex items-center gap-2 text-sm font-medium ${
+                      status === "Pending"
+                        ? "text-amber-300"
+                        : status === "Confirmed"
+                          ? "text-blue-500"
+                          : status === "Cancelled"
+                            ? "text-rose-500"
+                            : "text-emerald-500"
+                    }`}
+                  >
+                    <span className="h-2 w-2 animate-pulse rounded-full bg-blue-400" />
+                    {status} Bookings
+                    <span>
+                      (
+                      {
+                        bookings.filter(
+                          (booking) => booking?.status === status.toLowerCase(),
+                        ).length
+                      }
+                      )
+                    </span>
                   </span>
-                </span>
-              </motion.div>
-            ))}
+                </motion.div>
+              ),
+            )}
           </div>
         </CardContent>
 
@@ -91,6 +118,6 @@ const BookingTabContent = () => {
       </Card>
     </motion.div>
   );
-}
+};
 
 export default BookingTabContent;
