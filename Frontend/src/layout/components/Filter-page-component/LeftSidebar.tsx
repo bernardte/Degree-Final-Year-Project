@@ -53,6 +53,13 @@ const LeftSidebar = ({
     }
   };
 
+  const formatAmenity = (amenity: string) => {
+    return amenity
+      .split("_")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+  };
+
   const amenitiesList = Array.from(
     new Set(rooms.flatMap((room: Room) => room.amenities)),
   );
@@ -296,14 +303,14 @@ const LeftSidebar = ({
 
         {/* Amenities */}
         <div>
-          <label className="mb-1 block text-sm font-semibold text-blue-900">
+          <label className="mb-1 block text-sm font-semibold text-blue-900 border-b-2 border-blue-500">
             Amenities
           </label>
-          <div className="flex flex-wrap gap-x-6 gap-y-3">
+          <div className="flex flex-wrap gap-y-3 py-3">
             {amenitiesList.map((amenity) => (
               <label
                 key={amenity}
-                className="flex w-[100px] items-center gap-2 text-sm text-blue-800"
+                className="flex min-w-[150px] gap-2 text-sm text-blue-800"
               >
                 <input
                   type="checkbox"
@@ -317,9 +324,9 @@ const LeftSidebar = ({
                         : prev.filter((item) => item !== amenity),
                     );
                   }}
-                  className="h-4 w-4 accent-blue-600"
+                  className="h-4 w-4 accent-sky-600"
                 />
-                {amenity}
+                {formatAmenity(amenity)}
               </label>
             ))}
           </div>

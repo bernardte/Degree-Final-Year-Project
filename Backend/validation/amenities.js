@@ -1,16 +1,16 @@
-export const validateRoomAmenities = (amenities) => {
+export const validateRoomAmenities = (amenitiesArray) => {
+  console.log(amenitiesArray);
   const validAmenities = [
     "wifi",
     "tv",
-    "ac",
-    "fridge",
-    "balcony",
-    "bathtub",
-    "pool",
-    "gym",
-    "parking",
-    "breakfast",
+    "air conditioning",
+    "mini fridge",
+    "private bathroom",
+    "room service",
+    "in room safe",
+    "sofa",
+    "desk lamp",
   ];
 
-  return amenities.some((amenity) => validAmenities.includes(amenity));
+  return amenitiesArray.some((amenity) => validAmenities.includes(amenity));
 };

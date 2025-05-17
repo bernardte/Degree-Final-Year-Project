@@ -11,7 +11,7 @@ const enquireEvents = async (req, res) => {
     }
 
     const newEvents = new Event({
-      fullName: name,
+      fullname: name,
       email: email,
       phoneNumber: phone,
       totalGuests: guests,

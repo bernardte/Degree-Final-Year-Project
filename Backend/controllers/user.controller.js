@@ -209,7 +209,7 @@ const getUserProfile = async (req, res) => {
   const user = await User.findById(logInUserId).select("-password");
   if (!user) {
     return res.status(400).json({ error: "User not found" });
-  }
+}
 
   return res.status(200).json({
     _id: user._id,

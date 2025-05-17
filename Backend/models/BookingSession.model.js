@@ -21,7 +21,7 @@ const bookingSessionSchema = new mongoose.Schema(
         contactNumber: { type: String, required: false },
         additionalDetails: { type: String },
       }),
-      required: false, // ✅ make guestDetails optional
+      required: false, // make guestDetails optional
     },
     roomId: [
       {

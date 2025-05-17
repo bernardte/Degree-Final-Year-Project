@@ -1,13 +1,13 @@
 import { uploadToCloudinary } from "../utils/uploadToCloudinary.js";
 import { validateRoomAmenities } from "../validation/amenities.js";
 import { v2 as cloudinary } from "cloudinary";
-import { validateRoomType } from "../validation/roomType.js";
 import Booking from "../models/booking.model.js";
 import Room from "../models/room.model.js";
 import RoomAvailability from "../models/roomAvailability.model.js";
-import Event from  "../models/event.model.js";
+import Event from "../models/event.model.js";
 import User from "../models/user.model.js";
-
+import sendEventResponseEmail from "../utils/sendEventResponseEmail.js";
+import OTP from "../models/adminOTP.model.js";
 
 const getUser = async (req, res) => {
   try {
@@ -21,8 +21,7 @@ const getUser = async (req, res) => {
     console.log("Error in getUser: ", error.message);
     res.status(500).json({ error: error.message });
   }
-}
-
+};
 
 const updateUserRole = async (req, res) => {
   const { newRole, userId } = req.body;
@@ -67,54 +66,102 @@ const updateUserRole = async (req, res) => {
   }
 };
 
+//OTP update
+const changeOTPVerificationCode = async (req, res) => {
+  const { newOTP } = req.body;
+  const superAdminId = req.user._id;
+
+  if (!newOTP) {
+    return res.status(400).json({ error: "OTP cannot be empty" });
+  }
+
+  try {
+    const OTP = await OTP.findOneAndUpdate(
+      { superAdminId },//filter
+      { otpCode: newOTP },//update otp
+      { new: true, upsert: true }//if not found then create
+    );
+    res.status(200).json({
+      message: "OTP updated successfully",
+      updatedOTP,
+    });
+  } catch (error) {
+    console.log("Error in changeOTPVerificationCode", error.message);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
 
 // create room by admin panel
 const addRoom = async (req, res) => {
   const {
+    bedType,
+    roomName,
     roomNumber,
     roomType,
     description,
     pricePerNight,
     amenities,
-    images,
-    capacity: { children, adults },
+    capacity,
+    roomDetails,
   } = req.body;
+
+  const imageFile = req.files.images;
+  // parse capacity string into an object
+  const { Adults, Children } = JSON.parse(capacity);
   if (
+    !bedType ||
+    !roomName ||
     !roomNumber ||
     !roomType ||
     !description ||
     !pricePerNight ||
     !amenities ||
-    !images ||
-    !adults
+    !imageFile ||
+    !roomDetails ||
+    Adults === undefined ||
+    Children === undefined
   ) {
     return res
       .status(400)
       .json({ error: "Please provide all required fields" });
   }
-  if (adults < 1 || adults > 5) {
+
+  if (Adults < 1 || Adults > 4) {
     return res
       .status(400)
-      .json({ error: "Adults count must be between 1 and 5" });
+      .json({ error: "Adults count must be between 1 and 4" });
   }
 
-  const amenitiesArray = validateRoomAmenities(...amenities);
-  if (!amenitiesArray) {
+  const amenitiesArray = amenities.split(","); // ['wifi', 'air conditioning', 'tv']
+  console.log(amenitiesArray)
+  const isValid = validateRoomAmenities(amenitiesArray);
+
+  if (!isValid) {
     return res.status(400).json({ error: "Invalid amenities" });
   }
 
   try {
-    const imagesUrls = await uploadToCloudinary(images);
-    const newRoom = new Room({
+    const existingRoom = await Room.findOne({
       roomNumber,
-      roomType,
+    });
+    if (existingRoom) {
+      return res.status(400).json({ message: "Room number already exists." });
+    }
+    
+    const imagesUrls = await uploadToCloudinary(imageFile);
+    const newRoom = new Room({
+      bedType,
+      roomName,
+      roomNumber,
+      roomType: roomType.toLowerCase(),
+      roomDetails,
       description,
       pricePerNight,
-      amenities,
+      amenities: amenitiesArray,
       images: imagesUrls,
       capacity: {
-        children,
-        adults,
+        children: Children,
+        adults: Adults,
       },
     });
 
@@ -125,8 +172,6 @@ const addRoom = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
-
-//  update room by admin panel
 const updateRoom = async (req, res) => {
   const {
     roomNumber,
@@ -134,10 +179,18 @@ const updateRoom = async (req, res) => {
     description,
     pricePerNight,
     amenities,
-    images,
-    capacity: { adults, children },
+    "capacity[adults]": adultsRaw,
+    "capacity[children]": childrenRaw,
   } = req.body;
+
+  const adults = parseInt(adultsRaw, 10);
+  const children = parseInt(childrenRaw, 10);
+  
+  console.log(req.body);
   const { roomId } = req.params;
+  const { images } = req.files || {};
+  let imageUrls = null;
+  
   if (!roomId) {
     return res.status(400).json({ error: "Please provide a room ID" });
   }
@@ -148,13 +201,10 @@ const updateRoom = async (req, res) => {
       .json({ error: "Adults count must be between 1 and 5" });
   }
 
-  const roomTypeArray = validateRoomType(...roomType);
-  if (!roomTypeArray) {
-    return res.status(400).json({ error: "Invalid room type" });
-  }
+  const isValid = validateRoomAmenities(amenities);
+  console.log(isValid);
 
-  const amenitiesArray = validateRoomAmenities(...amenities);
-  if (!amenitiesArray) {
+  if (!isValid) {
     return res.status(400).json({ error: "Invalid amenities" });
   }
 
@@ -164,17 +214,21 @@ const updateRoom = async (req, res) => {
       return res.status(404).json({ error: "Room not found" });
     }
     if (images && room.images) {
-      const imgId = room.images.split("/").pop().split(".")[0];
+      const imgId = room.images[0]?.split("/").pop().split(".")[0];
       await cloudinary.uploader.destroy(imgId);
     }
 
-    const imagesUrls = await uploadToCloudinary(images);
+    if (images) {
+      //! ensure multiple image uploads in the future 
+      const imageArray = Array.isArray(images) ? images : [images];
+      imageUrls = await Promise.all(imageArray.map(uploadToCloudinary));
+    }
     room.roomNumber = roomNumber || room.roomNumber;
     room.roomType = roomType || room.roomType;
     room.description = description || room.description;
     room.pricePerNight = pricePerNight || room.pricePerNight;
     room.amenities = amenities || room.amenities;
-    room.images = imagesUrls || room.images;
+    room.images = imageUrls || room.images;
     room.capacity = {
       adults: adults || room.capacity.adults,
       children: children || room.capacity.children,
@@ -210,7 +264,7 @@ const deleteRoom = async (req, res) => {
     }
 
     // Extract image ID from image URL
-    const imageUrl = room.images; // Assuming it's a single URL. Adjust if it's an array
+    const imageUrl = Array.isArray(room.images) ? room.images[0] : room.images;
     const imgId = imageUrl.split("/").pop().split(".")[0];
 
     // Delete image from Cloudinary
@@ -226,100 +280,111 @@ const deleteRoom = async (req, res) => {
   }
 };
 
-
 // after payment is done, automatically update the payment status to paid
 const updatePaymentStatus = async (req, res) => {
-    const { bookingCreatedByUser, bookingReference } = req.body;
+  const { bookingCreatedByUser, bookingReference } = req.body;
 
-    try{
-        const booking = await Booking.findOne({bookingCreatedByUser, bookingReference});
-        if(!booking){
-            return res.status(404).json({ error: "Booking not found" });
-        }
-        booking.paymentStatus = "paid"; // Update payment status to paid
-        await booking.save(); // Save the updated booking status
-        res.status(200).json(booking);
-    }catch(error){
-        console.error("Error updating payment status: ", error.message);
-        res.status(500).json({ error: error.message });
+  try {
+    const booking = await Booking.findOne({
+      bookingCreatedByUser,
+      bookingReference,
+    });
+    if (!booking) {
+      return res.status(404).json({ error: "Booking not found" });
     }
+    booking.paymentStatus = "paid"; // Update payment status to paid
+    await booking.save(); // Save the updated booking status
+    res.status(200).json(booking);
+  } catch (error) {
+    console.error("Error updating payment status: ", error.message);
+    res.status(500).json({ error: error.message });
+  }
 };
 
 //use in admin panel to get all bookings
 const getAllBookings = async (req, res) => {
-    try {
-        const bookings = await Booking.find()
-        .populate("room", "roomType pricePerNight") // Populate the room field with roomType and pricePerNight
-        .populate("bookingCreatedByUser", "name email");
+  try {
+    const bookings = await Booking.find()
+      .populate("room", "roomType pricePerNight") // Populate the room field with roomType and pricePerNight
+      .populate("bookingCreatedByUser", "name email");
 
-        if (!bookings || bookings.length === 0) {
-            return res.status(404).json({ error: "No bookings found" });
-        }
-
-        res.status(200).json(bookings);
-    } catch (error) {
-        console.error("Error fetching all bookings: ", error.message);
-        res.status(500).json({ error: error.message });
-        
+    if (!bookings || bookings.length === 0) {
+      return res.status(404).json({ error: "No bookings found" });
     }
-}
+
+    res.status(200).json(bookings);
+  } catch (error) {
+    console.error("Error fetching all bookings: ", error.message);
+    res.status(500).json({ error: error.message });
+  }
+};
 
 //user and admin use
 const getBookingByUserId = async (req, res) => {
-    const { userId } = req.params;
-    if (!userId.trim() === "") {
-        return res.status(400).json({ error: "Please provide a user ID" });
+  const { userId } = req.params;
+  if (!userId.trim() === "") {
+    return res.status(400).json({ error: "Please provide a user ID" });
+  }
+  try {
+    const bookings = await Booking.find({
+      bookingCreatedByUser: userId,
+    }).populate("room", "roomType pricePerNight"); // Populate the room field with roomType and pricePerNight
+    if (!bookings || bookings.length === 0) {
+      return res.status(404).json({ error: "No bookings found for this user" });
     }
-    try {
-        const bookings = await Booking.find({ bookingCreatedByUser: userId }).populate("room", "roomType pricePerNight"); // Populate the room field with roomType and pricePerNight
-        if(!bookings || bookings.length === 0) {
-            return res.status(404).json({ error: "No bookings found for this user" });
-        }
 
-        res.status(200).json(bookings);
-    } catch (error) {
-        console.error("Error fetching booking by user ID: ", error.message);
-        res.status(500).json({ error: error.message });
-    }
-}
+    res.status(200).json(bookings);
+  } catch (error) {
+    console.error("Error fetching booking by user ID: ", error.message);
+    res.status(500).json({ error: error.message });
+  }
+};
 
 //update by admin select by and drop down list
 const updateBookingStatus = async (req, res) => {
-    const { bookingId } = req.params;
-    const { status } = req.body; // Assuming status is the field to be updated
-    if (!status.trim() === "" || !bookingId.trim() === "") {
-        return res.status(400).json({ error: "Please provide a booking ID and status" });
-    }
-    
-    try {
-      const booking = await Booking.findById(bookingId);
-      if (!booking) {
-        return res.status(404).json({ error: "Booking not found" });
-      }
+  const { bookingId } = req.params;
+  const { status } = req.body; // Assuming status is the field to be updated
+  if (!status.trim() === "" || !bookingId.trim() === "") {
+    return res
+      .status(400)
+      .json({ error: "Please provide a booking ID and status" });
+  }
 
-      booking.status = status; // Update the booking status
-      await booking.save(); // Save the updated booking status
-      return res.status(200).json({ message: `successfully update to ${status}` })
-    } catch (error) {
-        console.error("Error updating booking: ", error.message);
-        return res.status(500).json({ error: error.message });
+  try {
+    const booking = await Booking.findById(bookingId);
+    if (!booking) {
+      return res.status(404).json({ error: "Booking not found" });
     }
-}
+
+    if(booking.status === status){
+      return res.status(400).json({ error: "Booking status is already " + status });
+    }
+
+    booking.status = status; // Update the booking status
+    await booking.save(); // Save the updated booking status
+    return res
+      .status(200)
+      .json({ message: `successfully update to ${status}` });
+  } catch (error) {
+    console.error("Error updating booking: ", error.message);
+    return res.status(500).json({ error: error.message });
+  }
+};
 
 //cancel booking by admin or user
 const deleteBooking = async (req, res) => {
-    const { bookingId } = req.params;
-    if (!bookingId.trim() === "") {
-        return res.status(400).json({ error: "Please provide a booking ID" });
-    }
-    try {
-        await Booking.findByIdAndDelete(bookingId);
-        res.status(200).json({ message: "Booking deleted successfully" });
-    } catch (error) {
-        console.error("Error deleting booking: ", error.message);
-        res.status(500).json({ error: error.message });
-    }
-}
+  const { bookingId } = req.params;
+  if (!bookingId.trim() === "") {
+    return res.status(400).json({ error: "Please provide a booking ID" });
+  }
+  try {
+    await Booking.findByIdAndDelete(bookingId);
+    res.status(200).json({ message: "Booking deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting booking: ", error.message);
+    res.status(500).json({ error: error.message });
+  }
+};
 
 // filter bookings by payment status and booking status in admin panel
 
@@ -336,9 +401,11 @@ const filterBookingsByPaymentStatusAndBookingStatus = async (req, res) => {
 
   try {
     // Fetch all unavailable room IDs from the UnavailableRoom collection
-    const unavailableRooms = await RoomAvailability.find().select("unavailableRooms");
+    const unavailableRooms = await RoomAvailability.find().select(
+      "unavailableRooms"
+    );
 
-    if(!unavailableRooms || unavailableRooms.length === 0) {
+    if (!unavailableRooms || unavailableRooms.length === 0) {
       return res.status(404).json({ error: "No Unavailable Room Found" });
     }
 
@@ -428,20 +495,81 @@ const getAllEventsQuery = async (req, res) => {
   try {
     const events = await Event.find();
 
-    if(!events){
+    if (!events) {
       return res.status(404).json({ error: "No events found" });
     }
-    
+
     res.status(200).json(events);
   } catch (error) {
     console.log("Error in getAllEventsQuery: ", error.message);
     res.ststus(500).json({ error: error.message });
   }
-}
+};
+
+const acceptEvents = async (req, res) => {
+  const { status } = req.body;
+  const { eventId } = req.params;
+  let user = null;
+
+  if (!["pending", "Accept", "Decline"].includes(status)) {
+    return res.status(400).json({ message: "Invalid status" });
+  }
+
+  try {
+    const enquiry = await Event.findById({ _id: eventId });
+    if (!enquiry) {
+      return res.status(404).json({ error: "Enquiry not found" });
+    }
+
+    user = enquiry.fullname;
+    enquiry.status = status;
+    await enquiry.save();
+
+    if (status === "Accept") {
+      await sendEventResponseEmail(enquiry, true);
+    }
+
+    res.status(200).json({ message: `${user} update ${status}` });
+    user = null;
+  } catch (error) {
+    console.log("Error in acceptEvents: ", error.message);
+    return res.ststus(500).json({ error: error.message });
+  }
+};
+
+const rejectEvents = async (req, res) => {
+  const { eventId } = req.params;
+  let user = null;
+
+  try {
+    const enquiry = await Event.findById(eventId);
+
+    if (!enquiry) {
+      return res.status(404).json({ error: "Enquiry not found" });
+    }
+    user = enquiry.fullname;
+
+    await Event.deleteOne({ _id: eventId });
+
+    if (!enquiry) {
+      return res.status(404).json({ message: "Enquiry not found" });
+    }
+
+    await sendEventResponseEmail(enquiry, false);
+
+    res
+      .status(200)
+      .json({ message: `Event Request of ${user} has been Rejected` });
+  } catch (error) {
+    console.log("Error in rejectEvents: ", error.message);
+    return res.ststus(500).json({ error: error.message });
+  }
+};
 
 export default {
   getUser,
   updateUserRole,
+  changeOTPVerificationCode,
   addRoom,
   updateRoom,
   deleteRoom,
@@ -453,4 +581,6 @@ export default {
   filterBookingsByPaymentStatusAndBookingStatus,
   filterAvailableRoomsForAdmin,
   getAllEventsQuery,
+  acceptEvents,
+  rejectEvents,
 };

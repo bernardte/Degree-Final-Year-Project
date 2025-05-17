@@ -12,7 +12,8 @@ const PaymentSuccess = () => {
   const { fetchBookingSessionPaymentDetail, error, bookingSession } = useBookingSessionStore(state => state);
   const { showToast } = useToast();
   const { sessionId: bookingSessionId } = bookingSession;
-  const specialRequests = localStorage.getItem("contactDetails");
+  const { additionalInfo } = useBookingSessionStore.getState();
+  console.log("additional Info: ", additionalInfo);
 
   useEffect(() => {
     if(sessionId){
@@ -36,7 +37,7 @@ const PaymentSuccess = () => {
       try {
         const response = await axiosInstance.post(
           "/api/bookings/create-booking",
-          { bookingSessionId, specialRequests },
+          { bookingSessionId, specialRequests: additionalInfo },
         );
         if (response.data) {
           showToast("success", "booking created");

@@ -162,7 +162,7 @@ const createBooking = async (req, res) => {
 
     res.status(201).json({ newBooking, qrCodePublicURLfromCloudinary });
   } catch (error) {
-    console.error("Error creating booking:", error.message);
+    console.error("Error in creating booking:", error.message);
     res.status(500).json({ error: error.message });
   }
 };
@@ -216,7 +216,6 @@ const getBookingByUser = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
-
 
 const createBookingSession = async (req, res) => {
   // 1) Pull body
@@ -349,9 +348,55 @@ const getBookingSession = async (req, res) => {
   }
 };
 
+const deleteBookingSession = async (req, res) => {
+  const { sessionId } = req.params;
+  console.log(sessionId)
+  try {
+    const result = await BookingSession.findOneAndDelete({ sessionId });
+    console.log("your result: ", result);
+
+    if(!result){
+      return res.status(404).json({ error: "Session not found or expired" });
+    }
+
+    res.status(200).json({ message: "Booking session deleted successfully" });
+  } catch (error) {
+    console.log("Error in deleteBookingSession: ", error.message);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+}
+
+const removeRoomFromBookingSession = async (req, res) => {
+  const { sessionId, roomId} = req.params;
+
+  console.log(sessionId, roomId);
+
+  if(!sessionId || !roomId){
+    return res.status(400).json({ error: "Invalid request" });
+  }
+
+  try {
+    const bookingSession = await BookingSession.findOne({ sessionId: sessionId });
+    
+    if(!bookingSession){
+      return res.status(404).json({ error: "Booking Session Not Found "});
+    }
+
+    bookingSession.roomId = bookingSession.roomId.filter(id => id.toString() !== roomId);
+    await bookingSession.save()
+
+    res.status(200).json({ message: "Room removed successfully", bookingSession });
+  }catch(error){
+    console.log("Error in remove Room From Booking Session: ", error.message)
+    res.status(500).json({ error: "Internal Server Error"})
+  }
+}
+
 export default {
   createBooking,
   createBookingSession,
   getBookingSession,
-  getBookingByUser
+  getBookingByUser,
+  deleteBookingSession,
+  removeRoomFromBookingSession,
 };

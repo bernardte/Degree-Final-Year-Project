@@ -66,7 +66,7 @@ const RoomInformationPage = () => {
                 RM {(room.pricePerNight || 0).toFixed(2)}/per night
               </p>
               <p className="text-sm text-gray-400">
-                Includes complimentary breakfast
+                Exclude complimentary breakfast
               </p>
             </div>
 

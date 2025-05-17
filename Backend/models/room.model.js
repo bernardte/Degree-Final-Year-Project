@@ -16,15 +16,6 @@ const roomSchema = mongoose.Schema(
     roomType: {
       type: String,
       required: true,
-      enum: [
-        "double bed",
-        "balcony",
-        "single",
-        "double",
-        "sea view",
-        "deluxe",
-        "deluxe twin",
-      ],
     },
     description: {
       type: String,
@@ -44,17 +35,26 @@ const roomSchema = mongoose.Schema(
         enum: [
           "wifi",
           "tv",
-          "ac",
-          "fridge",
-          "balcony",
-          "bathtub",
-          "pool",
-          "gym",
-          "parking",
-          "breakfast",
+          "air conditioning",
+          "mini fridge",
+          "private bathroom",
+          "room service",
+          "in room safe",
+          "sofa",
+          "desk lamp",
         ],
       },
     ],
+    bedType: {
+      type: String,
+      enum: [
+        "King",
+        "Queen",
+        "Single",
+        "Double",
+        "Twin",
+      ]
+    },
     images: [
       {
         type: String,

@@ -1,18 +1,19 @@
 import { useState } from "react";
 import useBookingStore from "@/stores/useBookingStore";
 import formatCurrency from "@/utils/formatCurrency";
-import ActionButton from "../../share-components/ActionButton";
+import { ActionButton } from "../../share-components/ActionButton";
 import useToast from "@/hooks/useToast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatDateInBookingCheckOut } from "@/utils/formatDate";
-import { Clock, Loader2, Mail, User, UserRoundCog } from "lucide-react";
+import { ClipboardList, Clock, Loader2, Mail, User, UserRoundCog } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import axiosInstance from "@/lib/axios";
+import { Room } from "@/types/interface.type";
 
 const BookingTable = () => {
-    const { bookings, isLoading, error } = useBookingStore((state) => state);
+    const { bookings, isLoading, error, updateBookingStatus } = useBookingStore((state) => state);
     const [ status, setStatus ] = useState<{[key: string]: string}>({});
-    const { fetchAllBooking } = useBookingStore();
+    const [ loading, setLoading ] = useState<boolean>(false);
     const { showToast } = useToast();
     const handleStatusChange = (bookingId: string, newStatus: string) => {
       setStatus((prev) => ({...prev, [bookingId]: newStatus}))
@@ -20,6 +21,7 @@ const BookingTable = () => {
 
     const handleEdit = async (bookingId: string) => {
       const updateStatus = status[bookingId];
+      setLoading(true)
       try {
 
         const response = await axiosInstance.patch(
@@ -28,7 +30,7 @@ const BookingTable = () => {
 
         if(response?.data){
           showToast("success", response?.data?.message)
-          fetchAllBooking();
+          updateBookingStatus(bookingId, updateStatus as "confirmed" | "pending" | "cancelled" | "completed")
         }
         
       } catch (error: any) {
@@ -40,6 +42,8 @@ const BookingTable = () => {
         }
 
         showToast("error", error?.response?.data?.error)
+      }finally{
+        setLoading(false)
       }
     };
   
@@ -121,10 +125,14 @@ const BookingTable = () => {
                     </span>
                   </TableCell>
                   <TableCell>
-                    <span className="inline-flex items-center gap-1 text-zinc-700">
-                      {booking?.bookingReference}
+                    <span className="inline-flex items-center gap-2 rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-zinc-700 shadow-sm">
+                      <ClipboardList className="h-4 w-4 text-blue-500" />
+                      <span className="truncate">
+                        {booking?.bookingReference}
+                      </span>
                     </span>
                   </TableCell>
+
                   <TableCell>
                     <span className="inline-flex max-w-[200px] items-center gap-1 truncate text-zinc-700">
                       <Mail className="h-4 w-4 shrink-0 text-rose-500 opacity-60" />
@@ -151,9 +159,17 @@ const BookingTable = () => {
                     </span>
                   </TableCell>
                   <TableCell>
-                    <span className="inline-flex items-center gap-2 truncate text-wrap text-zinc-700 capitalize">
-                      {booking?.room?.map((room) => room.roomType).join(", ")}
-                    </span>
+                    <div className="flex flex-wrap items-center gap-2">
+                      {Array.isArray(booking?.room) &&
+                        booking.room.map((room: Room, index: number) => (
+                          <span
+                            key={index}
+                            className="inline-block rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-800 capitalize"
+                          >
+                            {room.roomType}
+                          </span>
+                        ))}
+                    </div>
                   </TableCell>
                   <TableCell>
                     <span className="inline-flex items-center gap-1 text-zinc-700 capitalize">
@@ -208,6 +224,7 @@ const BookingTable = () => {
                   </TableCell>
                   <TableCell className="text-right text-blue-500">
                     <ActionButton
+                      loading={loading}
                       onEdit={() => handleEdit(booking._id)}
                       editLabel={
                         status[booking._id] &&

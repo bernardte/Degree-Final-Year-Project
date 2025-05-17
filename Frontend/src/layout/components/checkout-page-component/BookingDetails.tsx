@@ -1,8 +1,8 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Coffee, XCircle } from "lucide-react";
+import { Coffee, X, XCircle } from "lucide-react";
 import { formatDateInBookingCheckOut } from "@/utils/formatDate";
 import { Room, BookingSession } from "@/types/interface.type";
-import { useState } from "react";
+import useBookingSessionStore from "@/stores/useBookingSessionStore";
 
 interface BookingDetailsProps {
   bookingSession: BookingSession;
@@ -18,9 +18,9 @@ const BookingDetails = ({
   onToggleBreakfast,
 }: BookingDetailsProps) => {
   const breakfastPrice = 30;
-  const [contactDetails, setContactDetails] = useState<string>("");
-  localStorage.setItem("contactDetails", JSON.stringify(contactDetails));
-  
+  const { removeBookingSessionRoom, setAdditionalInfo, additionalInfo } = useBookingSessionStore();
+
+  console.log(rooms);
   return (
     <motion.div
       initial={{ x: -100, opacity: 0 }}
@@ -116,7 +116,8 @@ const BookingDetails = ({
               Rooms Booked
             </h2>
             <div className="grid grid-cols-1 gap-4">
-              {rooms
+              {
+              rooms
                 .filter((room: Room) =>
                   (bookingSession.roomId as string[]).includes(room._id),
                 )
@@ -124,8 +125,19 @@ const BookingDetails = ({
                   <motion.div
                     key={room._id}
                     whileHover={{ scale: 1.03 }}
-                    className="rounded-lg bg-blue-50 p-4 shadow-sm transition hover:bg-blue-100"
+                    className="group relative rounded-lg bg-blue-50 p-4 pr-12 shadow-sm transition hover:bg-blue-100"
                   >
+                    {/* Remove button */}
+                    <motion.button
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={() => removeBookingSessionRoom(room._id)}
+                      className="absolute top-1/2 right-3 -translate-y-1/2 rounded-full bg-red-100 p-1.5 opacity-0 transition-all group-hover:opacity-100"
+                    >
+                      <X className="h-5 w-5 text-red-600 hover:text-red-700" />
+                    </motion.button>
+
+                    {/* Room info */}
                     <p className="text-lg font-semibold text-gray-700">
                       {room.roomName}
                     </p>
@@ -141,8 +153,8 @@ const BookingDetails = ({
             Additional Details (Optional)
           </label>
           <textarea
-            value={contactDetails}
-            onChange={(e) => setContactDetails(e.target.value)}
+            value={additionalInfo}
+            onChange={(e) => setAdditionalInfo(e.target.value)}
             rows={4}
             className="mt-1 w-full rounded-md border border-gray-300 p-2 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200"
             placeholder="Special requests, estimated arrival time, etc."

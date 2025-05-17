@@ -3,7 +3,7 @@ const isSuperAdmin = (req) => req.user.role === "superAdmin";
 const isAdmin = (req) => req.user.role === "admin";
 const isUser = (req) => req.user.role === "user";
 const isSuperAdminOrAdmin = (req) => isSuperAdmin(req) || isAdmin(req);
-
+const isSuperAdminOrAdminOrUser = (req) => isSuperAdmin(req) || isAdmin(req) || isUser(req);
 const policies = {
   profile: {
     update: isSuperAdminOrAdmin,
@@ -21,11 +21,11 @@ const policies = {
     view: isSuperAdminOrAdmin,
     update_booking_status: isSuperAdminOrAdmin,
     cancel_any: isSuperAdmin,
-    view_own: isUser,
+    view_own: isSuperAdminOrAdminOrUser,
   },
 
   rooms: {
-    view_all: isSuperAdmin,
+    view_all: isSuperAdminOrAdmin,
     create_room: isSuperAdmin,
     delete_room: isSuperAdmin,
     update_room: isSuperAdmin,
@@ -49,7 +49,7 @@ const policies = {
   },
 
   amenities: {
-    view_all: isSuperAdmin,
+    view_all: isSuperAdminOrAdmin,
     create: isSuperAdmin,
     update: isSuperAdmin,
     delete: isSuperAdmin,
@@ -57,10 +57,18 @@ const policies = {
 
   events: {
     view_all: isSuperAdminOrAdmin,
+    update_event_status: isSuperAdminOrAdmin,
+    reject_event_status: isSuperAdmin,
   },
 
   rateAndReview: {
     create: isUser,
+  },
+
+  OTP: {
+    view: isSuperAdmin,
+    update: isSuperAdmin,
+    create: isSuperAdmin,
   },
 };
 

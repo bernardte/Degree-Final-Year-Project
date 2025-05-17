@@ -7,12 +7,18 @@ interface eventStore {
     isLoading: boolean;
     error: string | null;
     fetchAllEvents: () => Promise<void>;
+    updateEventsStatus: (eventId: string, newStatus: string) => void; 
 }
 
 const useEventsStore = create<eventStore>((set) => ({
   events: [],
   isLoading: false,
   error: null,
+  updateEventsStatus: (eventId: String, newStatus: string) => {
+    set((prevState) => ({
+      events: prevState.events.map(event => eventId === event._id ? {...event, status: newStatus} : event)
+    }))
+  },
   fetchAllEvents: async () => {
     set({ isLoading: true, error: null})
     try {

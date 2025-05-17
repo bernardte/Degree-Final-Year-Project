@@ -15,7 +15,9 @@ interface roomStore {
     adults: number;
     children: number;
   };
+  createNewRoom: (addNewRoom: Room) => void;
   removeRoomById: (roomId: string) => void;
+  updateRoomById: (roomId: string, updatedRoomData?: Partial<Room>) => void;
   setRooms: (rooms: Room[]) => void;
   setSearchParams: (params: {
     checkInDate: string;
@@ -128,6 +130,24 @@ const useRoomStore = create<roomStore>((set) => ({
       rooms: prevState.rooms.filter((room) => room._id !== roomId),
       filterRoom: prevState.rooms.filter(room => room._id !== roomId)
     }))
+  },
+
+  updateRoomById: (roomId: string, updatedRoomData?: Partial<Room>) => {
+    set((prevState) => ({
+      rooms: prevState.rooms.map((room) =>
+        room._id === roomId ? { ...room, ...updatedRoomData } : room
+      ),
+      filterRoom: prevState.filterRoom.map((room) =>
+        room._id === roomId ? { ...room, ...updatedRoomData } : room
+      ),
+    }));
+  },
+
+  createNewRoom: (addNewRoom) => {
+    set((prevState) => ({
+      rooms: [addNewRoom, ...prevState.rooms],
+      filterRoom: [addNewRoom, ...prevState.filterRoom],
+    }));
   },
 
   fetchRoomRanking: async () => {

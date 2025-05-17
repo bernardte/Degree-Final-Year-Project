@@ -12,29 +12,20 @@ export interface User {
 };
 
 export interface Room {
-  flatMap(arg0: () => any): import("react").ReactNode;
-  filter: any;
-  map(arg0: (room: any) => void): any;
   _id: string;
   roomNumber: string;
   roomName: string;
-  roomType:
-    | "double bed"
-    | "balcony"
-    | "single"
-    | "double"
-    | "sea view"
-    | "deluxe"
-    | "deluxe twin";
+  roomType: string;
   description: string;
   roomDetails: string;
   pricePerNight: number;
   amenities: Amenity[];
-  images: string;
+  images: string | File ;
   capacity: {
     adults: number;
     children?: number;
   };
+  bedType: "King" | "Queen" | "Single" | "Double" | "Twin";
   bookings: Bookings[];
   rating: number;
   reviews: Reviews[];
@@ -45,16 +36,14 @@ export interface Room {
 export enum Amenity {
   Wifi = "wifi",
   Tv = "tv",
-  Ac = "ac",
-  Fridge = "fridge",
-  Balcony = "balcony",
-  Bathtub = "bathtub",
-  Pool = "pool",
-  Gym = "gym",
-  Parking = "parking",
-  Breakfast = "breakfast",
+  AirConditioning = "air conditioning",
+  MiniFridge = "mini fridge",
+  PrivateBathroom = "private bathroom",
+  RoomService = "room service",
+  InRoomSafe = "in room_safe",
+  Sofa = "sofa",
+  DeskLamp = "desk lamp",
 }
-
 
 export interface Reviews {
     rating: number;
@@ -142,9 +131,12 @@ export interface Statistic {
 
 export interface Event {
   _id: string,
+  fullname: string,
   phoneNumber: string,
   email: string,
   eventType: string,
   eventDate: string,
+  totalGuests: number,
   additionalInfo?: string,
+  status: string,
 }

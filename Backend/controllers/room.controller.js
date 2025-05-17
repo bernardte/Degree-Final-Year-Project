@@ -66,6 +66,7 @@ const getMostBookingRoom = async (req, res) => {
           amenities: 1,
           images: 1,
           bookingsCount: 1,
+          rating: 1,
           reviews: 1,
           averageRating: 1,
         },
@@ -158,8 +159,8 @@ const filterRooms = async (req, res) => {
 
       // Find bookings that overlap with requested dates
       const overlappingBookings = await Booking.find({
-        startDate: { $lt: checkOut }, // booking starts before requested checkout
-        endDate: { $gt: checkIn }, // booking ends after requested checkin
+        startDate: { $lte: checkOut }, // booking starts before requested checkout
+        endDate: { $gte: checkIn }, // booking ends after requested checkin
       }).select("room");
 
       const bookedRoomIds = new Set(

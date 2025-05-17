@@ -223,7 +223,7 @@ const handleSearch = async () => {
             {isLoading ? (
               <Loader2 className="mx-auto animate-spin text-white" />
             ) : (
-              "Search"
+              "Check Availability"
             )}
           </button>
         </div>

@@ -15,15 +15,16 @@ import {
 } from "@/components/ui/select";
 import useUserStore from "@/stores/useUserStore";
 import { Loader2, Mail, User } from "lucide-react";
-import ActionButton from "../../share-components/ActionButton";
+import { ActionButton } from "../../share-components/ActionButton";
 import useToast from "@/hooks/useToast";
 import axiosInstance from "@/lib/axios";
 import { useState } from "react";
 
 const UsersTable = () => {
-  const { user: users, isLoading, error, fetchUser } = useUserStore((state) => state);
+  const { user: users, isLoading, error, updateRole } = useUserStore((state) => state);
   const [roles, setRoles] = useState<{ [key: string]: string }>({});
   const { showToast } = useToast();
+  const [ loading, setLoading ] = useState<boolean>(false);
 
   if (isLoading) {
     return (
@@ -48,6 +49,7 @@ const UsersTable = () => {
 
   const handleEdit = async(userId: string) => {
     const updatedRole = roles[userId];
+    setLoading(true);
     try {
       const response = await axiosInstance.patch(
         "/api/admin/update-user-role",
@@ -57,7 +59,7 @@ const UsersTable = () => {
         },
       );
       showToast("success", response?.data?.message);
-      fetchUser();
+      updateRole(userId, updatedRole as "superAdmin" | "admin" | "user");
     } catch (error: any) {
       const message = error?.response?.data?.error || error?.response?.data?.message;
     
@@ -67,6 +69,8 @@ const UsersTable = () => {
       }
     
       showToast("error", message);
+    }finally{
+      setLoading(false);
     }
   };
 
@@ -119,7 +123,7 @@ const UsersTable = () => {
               </TableCell>
               <TableCell>
                 <span className="inline-flex items-center gap-1 text-zinc-700">
-                  <Mail className="h-4 w-4 opacity-60" />
+                  <Mail className="h-4 w-4 opacity-60 text-rose-500" />
                   {user.email}
                 </span>
               </TableCell>
@@ -151,6 +155,7 @@ const UsersTable = () => {
               <TableCell className="text-right text-blue-500">
                 {/* Future actions like edit/delete buttons can be placed here */}
                 <ActionButton
+                  loading={loading}
                   onEdit={() => handleEdit(user._id)}
                   editLabel={
                     roles[user._id] && roles[user._id] !== user.role

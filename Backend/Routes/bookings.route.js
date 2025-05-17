@@ -7,6 +7,10 @@ const router = express.Router();
 router.post("/create-booking", bookingControllers.createBooking); // Create a new booking
 router.post("/create-booking-session", bookingControllers.createBookingSession); // Create a booking session
 router.get("/get-booking-session/:sessionId", bookingControllers.getBookingSession); // Create a new booking
+router.delete("/delete-booking-session/:sessionId", bookingControllers.deleteBookingSession);//delete booking session
+router.delete(
+  "/:sessionId/remove-room/:roomId",
+  bookingControllers.removeRoomFromBookingSession
+);//delete booking session
 router.get("/get-user-booking", protectRoute, accessControl("booking", "view_own"), bookingControllers.getBookingByUser);
-
 export default router;

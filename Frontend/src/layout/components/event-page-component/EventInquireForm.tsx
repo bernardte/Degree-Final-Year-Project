@@ -104,7 +104,7 @@ const EventInquireForm = ({ title }: { title: string }) => {
   return (
     <section className="flex py-12">
       <div className="mx-auto w-full max-w-3xl px-4">
-        <span className="flex justify-center pb-10 font-semibold bg-gradient-to-r from-blue-500 to-sky-600 bg-clip-text text-center text-3xl text-transparent">
+        <span className="flex justify-center bg-gradient-to-r from-blue-500 to-sky-600 bg-clip-text pb-10 text-center text-3xl font-semibold text-transparent">
           {title}
         </span>
         <motion.form
@@ -208,9 +208,13 @@ const EventInquireForm = ({ title }: { title: string }) => {
                 <SelectValue placeholder="Select Event Type *" />
               </SelectTrigger>
               <SelectContent className="rounded-xl border-blue-100/80 bg-white/95 backdrop-blur-sm">
-                <SelectItem value="wedding">wedding</SelectItem>
-                <SelectItem value="party">party</SelectItem>
-                <SelectItem value="meeting">meeting</SelectItem>
+                <SelectItem value="Wedding Ceremony">
+                  Wedding Ceremony
+                </SelectItem>
+                <SelectItem value="Corporate Party">Corporate Party</SelectItem>
+                <SelectItem value="Business Meeting">
+                  Business Meeting
+                </SelectItem>
               </SelectContent>
             </Select>
             {errors.eventType && (

@@ -1,19 +1,25 @@
 import { create } from "zustand";
 import { BookingSession } from "@/types/interface.type";
 import axiosInstance from "@/lib/axios";
-
-interface BookingSessionStore{
-    bookingSession: BookingSession;
-    isLoading: boolean;
-    error: string | null;
-    fetchBookingSession: (sessionId: string) => Promise<void>;
-    fetchBookingSessionPaymentDetail: (sessionId: string) => Promise<void>;
+interface BookingSessionStore {
+  bookingSession: BookingSession;
+  isLoading: boolean;
+  error: string | null;
+  additionalInfo: string;
+  setAdditionalInfo: (info: string) => void;
+  removeBookingSessionRoom: (roomId: string) => void;
+  fetchBookingSession: (sessionId: string) => Promise<void>;
+  fetchBookingSessionPaymentDetail: (sessionId: string) => Promise<void>;
 }
 
 const useBookingSessionStore = create<BookingSessionStore>((set, get) => ({
     bookingSession: {} as BookingSession,
     isLoading: false,
     error: null,
+    additionalInfo: "",
+    setAdditionalInfo: (info: string) => {
+      set({additionalInfo: info})
+    },
     fetchBookingSession: async (sessionId: string) => {
         set({isLoading: true })
         axiosInstance
@@ -48,6 +54,37 @@ const useBookingSessionStore = create<BookingSessionStore>((set, get) => ({
                 );
                 set({ error: err.response?.data?.error})
               }).finally(() => set({ isLoading: false }));
+        },
+
+        removeBookingSessionRoom: async (roomId: string) => {
+          const sessionId = get().bookingSession.sessionId;
+
+          if(!sessionId){
+            console.error("No booking session ID found.");
+            return 
+          }
+
+          set({ isLoading: true, error: null });
+          try {
+            await axiosInstance.delete(`/api/bookings/${sessionId}/remove-room/${roomId}`);
+            
+            set((prevState) => ({
+              bookingSession: {
+                ...prevState.bookingSession,
+                roomId: Array.isArray(prevState.bookingSession.roomId)
+                  ? prevState.bookingSession.roomId.filter(
+                      (id: string) => id !== roomId,
+                    )
+                  : [],
+              },
+            }));
+          } catch (error: any) {
+            console.log("Error in remove BookingSession Room: ", error?.response?.data?.error);
+            set({ error: error?.response?.data?.error });
+          }finally{
+            set({ isLoading: false, error: null });
+          }
+
         }
 }));
 
