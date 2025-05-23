@@ -29,17 +29,30 @@ const getStatistic = async (req, res) => {
     const totalRoomAvailable = totalRoom - uniqueBookedRoomIds.length;
 
     // 5. Other statistics
-    const [totalBooking, totalUsers] = await Promise.all([
+    const [totalBooking, totalUsers, revenueResult] = await Promise.all([
       Booking.countDocuments(),
       User.countDocuments(),
+      Booking.aggregate([
+        {
+          $group: {
+            _id: null,
+            totalRevenue: { $sum: "$totalPrice" },
+            totalRefundAmount: { $sum: { $ifNull: ["$refundAmount", 0] } },
+          },
+        },
+      ]),
     ]);
-
+    const totalRevenue =
+      revenueResult.length > 0 ? revenueResult[0].totalRevenue : 0;
+    const totalRefundAmount = revenueResult[0]?.totalRefundAmount || 0;
     // 6. Respond with statistics
     res.status(200).json({
       totalBooking,
       totalUsers,
       totalRoom,
       totalRoomAvailable,
+      totalRevenue,
+      totalRefundAmount,
     });
   } catch (error) {
     console.error("Error in getStatistic:", error.message);

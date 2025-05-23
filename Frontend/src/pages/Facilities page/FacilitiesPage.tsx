@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import useFacilityStore from "@/stores/useFacilityStore";
 import useToast from "@/hooks/useToast";
 import FacilitiesCardSkeleton from "@/layout/components/skeletons/FacilitiesCardSkeleton";
+import getImageSrc from "@/utils/getImageSrc";
 
 const FacilitiesPage = () => {
 
@@ -21,13 +22,13 @@ const FacilitiesPage = () => {
   
   return (
     <div className="bg-gradient-to-b from-white via-sky-100 to-cyan-500/20">
-      <Carousel images={facilities.map((facility) => facility.image)} />
+      <Carousel images={facilities.map((facility) => getImageSrc(facility.image) ?? "").filter((src) => src)} />
       <div className="m-auto flex items-center justify-center">
         <GridList
           title="Facilities"
           list={facilities.slice(0, 3)}
           getName={(item) => item.facilitiesName}
-          getImage={(item) => item.image}
+          getImage={(item) => getImageSrc(item.image) ?? ""}
         />
       </div>
       <div className="mx-auto max-w-6xl p-6">

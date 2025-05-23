@@ -4,6 +4,7 @@ import RoomCardSkeleton from "../skeletons/RoomCardSkeleton";
 import useToast from "@/hooks/useToast";
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import getImageSrc from "@/utils/getImageSrc";
 
 type RoomCardHorizontalProps = {
   rooms: Room[];
@@ -45,7 +46,7 @@ const RoomCardHorizontal = ({ rooms, title, isLoading, error }: RoomCardHorizont
             {/* Image Section */}
             <div className="w-full md:w-1/2">
               <img
-                src={roomType.images[0]}
+                src={Array.isArray(roomType.images) ? getImageSrc(roomType.images[0]) : getImageSrc(roomType.images)}
                 alt={`${roomType.roomName}`}
                 className="h-full w-full object-cover"
               />

@@ -41,7 +41,7 @@ const PaymentSummary = ({
   const basePrice = lineItems.reduce((sum, li) => sum + li.lineTotal, 0);
   const roomPrices = lineItems.map((li) => li.pricePerNight);
   // Calculate the total price with optional breakfast
-  const totalPrice = basePrice + (breakfastIncluded ? breakfastPrice : 0);
+  const totalPrice = basePrice + (breakfastIncluded ? breakfastPrice * roomId.length: 0);
   const { showToast } = useToast();
   const { bookingSession } = useBookingSessionStore();
 
@@ -96,7 +96,7 @@ const PaymentSummary = ({
           {breakfastIncluded && (
             <div className="flex justify-between text-sm text-green-200 italic">
               <span>Breakfast</span>
-              <span>RM {breakfastPrice}</span>
+              <span>RM {breakfastPrice * roomId.length}</span>
             </div>
           )}
 

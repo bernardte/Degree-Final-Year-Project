@@ -25,6 +25,8 @@ import RoleBasedProvider from "./provider/RoleBasedProvider";
 import AdminPageMainLayout from "./layout/AdminPageMainLayout";
 import AdminRoomPage from "./pages/Admin room page/AdminRoomPage";
 import AdminEventsPage from "./pages/Admin events page/AdminEventsPage";
+import CancelBookingPage from "./pages/Cancel booking page/CancelBookingPage";
+import AdminFacilityPage from "./pages/Admin-facility-page/AdminFacilityPage";
 
 const App = () => {
   const { user, showLoginPopup, showSignupPopup } = useAuthStore();
@@ -58,6 +60,10 @@ const App = () => {
           />
           <Route path="facilities" element={<FacilitiesPage />} />
           <Route path="event" element={<EventPage />} />
+          <Route
+            path="cancelled-booking-policy"
+            element={<CancelBookingPage />}
+          />
           <Route path="contact-us" element={<ContactUsPage />} />
         </Route>
 
@@ -74,6 +80,7 @@ const App = () => {
           <Route element={<AdminPageMainLayout />}>
             <Route path="/verify-admin-otp" element={<VerifyAdminOtpPage />} />
             <Route path="/admin-portal" element={<AdminMainPage />} />
+            <Route path="/admin-facility" element={<AdminFacilityPage />} />
             <Route path="/admin-room" element={<AdminRoomPage />} />
             <Route path="/admin-event" element={<AdminEventsPage />} />
           </Route>

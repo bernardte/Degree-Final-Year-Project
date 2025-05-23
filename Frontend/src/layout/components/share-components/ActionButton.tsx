@@ -82,7 +82,6 @@ export const ActionButton = ({
                 Cancel
               </AlertDialogCancel>
               <AlertDialogAction
-                disabled={loading}
                 onClick={onDelete}
                 className="cursor-pointer bg-rose-600 text-white hover:bg-rose-700"
               >
@@ -99,7 +98,7 @@ export const ActionButton = ({
 interface ActionButtonWithAcceptDeclineProps {
   handleDecline: () => Promise<void>;
   handleAccept: () => Promise<void>;
-  currentStatus: "Accept" | "Decline" | null;
+  currentStatus: "Accept" | "Decline" | "approved" | "decline" | null ;
   loading: boolean
 }
 
@@ -109,7 +108,7 @@ export const ActionButtonWithAcceptDecline = ({
   handleAccept,
   currentStatus,
 }: ActionButtonWithAcceptDeclineProps) => {
-  const [status, setStatus] = useState<"Accept" | "Decline" | null>(
+  const [status, setStatus] = useState<"Accept" | "Decline" | "approved" | "decline" | null>(
     currentStatus,
   );
   return (
@@ -141,7 +140,7 @@ export const ActionButtonWithAcceptDecline = ({
         </>
       ) : (
         <div
-          className={`rounded-full px-3 py-1 text-sm font-semibold items-center flex justify-center ${
+          className={`rounded-sm px-10 py-1 text-sm font-semibold items-center flex justify-center ${
             status === "Accept"
               ? "bg-green-100 text-green-700"
               : "bg-red-100 text-red-700"

@@ -23,7 +23,6 @@ import bedTypes from "@/constant/bedTypes";
 import useToast from "@/hooks/useToast";
 import axiosInstance from "@/lib/axios";
 import {
-  Loader,
   UploadCloud,
   Bed,
   User,
@@ -40,6 +39,7 @@ import {
   Bell,
   DoorClosed,
   Ruler,
+  Loader2,
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
@@ -399,7 +399,7 @@ const AddNewRoomDialog = ({ open, onClose }: AddNewRoomDialogProps) => {
 
                   {/* Amenities selector */}
                   <div>
-                    <Label className="font-medium text-blue-800 pb-3">
+                    <Label className="pb-3 font-medium text-blue-800">
                       Room Amenities
                     </Label>
                     <ToggleGroup
@@ -444,7 +444,10 @@ const AddNewRoomDialog = ({ open, onClose }: AddNewRoomDialogProps) => {
                     </Button>
                     <Button onClick={handleSave} disabled={isLoading}>
                       {isLoading && (
-                        <Loader className="mr-2 h-4 w-4 animate-spin" />
+                        <>
+                          <span>Saving</span>
+                          <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
+                        </>
                       )}
                       Save Room
                     </Button>

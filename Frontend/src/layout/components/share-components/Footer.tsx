@@ -1,4 +1,4 @@
-import { NavLink } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 import list from "@/constant/navBarList";
 
 const Footer = () => {
@@ -108,6 +108,14 @@ const Footer = () => {
                 <circle cx="4" cy="4" r="2" />
               </svg>
             </a>
+          </div>
+          <div className="flex flex-col gap-2 mt-5">
+            <h3 className="mb-1 text-lg font-semibold text-white capitalize">
+             cancellation policy
+            </h3>
+            <Link to="/cancelled-booking-policy" className="text-sm text-blue-100 hover:underline">
+              View Policy or Cancelled Booking
+            </Link>
           </div>
         </div>
       </div>

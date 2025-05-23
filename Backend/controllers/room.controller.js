@@ -163,6 +163,8 @@ const filterRooms = async (req, res) => {
         endDate: { $gte: checkIn }, // booking ends after requested checkin
       }).select("room");
 
+      console.log("Overlapping Bookings:", overlappingBookings);
+
       const bookedRoomIds = new Set(
         overlappingBookings.flatMap((b) => b.room.map((id) => id.toString())) //ensure to get each individual room ID
       );
@@ -288,10 +290,10 @@ const roomReview = async (req, res) => {
 
     //Recalculate average rating
     room.rating =
-      room.reviews.rating.reduce((acc, review) => acc + review.rating, 0) /
-      room.reviews.length + 1;
-
-    console.log(room.rating);
+      room.reviews.length > 0
+        ? room.reviews.reduce((acc, review) => acc + review.rating, 0) /
+          room.reviews.length
+        : 0;
 
     await room.save();
 

@@ -62,7 +62,7 @@ const policies = {
   },
 
   rateAndReview: {
-    create: isUser,
+    create: isSuperAdminOrAdminOrUser,
   },
 
   OTP: {

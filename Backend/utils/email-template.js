@@ -13,12 +13,12 @@ export const generateBookingEmailHTML = ({
 }) => {
   return `
     <body style="margin:0; padding:0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">
-      <!-- 外层容器 -->
+      <!-- outer container -->
       <div style="max-width: 680px; margin: 20px auto; background: #ffffff; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.1);">
-        <!-- 顶部色块 -->
+        <!-- top header -->
         <div style="height: 8px; background: linear-gradient(90deg, #0057a3 0%, #0081d6 100%);"></div>
 
-        <!-- 头部区 -->
+        <!-- header -->
         <div style="padding: 40px 20px; text-align: center; background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
           <img src="https://example.com/logo.png" alt="Hotel Logo" style="height: 50px; margin-bottom: 25px;">
           <h1 style="color: #1a365d; font-size: 28px; margin: 0; padding: 0;">
@@ -31,9 +31,9 @@ export const generateBookingEmailHTML = ({
           </p>
         </div>
 
-        <!-- 主体内容 -->
+        <!-- main content -->
         <div style="padding: 30px;">
-          <!-- 用户信息 -->
+          <!-- user details -->
           <div style="margin-bottom: 30px; text-align: center;">
             <h2 style="color: #1a365d; font-size: 22px; margin: 0 0 15px;">
               Welcome, ${username}!
@@ -43,7 +43,7 @@ export const generateBookingEmailHTML = ({
             </div>
           </div>
 
-          <!-- 关键信息表格 -->
+          <!-- key information -->
           <table style="width: 100%; margin: 25px 0; border-collapse: collapse;">
             <tr>
               <td style="padding: 15px; background: #f8fafc; border: 1px solid #e2e8f0; width: 33%;">
@@ -78,7 +78,7 @@ export const generateBookingEmailHTML = ({
             </tr>
           </table>
 
-          <!-- 房间信息 -->
+          <!-- room details -->
           <div style="margin: 30px 0;">
             <h3 style="color: #1a365d; font-size: 18px; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; margin: 0 0 20px;">
               Room Details
@@ -114,7 +114,7 @@ export const generateBookingEmailHTML = ({
               .join("")}
           </div>
 
-          <!-- 价格信息 -->
+          <!-- price details -->
           <div style="background: #f8fafc; padding: 25px; border-radius: 8px; text-align: center; margin: 30px 0;">
             <div style="color: #718096; font-size: 14px; margin-bottom: 10px;">
               Total Payment
@@ -137,7 +137,7 @@ export const generateBookingEmailHTML = ({
             </div>
           </div>
 
-          <!-- 联系信息 -->
+          <!-- contact us details -->
           <div style="border-top: 1px solid #e2e8f0; padding: 30px 0 0; margin-top: 30px;">
             <table style="width: 100%;">
               <tr>
@@ -148,8 +148,7 @@ export const generateBookingEmailHTML = ({
                 <td style="width: 50%; vertical-align: top; text-align: right;">
                   <div style="color: #4a5568; font-size: 14px; margin-bottom: 10px;">Hotel Address</div>
                   <div style="color: #718096; font-size: 14px;">
-                    123 Luxury Avenue<br>
-                    Kuala Lumpur, Malaysia
+                    George Town, Penang, Malaysia
                   </div>
                 </td>
               </tr>

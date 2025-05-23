@@ -15,11 +15,11 @@ const facilitiesSchema = mongoose.Schema({
   },
   icon: {
     type: String,
-    required: true,
+    required: false,
   },
   iconColor: {
     type: String,
-    required: true,
+    required: false,
   },
   openTime: {
     type: String,

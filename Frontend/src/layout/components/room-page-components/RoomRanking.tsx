@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import RoomCarouselSkeleton from "../skeletons/RoomCarouselSkeleton"; // adjust path as needed
 import useToast from "@/hooks/useToast";
+import getImageSrc from "@/utils/getImageSrc";
 
 const RoomRanking = () => {
   const { fetchRoomRanking, mostBookingRoom, isLoading, error } = useRoomStore(
@@ -54,7 +55,7 @@ const RoomRanking = () => {
                 <div className="flex h-full flex-col justify-between overflow-hidden rounded-2xl bg-white shadow-xl transition-transform duration-300 hover:scale-[1.02] hover:shadow-2xl">
                   <div className="relative">
                     <img
-                      src={room.images}
+                      src={getImageSrc(room.images)}
                       alt={room.roomName}
                       className="block h-60 w-full object-cover"
                     />

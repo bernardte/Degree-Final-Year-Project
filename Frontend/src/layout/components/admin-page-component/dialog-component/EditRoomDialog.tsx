@@ -18,6 +18,7 @@ import bedTypes from "@/constant/bedTypes";
 import { Label } from "@/components/ui/label";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import roomAmenities from "@/constant/roomAmenities";
+import getImageSrc from "@/utils/getImageSrc";
 
 
 interface editRoomDialogProps {
@@ -180,15 +181,7 @@ const EditRoomDialog = ({
                         {selectedRoom?.images ? (
                           <>
                             <img
-                              src={
-                                selectedRoom.images instanceof File
-                                  ? URL.createObjectURL(selectedRoom.images)
-                                  : Array.isArray(selectedRoom.images)
-                                    ? selectedRoom.images[0] // Show the first image if array
-                                    : typeof selectedRoom.images === "string"
-                                      ? selectedRoom.images
-                                      : ""
-                              }
+                              src={getImageSrc(selectedRoom.images)}
                               alt="room preview"
                               className="object-cover"
                             />

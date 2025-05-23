@@ -16,6 +16,7 @@
   import { useState } from "react";
   import { AnimatePresence } from "framer-motion";
   import EditRoomDialog from "../dialog-component/EditRoomDialog";
+import getImageSrc from "@/utils/getImageSrc";
 
   const RoomTable = ({
     isLoading,
@@ -153,20 +154,6 @@
     ) => {
       const { name, value } = e.target;
       setSelectedRoom((prev) => (prev ? { ...prev, [name]: value } : prev));
-    };
-
-    const getImageSrc = (img: string | File | (string | File)[]) => {
-      if (Array.isArray(img)) {
-        const first = img[0];
-        return first instanceof File ? URL.createObjectURL(first) : first;
-      }
-      if (img instanceof File) {
-        return URL.createObjectURL(img);
-      }
-      if (typeof img === "string") {
-        return img;
-      }
-      return undefined;
     };
 
     return (

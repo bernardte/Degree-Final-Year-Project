@@ -74,6 +74,7 @@ const Navbar = () => {
 
       {!user ? (
         <div className="group absolute top-3 right-0 mr-[50px] flex items-center justify-center rounded-xl border-3 border-white transition-all duration-300 hover:border-blue-500 focus:ring-0 focus:outline-none">
+          
           <button
             className={`group:hover:transition-colors group:hover:duration:500 group:hover:ease-in-out flex cursor-pointer items-center gap-2 px-3 py-1 font-bold text-white group-hover:rounded-xl ${navbar && "bg-transparent"} duration-300 group-hover:text-blue-500`}
             onClick={() => setOpenLoginPopup(true)}

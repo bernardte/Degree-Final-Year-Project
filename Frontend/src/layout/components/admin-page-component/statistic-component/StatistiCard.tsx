@@ -16,7 +16,9 @@ const StatisticCard = ({
   value,
 }: StatisticCardProps) => {
   return (
-    <Card className="border border-gray-200 bg-white shadow-sm transition hover:shadow-md">
+    <Card
+      className={`border border-gray-200 bg-white shadow-sm transition hover:shadow-md ${bgColor}`}
+    >
       <CardContent className="p-4">
         <div className="flex items-center gap-4">
           <div className={`rounded-xl p-3 ${bgColor}`}>

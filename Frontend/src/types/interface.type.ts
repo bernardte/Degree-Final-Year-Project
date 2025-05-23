@@ -70,13 +70,24 @@ export interface Bookings {
   BookingDate: Date;
   status: "confirmed" | "pending" | "cancelled" | "completed";
   paymentMethod: "card" | "grabpay" | "fpx";
-  paymentStatus: "paid" | "unpaid";
+  paymentStatus: "paid" | "unpaid" | "refund";
   specialRequests?: string;
   bookingReference: string;
   createdAt: Date;
   updatedAt: Date;
   qrCodeImageURL: string;
   userType: string;
+}
+
+export interface CancelBookingRequest {
+  _id: string;
+  bookingId: string;
+  bookingReference: string;
+  email: string;
+  userId: User;
+  requestedAt: Date;
+  status: "pending" | "approved" | "decline";
+  checkInDate: Date;
 }
 
 export interface BookingSession {
@@ -119,7 +130,7 @@ export interface Facility {
   iconColor: string;
   openTime: string;
   closeTime: string;
-  image: string;
+  image: string | File;
 }
 
 export interface Statistic {
@@ -127,6 +138,8 @@ export interface Statistic {
   totalUsers: number;
   totalRoom: number;
   totalRoomAvailable: number;
+  totalRevenue: number;
+  totalRefundAmount: number;
 }
 
 export interface Event {

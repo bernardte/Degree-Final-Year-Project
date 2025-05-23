@@ -56,8 +56,14 @@ const bookingSchema = mongoose.Schema(
     },
     paymentStatus: {
       type: String,
-      enum: ["paid", "unpaid"],
+      enum: ["paid", "unpaid", "refund"],
       default: "unpaid",
+    },
+    paymentIntentId: {
+      type: String,
+      required: function () {
+        return this.paymentStatus === "paid";
+      },
     },
     paymentMethod: {
       type: String,
@@ -102,6 +108,10 @@ const bookingSchema = mongoose.Schema(
         return this.userType === "guest";
       },
       trim: true,
+    },
+    refundAmount: {
+      type: Number,
+      default: 0,
     },
   },
   { timestamps: true }

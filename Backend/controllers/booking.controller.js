@@ -4,6 +4,7 @@ import Room from "../models/room.model.js";
 import User from "../models/user.model.js";
 import { sendBookingConfirmationEmail } from "../utils/send-email.js";
 import BookingSession from "../models/BookingSession.model.js";
+import CancellationRequest from "../models/cancellationRequest.model.js";
 import generateAndUploadQRCode from "../utils/generateAndUploadQRCode.js";
 import { differenceInCalendarDays } from "date-fns";
 import mongoose from "mongoose";
@@ -166,6 +167,65 @@ const createBooking = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+const cancelBooking = async (req, res) => {
+  const { bookingReference, email } = req.body;
+  console.log("cancel booking: ", bookingReference, email);
+  try {
+    const booking = await Booking.findOne({
+      bookingReference,
+      $or: [
+        { userEmail: email },
+        { contactEmail: email },
+      ]
+    });
+    if (!booking) {
+      return res.status(404).json({ error: "Booking not found" });
+    }
+
+    const currentDate = new Date();
+    const checkInDate = new Date(booking.startDate);
+    
+    const msUntilCheckIn = checkInDate - currentDate;
+
+    const totalHours = Math.max(
+      0,
+      Math.floor(msUntilCheckIn / (1000 * 60 * 60))
+    );
+    const daysUntilCheckIn = Math.floor(totalHours / 24);
+    const hoursLeftAfterDays = totalHours % 24;
+
+    console.log("daysUntilCheckIn: ", daysUntilCheckIn);
+    console.log("hoursLeftAfterDays: ", hoursLeftAfterDays);
+    
+
+    if(booking.status === "completed"){
+      return res.status(400).json({ error: "Booking already completed, cancellation not possible." });
+    }
+
+    const cancellationRequest = await CancellationRequest.findOne({
+      bookingId: booking._id,
+      email: email,
+    });
+    
+    if (cancellationRequest) {
+      return res.status(400).json({ error: "Your request is already pending, please wait for our admin to process it." });
+    }
+
+    const newCancellationRequest = new CancellationRequest({
+      bookingId: booking._id,
+      bookingReference,
+      email,
+      checkInDate: booking.startDate,
+    });
+
+    await newCancellationRequest.save();
+
+  } catch (error) {
+    console.log("Error in cancelBooking: ", error.message);
+    res.status(500).json({ error: error.message });
+  }
+}
 
 const getBookingByUser = async (req, res) => {
   const userId = req.user._id;
@@ -394,6 +454,7 @@ const removeRoomFromBookingSession = async (req, res) => {
 
 export default {
   createBooking,
+  cancelBooking,
   createBookingSession,
   getBookingSession,
   getBookingByUser,

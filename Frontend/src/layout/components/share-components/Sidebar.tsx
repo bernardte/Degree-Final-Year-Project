@@ -6,6 +6,7 @@ import {
   Bed,
   Bell,
   Calendar1,
+  LayoutGrid,
 } from "lucide-react";
 import { useState } from "react";
 import { motion } from "framer-motion";
@@ -26,7 +27,7 @@ const Sidebar = () => {
   return (
     <motion.nav
       layout
-      className="border-slate-300 sticky top-0 h-screen shrink-0 border-r bg-white p-2"
+      className="sticky top-0 h-screen shrink-0 border-r border-slate-300 bg-white p-2"
       style={{
         width: open ? "225px" : "fit-content",
       }}
@@ -46,6 +47,16 @@ const Sidebar = () => {
           open={open}
         />
         <Option
+          Icon={LayoutGrid}
+          title="Facility"
+          titleColor="text-indigo-500"
+          IconColor="text-indigo-500"
+          selected={selected}
+          setSelected={setSelected}
+          link={() => navigate("/admin-facility")}
+          open={open}
+        />
+        <Option
           Icon={Bed}
           title="Room"
           titleColor="text-indigo-700"
@@ -58,8 +69,8 @@ const Sidebar = () => {
         <Option
           Icon={Calendar1}
           title="Event"
-          titleColor="text-amber-700"
-          IconColor="text-amber-600"
+          titleColor="text-sky-500"
+          IconColor="text-sky-500"
           selected={selected}
           setSelected={setSelected}
           link={() => navigate("/admin-event")}

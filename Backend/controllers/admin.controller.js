@@ -4,10 +4,12 @@ import { v2 as cloudinary } from "cloudinary";
 import Booking from "../models/booking.model.js";
 import Room from "../models/room.model.js";
 import RoomAvailability from "../models/roomAvailability.model.js";
+import cancellationRequest from "../models/cancellationRequest.model.js";
 import Event from "../models/event.model.js";
 import User from "../models/user.model.js";
 import sendEventResponseEmail from "../utils/sendEventResponseEmail.js";
 import OTP from "../models/adminOTP.model.js";
+import stripe from "../config/stripe.js";
 
 const getUser = async (req, res) => {
   try {
@@ -371,14 +373,156 @@ const updateBookingStatus = async (req, res) => {
   }
 };
 
+const getAllCancelledBookings = async (req, res) => {
+  try {
+    const cancelledBookings = await cancellationRequest.find();
+    if (!cancelledBookings || cancelledBookings.length === 0) {
+      return res.status(200).json({ message: "No cancelled bookings found" });
+    }
+    return res.status(200).json(cancelledBookings);
+  } catch (error) {
+    console.error("Error getAllCancelledBookings: ", error.message);
+    return res.status(500).json({ error: error.message });
+  }
+}
+
+const updateCancellationRequest = async (req, res) => {
+    const { requestId } = req.params;
+    const { status } = req.body;
+    const userId = req.user._id;
+    console.log(status);
+    let policyNote = "";
+    if (!requestId || requestId.trim() === "") {
+      return res.status(400).json({ error: "Please provide a request ID" });
+    }
+
+    try {
+      const request = await cancellationRequest.findById(requestId).populate("bookingId");
+      console.log(request);
+      if (!request) {
+        return res.status(404).json({ error: "Cancellation request not found" });
+      }
+
+      const booking = request.bookingId;
+      if (!booking)
+        return res.status(404).json({ error: "Related booking not found" });
+
+      if (request.status === status) {
+        return res.status(400).json({ error: "Cancellation request is already " + status });
+      }
+
+      request.status = status; // Update the cancellation request status
+      request.processedAt = new Date(); // Set the processed date
+      request.processedBy = userId; // Set the processed by field
+      await request.save(); // Save the updated cancellation request status
+
+      if (request.status === "approved") {
+        const currentDate = new Date();
+        const checkInDate = new Date(booking.startDate);
+        const hoursBeforeCheckIn =
+          (checkInDate - currentDate) / (1000 * 60 * 60);
+        let refundAmount = 0;
+
+        console.log("Hours before check-in: ", hoursBeforeCheckIn);
+
+        if (hoursBeforeCheckIn > 48) {
+          refundAmount = booking.totalPrice;
+          policyNote =
+            "Full refund as cancellation is more than 48 hours before check-in.";
+        } else if (hoursBeforeCheckIn <= 48 && hoursBeforeCheckIn > 0) {
+          refundAmount = booking.totalPrice * 0.5;
+          policyNote = "50% refund (within 48 hours of check-in)";
+        } else {
+          refundAmount = 0;
+          policyNote = "No refund (after check-in)";
+        }
+        if (
+          refundAmount > 0 &&
+          booking.paymentStatus === "paid" &&
+          booking.paymentIntentId
+        ) {
+          await stripe.refunds.create({
+            amount: Math.round(refundAmount * 100),
+            payment_intent: booking.paymentIntentId,
+            reason: "requested_by_customer",
+          });
+          booking.status = "cancelled"; // Update the booking status to cancelled
+          booking.paymentStatus = "refund"; // Update payment status to refunded
+          booking.refundAmount = refundAmount; // Update total price to the refund amount
+          console.log("Refund amount1: ", refundAmount);
+          for (const roomId of booking.room) {
+            const room = await Room.findById(roomId);
+            if (!room) {
+              return res.status(404).json({ error: "Room not found" });
+            }
+            room.bookings = room.bookings.filter(
+              (bookingId) => bookingId.toString() !== booking._id.toString()
+            );
+            await room.save();
+          }
+
+          await booking.save(); // Save the updated booking status
+        }
+        console.log("Refund amount2: ", refundAmount);
+        return res.status(200).json({
+          message: `Cancellation approved. ${policyNote}`,
+          refund: refundAmount,
+          bookingId: booking._id,
+        });
+      }
+    } catch (error) {
+      console.error("Error updating cancellation request: ", error.message);
+      return res.status(500).json({ error: "Internal Server Error" });
+    }
+}
+
+const deleteCancellationRequest = async (req, res) => {
+  const { requestId } = req.params;
+  if (!requestId || requestId.trim() === "") {
+    return res.status(400).json({ error: "Please provide a request ID" });
+  }
+  try {
+    const request = await cancellationRequest.findById(requestId);
+    if (!request) {
+      return res.status(404).json({ error: "Cancellation request not found" });
+    }
+    await cancellationRequest.deleteOne({ _id: requestId });
+    res.status(200).json({ message: "Cancellation request has been rejected" });
+  } catch (error) {
+    console.error("Error deleting cancellation request: ", error.message);
+    res.status(500).json({ error: error.message });
+  }
+};
+
 //cancel booking by admin or user
 const deleteBooking = async (req, res) => {
   const { bookingId } = req.params;
-  if (!bookingId.trim() === "") {
+  if (!bookingId.trim() === "" || !bookingId) {
     return res.status(400).json({ error: "Please provide a booking ID" });
   }
   try {
-    await Booking.findByIdAndDelete(bookingId);
+    const booking = await Booking.findByIdAndDelete(bookingId);
+    if (!booking) {
+      return res.status(404).json({ error: "Booking not found" });
+    }
+
+    // Delete QR code image from Cloudinary
+    if (booking.qrCodeImageUrl) {
+      const imgId = booking.qrCodeImageUrl.split("/").pop().split(".")[0];
+      await cloudinary.uploader.destroy(imgId);
+    }
+
+    for (let i = 0; i < booking.room.length; i++) {
+      const room = await Room.findById(booking.room[i]);
+      if (!room) {
+        return res.status(404).json({ error: "Room not found" });
+      }
+      room.bookings = room.bookings.filter(
+        (bookingId) => bookingId.toString() !== booking._id.toString()
+      ); // Remove the booking from the room's bookings array
+      await room.save();
+    }
+    await cancellationRequest.deleteOne({ bookingId: booking._id });
     res.status(200).json({ message: "Booking deleted successfully" });
   } catch (error) {
     console.error("Error deleting booking: ", error.message);
@@ -387,7 +531,6 @@ const deleteBooking = async (req, res) => {
 };
 
 // filter bookings by payment status and booking status in admin panel
-
 const filterBookingsByPaymentStatusAndBookingStatus = async (req, res) => {
   const { paymentStatus, status } = req.query;
 
@@ -576,6 +719,9 @@ export default {
   updatePaymentStatus,
   getAllBookings,
   updateBookingStatus,
+  getAllCancelledBookings,
+  updateCancellationRequest,
+  deleteCancellationRequest,
   deleteBooking,
   getBookingByUserId,
   filterBookingsByPaymentStatusAndBookingStatus,

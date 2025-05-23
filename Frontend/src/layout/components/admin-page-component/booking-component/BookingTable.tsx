@@ -11,7 +11,7 @@ import axiosInstance from "@/lib/axios";
 import { Room } from "@/types/interface.type";
 
 const BookingTable = () => {
-    const { bookings, isLoading, error, updateBookingStatus } = useBookingStore((state) => state);
+    const { bookings, isLoading, error, updateBookingStatus, removeBooking } = useBookingStore((state) => state);
     const [ status, setStatus ] = useState<{[key: string]: string}>({});
     const [ loading, setLoading ] = useState<boolean>(false);
     const { showToast } = useToast();
@@ -47,8 +47,24 @@ const BookingTable = () => {
       }
     };
   
-    const handleDelete = async () => {
-      throw new Error("Function not implemented.");
+    const handleDelete = async (bookingId: string) => {
+       setLoading(true)
+       try {
+          const response = await axiosInstance.delete('/api/admin/delete-booking/' + bookingId);
+          if(response?.data){
+            showToast("success", response?.data?.message)
+            removeBooking(bookingId);
+          }
+
+       } catch (error: any) {
+        const message = error?.response?.data?.error || error?.response?.data?.message;
+        if (message.includes("Access Denied")) {
+          showToast("warn", error?.response?.data?.message);
+          return;
+        }
+
+        showToast("error", error?.response?.data?.error);
+       }
     };
 
     
@@ -184,7 +200,9 @@ const BookingTable = () => {
                     </span>
                   </TableCell>
                   <TableCell>
-                    <span className="inline-flex items-center gap-1 rounded-full bg-green-300 px-2 py-1 text-center text-emerald-700 capitalize">
+                    <span
+                      className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-center ${booking?.paymentStatus === "paid" ? "bg-green-300 text-emerald-700" : "bg-sky-200 text-sky-800"} capitalize`}
+                    >
                       {booking?.paymentStatus}
                     </span>
                   </TableCell>
@@ -232,7 +250,7 @@ const BookingTable = () => {
                           ? "Save"
                           : "Edit"
                       }
-                      onDelete={() => handleDelete}
+                      onDelete={() => handleDelete(booking._id)}
                     />
                   </TableCell>
                 </TableRow>
