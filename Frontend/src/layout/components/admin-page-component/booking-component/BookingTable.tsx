@@ -70,7 +70,7 @@ const BookingTable = () => {
     
     if (isLoading) {
       return (
-        <div className="flex h-64 items-center justify-center">
+        <div className="flex items-center justify-center">
           <Loader2 className="h-10 w-10 animate-spin text-blue-500" />
         </div>
       );
@@ -194,14 +194,14 @@ const BookingTable = () => {
                   </TableCell>
                   <TableCell>
                     <span
-                      className={`inline-flex items-center gap-1 text-center uppercase ${booking?.paymentMethod === "grabpay" ? "text-emerald-500" : booking?.paymentMethod === "fpx" ? "text-blue-700" : "text-zinc-700"}`}
+                      className={`flex items-center justify-center gap-1 text-center uppercase ${booking?.paymentMethod === "grabpay" ? "text-emerald-500" : booking?.paymentMethod === "fpx" ? "text-blue-700" : "text-zinc-700"}`}
                     >
                       {booking?.paymentMethod}
                     </span>
                   </TableCell>
                   <TableCell>
                     <span
-                      className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-center ${booking?.paymentStatus === "paid" ? "bg-green-300 text-emerald-700" : "bg-sky-200 text-sky-800"} capitalize`}
+                      className={`flex justify-center items-center gap-1 rounded-full px-2 py-1 text-center ${booking?.paymentStatus === "paid" ? "bg-green-300 text-emerald-700" : "bg-sky-200 text-sky-800"} capitalize`}
                     >
                       {booking?.paymentStatus}
                     </span>

@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist, devtools, createJSONStorage } from "zustand/middleware";
 import { User } from "@/types/interface.type";
+import useBookingStore from "./useBookingStore";
 
 interface authStore {
   isAuthenticated: boolean;
@@ -58,6 +59,8 @@ const useAuthStore = create<authStore>()(
             false,
             "LOGIN",
           );
+          // Clear bookings state
+          useBookingStore.getState().clearBookingInformation();
         },
 
         logout: () => {
@@ -75,9 +78,11 @@ const useAuthStore = create<authStore>()(
             false,
             "LOGOUT",
           );
-
+          // Clear bookings state
+          useBookingStore.getState().clearBookingInformation();
           localStorage.clear();
           // This is more robust to clear the persist local storage state
+          //! Remove specific persisted user state (extra safe)
           createJSONStorage(() => localStorage)?.removeItem("user") ??
             Promise.resolve();
         },

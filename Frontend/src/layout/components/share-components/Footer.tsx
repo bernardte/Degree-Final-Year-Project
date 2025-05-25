@@ -113,7 +113,7 @@ const Footer = () => {
             <h3 className="mb-1 text-lg font-semibold text-white capitalize">
              cancellation policy
             </h3>
-            <Link to="/cancelled-booking-policy" className="text-sm text-blue-100 hover:underline">
+            <Link to="/cancelled-booking-policy" className="text-sm text-blue-100 hover:underline hover:text-white">
               View Policy or Cancelled Booking
             </Link>
           </div>

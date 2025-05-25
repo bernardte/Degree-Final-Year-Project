@@ -63,6 +63,7 @@ const PaymentSummary = ({
 
       if (response.data?.sessionUrl) {
         window.location.href = response.data?.sessionUrl;
+        
       }else{
         showToast("error", "Transaction Failed");
       }

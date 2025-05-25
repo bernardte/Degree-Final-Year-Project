@@ -161,6 +161,9 @@ const createBooking = async (req, res) => {
       await sendBookingConfirmationEmail(emailToSend, bookingData);
     }
 
+    await BookingSession.deleteOne({ sessionId: bookingSessionId });
+    console.log(`Deleted booking session with sessionId: ${bookingSessionId}`);
+
     res.status(201).json({ newBooking, qrCodePublicURLfromCloudinary });
   } catch (error) {
     console.error("Error in creating booking:", error.message);
@@ -220,6 +223,8 @@ const cancelBooking = async (req, res) => {
     });
 
     await newCancellationRequest.save();
+
+    res.status(200).json({ message: "Your Cancel Booking Request has send to our staff. "})
 
   } catch (error) {
     console.log("Error in cancelBooking: ", error.message);
@@ -408,6 +413,40 @@ const getBookingSession = async (req, res) => {
   }
 };
 
+const getBookingSessionByUser = async (req, res) => {
+    const userId = req.user._id;
+    try {
+      const bookingSessions = await BookingSession.find({ userId });
+      if(!bookingSessions){
+        return res.status(404).json({ error: "No booking sessions found! "});
+      }
+
+      const rooms = await Room.find({_id: { $in: bookingSessions.flatMap(session => session.roomId) } });
+      const roomNameMap = rooms.reduce((acc, room) => {
+        acc[room._id.toString()] = room.roomName;
+        return acc;
+      }, {});
+      const user = await User.findById(userId).select("name");
+
+      const bookingSessionsWithUserName = bookingSessions.map(session => {
+        const sessionObject = session.toObject();
+        return {
+          ...sessionObject,
+          customerName:
+            user?.name || sessionObject.guestDetails?.contactName || null,
+          roomName: roomNameMap[sessionObject.roomId],
+        };
+      });
+
+      console.log("Booking Sessions: ", bookingSessionsWithUserName);
+
+      return res.status(200).json(bookingSessionsWithUserName);
+    } catch (error) {
+      console.log("Error in getBookingByUser: ", error.message);
+      res.status(500).json({ error: error.messgae });
+    }
+}
+
 const deleteBookingSession = async (req, res) => {
   const { sessionId } = req.params;
   console.log(sessionId)
@@ -458,6 +497,7 @@ export default {
   createBookingSession,
   getBookingSession,
   getBookingByUser,
+  getBookingSessionByUser,
   deleteBookingSession,
   removeRoomFromBookingSession,
 };

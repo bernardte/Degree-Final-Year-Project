@@ -9,9 +9,18 @@ import { motion } from "framer-motion";
 import { CalendarClock } from "lucide-react";
 import BookingTable from "./BookingTable";
 import useBookingStore from "@/stores/useBookingStore";
+import Pagination from "../../share-components/Pagination";
 
-const BookingTabContent = () => {
-  const { bookings } = useBookingStore();
+const BookingTabContent = ({
+  fetchAllBooking,
+}: {
+  fetchAllBooking: (page: number) => Promise<void>;
+}) => {
+  const { bookings, currentPage, totalPages } = useBookingStore();
+
+  const handlePageChange = (page: number) => {
+    fetchAllBooking(page);
+  };
 
   return (
     <motion.div
@@ -56,6 +65,11 @@ const BookingTabContent = () => {
             <div className="overflow-hidden rounded-lg border border-blue-200 bg-white/70 p-2 shadow-inner backdrop-blur">
               <div className="w-full overflow-x-auto">
                 <BookingTable />
+                <Pagination
+                  onPageChange={handlePageChange}
+                  totalPages={totalPages}
+                  currentPage={currentPage}
+                />
               </div>
             </div>
 

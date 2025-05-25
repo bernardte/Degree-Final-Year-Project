@@ -1,9 +1,20 @@
-import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import "react-day-picker/dist/style.css";
+import { useEffect, useState, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import useBookingStore from "@/stores/useBookingStore";
 import { formatDateInBookingCheckOut } from "@/utils/formatDate";
 import { capitalize } from "lodash";
-import { Loader, Calendar, Users, BedDouble, Star, ArrowRight } from "lucide-react";
+import {
+  Loader,
+  Calendar,
+  Users,
+  BedDouble,
+  Star,
+  CalendarDays,
+  X,
+  Wallet,
+  Search,
+} from "lucide-react";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -13,14 +24,58 @@ import {
 } from "@/components/ui/breadcrumb";
 import { useNavigate } from "react-router-dom";
 import RateReviewDialog from "@/layout/components/review-component/RateReviewDialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { DayPicker } from "react-day-picker";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
+import { CalendarIcon } from "lucide-react";
+
+// Filter and sorting constants
+const STATUS_OPTIONS = [
+  "all",
+  "pending",
+  "confirmed",
+  "completed",
+  "cancelled",
+];
+const SORT_OPTIONS = [
+  { value: "price-asc", label: "Price: Low to High" },
+  { value: "price-desc", label: "Price: High to Low" },
+  { value: "date-asc", label: "Date: Oldest First" },
+  { value: "date-desc", label: "Date: Newest First" },
+];
+
+// Animation configurations
+const filterVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0 },
+};
+
+const cardVariants = {
+  hidden: { opacity: 0, scale: 0.95 },
+  visible: { opacity: 1, scale: 1 },
+};
 
 const BookingDisplayPage = () => {
-  const { fetchBooking, isLoading, bookingInformation } =
-    useBookingStore((state) => state);
+  // State management
+  const { fetchBooking, isLoading, bookingInformation } = useBookingStore(
+    (state) => state,
+  );
   const [loadingTarget, setLoadingTarget] = useState<string | null>(null);
   const navigate = useNavigate();
-
-  // Track currently selected booking's roomTypes and roomIds for review dialog
   const [selectedBooking, setSelectedBooking] = useState<{
     id: string;
     roomTypes: string[];
@@ -28,10 +83,58 @@ const BookingDisplayPage = () => {
     bookingReference: string;
   } | null>(null);
 
+  // Filter states
+  const [selectedStatus, setSelectedStatus] = useState("all");
+  const [dateRange, setDateRange] = useState({ start: "", end: "" });
+  const [sortBy, setSortBy] = useState("date-desc");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Fetch bookings on mount
   useEffect(() => {
     fetchBooking();
   }, [fetchBooking]);
 
+  // Memoized filtered bookings
+  const filteredBookings = useMemo(() => {
+    return (bookingInformation || [])
+      .filter((booking) => {
+        const statusMatch =
+          selectedStatus === "all" || booking.status === selectedStatus;
+        const searchMatch = booking.bookingReference
+          .toLowerCase()
+          .includes(searchQuery.toLowerCase());
+        const dateStart = dateRange.start ? new Date(dateRange.start) : null;
+        const dateEnd = dateRange.end ? new Date(dateRange.end) : null;
+        const bookingStart = new Date(booking.startDate);
+        const bookingEnd = new Date(booking.endDate);
+
+        const dateMatch =
+          (!dateStart || bookingStart >= dateStart) &&
+          (!dateEnd || bookingEnd <= dateEnd);
+
+        return statusMatch && searchMatch && dateMatch;
+      })
+      .sort((a, b) => {
+        const aDate = new Date(a.createdAt).getTime();
+        const bDate = new Date(b.createdAt).getTime();
+
+        switch (sortBy) {
+          case "price-asc":
+            return a.totalPrice - b.totalPrice;
+          case "price-desc":
+            return b.totalPrice - a.totalPrice;
+          case "date-asc":
+            return aDate - bDate;
+          default:
+            return bDate - aDate;
+        }
+      });
+  }, [bookingInformation, selectedStatus, searchQuery, dateRange, sortBy]);
+
+  console.log(filteredBookings);
+  console.log(bookingInformation);
+
+  // Progress bar calculation
   const getBookingProgress = (status: string) => {
     switch (status) {
       case "pending":
@@ -45,21 +148,32 @@ const BookingDisplayPage = () => {
     }
   };
 
+  // Navigation handler
   const handleBreadcrumbClick = (path: string) => {
     setLoadingTarget(path);
     setTimeout(() => navigate(path), 800);
   };
 
-  if (isLoading)
+  // Reset all filters
+  const resetFilters = () => {
+    setSelectedStatus("all");
+    setDateRange({ start: "", end: "" });
+    setSearchQuery("");
+    setSortBy("date-desc");
+  };
+
+  // Loading state
+  if (isLoading) {
     return (
-      <div className="pt-20 text-center">
-        <Loader className="mx-auto animate-spin text-blue-500" />
+      <div className="flex h-screen items-center justify-center">
+        <Loader className="animate-spin text-blue-500" size={48} />
       </div>
     );
-
+  }
   return (
-    <div className="min-h-screen bg-white bg-gradient-to-b from-sky-100 via-blue-200 to-white font-['Inter']">
-      <Breadcrumb className="px-8 pt-2">
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
+      {/* Breadcrumb Navigation */}
+      <Breadcrumb className="px-8 pt-6">
         <BreadcrumbList>
           <BreadcrumbItem>
             <BreadcrumbLink
@@ -68,265 +182,407 @@ const BookingDisplayPage = () => {
                 e.preventDefault();
                 handleBreadcrumbClick("/");
               }}
-              className={
-                loadingTarget === "/"
-                  ? "font-bold text-gray-700"
-                  : "text-blue-600 hover:underline"
-              }
+              className="text-blue-600 hover:text-blue-800"
             >
-              {loadingTarget === "/" ? (
-                <span className="animate-caret-blink">Loading...</span>
-              ) : (
-                "Home"
-              )}
+              {loadingTarget === "/" ? "Loading..." : "Home"}
             </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
-          <BreadcrumbLink href="" className="font-bold text-gray-700">
-            View Bookings
-          </BreadcrumbLink>
+          <BreadcrumbItem>
+            <BreadcrumbLink className="font-semibold text-blue-800">
+              My Bookings
+            </BreadcrumbLink>
+          </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
-      <main className="mx-auto mt-10 max-w-4xl px-4">
+      {/* Filter Section */}
+      <motion.section
+        className="mx-auto mt-8 max-w-6xl px-4"
+        variants={filterVariants}
+        initial="hidden"
+        animate="visible"
+      >
+        <div className="rounded-xl bg-white p-6 shadow-lg">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+            {/* Search Input */}
+            <div>
+              <label className="mb-2 flex items-center gap-2 text-sm font-medium text-blue-600">
+                <Search size={16} />
+                Search
+              </label>
+              <Input
+                placeholder="Booking reference..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="border-blue-100 bg-blue-50"
+              />
+            </div>
+
+            {/* Status Filter */}
+            <div>
+              <label className="mb-2 flex items-center gap-2 text-sm font-medium text-blue-600">
+                <Wallet size={16} />
+                Status
+              </label>
+              <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                <SelectTrigger className="border-blue-100 bg-blue-50">
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  {STATUS_OPTIONS.map((status) => (
+                    <SelectItem key={status} value={status}>
+                      {capitalize(status)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Date Range */}
+            <div>
+              <label className="mb-2 flex items-center gap-2 text-sm font-medium text-blue-600">
+                <CalendarDays size={16} />
+                Check-in After
+              </label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start border-blue-100 bg-blue-50 text-left font-normal",
+                      !dateRange.start && "text-muted-foreground",
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {dateRange.start ? (
+                      format(new Date(dateRange.start), "PPP")
+                    ) : (
+                      <span>Pick a date</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <DayPicker
+                    mode="single"
+                    selected={
+                      dateRange.start ? new Date(dateRange.start) : undefined
+                    }
+                    onSelect={(date) =>
+                      setDateRange({
+                        ...dateRange,
+                        start: date ? format(date, "yyyy-MM-dd") : "",
+                      })
+                    }
+                    numberOfMonths={1}
+                    defaultMonth={
+                      dateRange.start ? new Date(dateRange.start) : new Date()
+                    }
+                    classNames={{
+                      months: "sm:flex gap-6 ",
+                      month: "w-full",
+                      caption: "text-center font-semibold mb-2",
+                      table: "w-full border-collapse",
+                      head_row: "text-gray-500",
+                      head_cell: "text-xs font-medium text-center py-1",
+                      row: "text-center",
+                      cell: "p-1",
+                      day: "w-10 h-10 rounded-full hover:bg-blue-100 transition",
+                      day_selected: "bg-blue-600 text-white",
+                      day_today: "border border-blue-500",
+                      day_range_middle: "bg-blue-100",
+                      day_range_start: "bg-blue-600 text-white",
+                      day_range_end: "bg-blue-600 text-white",
+                    }}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            <div>
+              <label className="mb-2 flex items-center gap-2 text-sm font-medium text-blue-600">
+                <CalendarDays size={16} />
+                Check-out Before
+              </label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start border-blue-100 bg-blue-50 text-left font-normal",
+                      !dateRange.end && "text-muted-foreground",
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {dateRange.end ? (
+                      format(new Date(dateRange.end), "PPP")
+                    ) : (
+                      <span>Pick a date</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <DayPicker
+                    mode="single"
+                    selected={
+                      dateRange.end ? new Date(dateRange.end) : undefined
+                    }
+                    onSelect={(date) =>
+                      setDateRange({
+                        ...dateRange,
+                        end: date ? format(date, "yyyy-MM-dd") : "",
+                      })
+                    }
+                    numberOfMonths={1}
+                    defaultMonth={
+                      dateRange.end ? new Date(dateRange.end) : new Date()
+                    }
+                    classNames={{
+                      months: "sm:flex gap-6 ",
+                      month: "w-full",
+                      caption: "text-center font-semibold mb-2",
+                      table: "w-full border-collapse",
+                      head_row: "text-gray-500",
+                      head_cell: "text-xs font-medium text-center py-1",
+                      row: "text-center",
+                      cell: "p-1",
+                      day: "w-10 h-10 rounded-full hover:bg-blue-100 transition",
+                      day_selected: "bg-blue-600 text-white",
+                      day_today: "border border-blue-500",
+                      day_range_middle: "bg-blue-100",
+                      day_range_start: "bg-blue-600 text-white",
+                      day_range_end: "bg-blue-600 text-white",
+                    }}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
+
+          {/* Sorting and Actions */}
+          <div className="mt-6 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <span className="text-sm font-medium text-blue-600">
+                Sort by:
+              </span>
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="w-[220px] border-blue-100 bg-blue-50">
+                  <SelectValue placeholder="Sort options" />
+                </SelectTrigger>
+                <SelectContent>
+                  {SORT_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button
+              onClick={resetFilters}
+              variant="ghost"
+              className="text-red-500 hover:bg-red-50"
+            >
+              <X size={16} className="mr-2" />
+              Reset Filters
+            </Button>
+          </div>
+        </div>
+      </motion.section>
+
+      {/* Main Content */}
+      <main className="mx-auto mt-8 max-w-6xl px-4 pb-12">
         <motion.h1
-          className="font-bold bg-gradient-to-r mb-12 from-blue-600 to-sky-500 bg-clip-text text-center text-3xl text-transparent drop-shadow-sm"
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.8 }}
+          className="mb-8 text-center text-3xl font-bold text-blue-900"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
         >
-          Booking Details
+          Your Booking History
         </motion.h1>
 
-        {bookingInformation && bookingInformation.length > 0 ? (
-          bookingInformation.map((booking) => {
-            // derive arrays for this booking
-            const types = Array.isArray(booking.roomType)
-              ? booking.roomType
-              : [booking.roomType];
-            const ids = Array.isArray(booking.room)
-              ? booking.room.map((r) => r)
-              : [booking.room];
-            console.log(booking.room);
-            console.log(types);
-            console.log(ids);
-
-            return (
-              <div key={booking._id} className="mb-8">
-                <motion.div
-                  className="group overflow-hidden rounded-2xl bg-white shadow-md transition-shadow duration-300 hover:shadow-xl"
-                  initial={{ opacity: 0, scale: 0.98 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.6 }}
-                  whileHover={{ y: -3 }}
+        {/* Bookings List */}
+        <AnimatePresence mode="wait">
+          {filteredBookings.length > 0 ? (
+            <motion.div
+              className="grid gap-6"
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+            >
+              {filteredBookings.map((booking) => (
+                <motion.article
+                  key={booking._id}
+                  variants={cardVariants}
+                  className="rounded-xl bg-white shadow-lg transition-shadow hover:shadow-xl"
+                  whileHover={{ y: -5 }}
                 >
-                  <div className="md:flex">
-                    <div className="relative border-r border-blue-100 bg-gradient-to-br from-blue-50 to-white md:w-1/3">
+                  <div className="flex flex-col md:flex-row">
+                    {/* QR Code Section */}
+                    <div className="border-b border-blue-100 bg-blue-50 p-8 md:w-1/3 md:border-r md:border-b-0">
                       <motion.div
-                        className="flex h-full items-center justify-center p-8"
-                        initial={{ scale: 0.9, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        transition={{ delay: 0.2 }}
+                        className="overflow-hidden rounded-lg"
+                        initial={{ scale: 0.9 }}
+                        animate={{ scale: 1 }}
                       >
-                        <div className="rounded-xl border-4 border-white bg-white p-4 shadow-[0_8px_32px_-4px_rgba(96,165,250,0.3)]">
-                          <img
-                            src={booking.qrCodeImageURL}
-                            alt="QR Code"
-                            className="h-auto w-full object-contain"
-                          />
-                        </div>
+                        <img
+                          src={booking.qrCodeImageURL}
+                          alt="QR Code"
+                          className="h-auto w-full object-contain"
+                        />
                       </motion.div>
                     </div>
-                    <div className="flex-1 space-y-6 p-6">
-                      <div className="border-b border-blue-100 pb-6">
-                        <h2 className="text-2xl font-bold text-blue-800">
-                          Booking # {booking.bookingReference}
-                        </h2>
-                        <div className="mt-3 flex flex-wrap gap-3">
-                          <span
-                            className={`status-pill ${
-                              booking.status === "pending"
-                                ? "bg-yellow-100 text-yellow-700"
-                                : booking.status === "confirmed"
-                                  ? "bg-blue-100 text-blue-800"
-                                  : "bg-green-100 text-green-800"
-                            }`}
-                          >
-                            {capitalize(booking.status)}
-                          </span>
-                          <span
-                            className={`status-pill ${
-                              booking.paymentStatus === "unpaid"
-                                ? "bg-red-100 text-red-800"
-                                : "bg-green-100 text-green-800"
-                            }`}
-                          >
-                            {capitalize(booking.paymentStatus)}
+
+                    {/* Booking Details */}
+                    <div className="flex-1 p-8">
+                      {/* Status and Progress */}
+                      <div className="mb-6">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <span
+                              className={`rounded-full px-4 py-1 text-sm font-medium ${
+                                booking.status === "pending"
+                                  ? "bg-amber-100 text-amber-800"
+                                  : booking.status === "confirmed"
+                                    ? "bg-blue-100 text-blue-800"
+                                    : "bg-green-100 text-green-800"
+                              }`}
+                            >
+                              {capitalize(booking.status)}
+                            </span>
+                            <span className="text-sm text-blue-600">
+                              {booking.bookingReference}
+                            </span>
+                          </div>
+                          <span className="text-xl font-bold text-blue-900">
+                            RM {booking.totalPrice.toFixed(2)}
                           </span>
                         </div>
-                        <div className="mt-6">
-                          <div className="relative h-3 rounded-full bg-blue-100/80">
-                            <motion.div
-                              className="h-full rounded-full bg-gradient-to-r from-sky-400 to-blue-600 shadow-inner shadow-blue-200/30"
-                              initial={{ width: 0 }}
-                              animate={{
-                                width: `${getBookingProgress(booking.status)}%`,
-                              }}
-                              transition={{ duration: 1.5, ease: "circOut" }}
-                            />
-                          </div>
+                        <div className="mt-4 h-2 rounded-full bg-blue-100">
+                          <motion.div
+                            className="h-full rounded-full bg-gradient-to-r from-blue-400 to-sky-400"
+                            initial={{ width: 0 }}
+                            animate={{
+                              width: `${getBookingProgress(booking.status)}%`,
+                            }}
+                            transition={{ duration: 1 }}
+                          />
                         </div>
                       </div>
 
+                      {/* Booking Details Grid */}
                       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                         <DetailItem
-                          icon={<Calendar />}
+                          icon={
+                            <Calendar size={20} className="text-blue-500" />
+                          }
                           label="Check-In"
                           value={formatDateInBookingCheckOut(booking.startDate)}
                         />
                         <DetailItem
-                          icon={<Calendar />}
+                          icon={
+                            <Calendar size={20} className="text-blue-500" />
+                          }
                           label="Check-Out"
                           value={formatDateInBookingCheckOut(booking.endDate)}
                         />
                         <DetailItem
-                          icon={<Users />}
+                          icon={<Users size={20} className="text-blue-500" />}
                           label="Guests"
-                          value={`${booking.totalGuests.adults} Adults, ${
-                            booking.totalGuests.children
-                          } Children`}
+                          value={`${booking.totalGuests.adults} Adults, ${booking.totalGuests.children} Children`}
                         />
                         <DetailItem
-                          icon={<BedDouble />}
-                          label="Room Type"
+                          icon={
+                            <BedDouble size={20} className="text-blue-500" />
+                          }
+                          label="Rooms"
                           value={
-                            <div className="flex flex-wrap gap-2">
-                              {types.map((t, i) => (
-                                <span
-                                  key={i}
-                                  className="rounded bg-blue-100 px-3 py-1 text-sm text-blue-800 capitalize"
-                                >
-                                  {t}
-                                </span>
-                              ))}
-                            </div>
+                            Array.isArray(booking.roomType) ? (
+                              booking.roomType.map(
+                                (type: string, index: number) => (
+                                  <span
+                                    key={index}
+                                    className="mr-2 rounded bg-blue-100 px-2 py-1 text-sm text-blue-800"
+                                  >
+                                    {type}
+                                  </span>
+                                ),
+                              )
+                            ) : (
+                              <span className="mr-2 rounded bg-blue-100 px-2 py-1 text-sm text-blue-800">
+                                {booking.roomType}
+                              </span>
+                            )
                           }
                         />
                       </div>
 
-                      <div className="flex flex-col items-center justify-between gap-4 pt-6 md:flex-row">
-                        <div className="text-3xl font-bold text-blue-700">
-                          <span className="text-2xl">Total: </span>
-                          RM {booking.totalPrice.toFixed(2)}
-                        </div>
-                        <motion.button className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 to-sky-500 px-6 py-3 font-semibold text-white">
-                          📃 View Invoice
-                        </motion.button>
-                      </div>
-
-                      {/* Review Button */}
-                      {new Date(formatDateInBookingCheckOut(booking.endDate)) <
-                        new Date() && (
-                        <motion.div
-                          className="border-t border-emerald-50 pt-6"
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: 0.4, type: "spring" }}
+                      {/* Action Buttons */}
+                      <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                        <Button
+                          variant="outline"
+                          className="border-blue-200 text-blue-600 hover:bg-blue-50"
                         >
-                          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-green-50/80 to-white p-1 shadow-inner backdrop-blur-sm">
-                            {/* 动态渐变边框 */}
-                            <motion.div
-                              className="absolute inset-0 bg-[conic-gradient(from_90deg_at_50%_50%,#059669_0%,#10b981_50%,transparent_100%)] opacity-20"
-                              animate={{ rotate: [0, 360] }}
-                              transition={{
-                                duration: 8,
-                                repeat: Infinity,
-                                ease: "linear",
-                              }}
-                            />
+                          View Invoice
+                        </Button>
 
-                            {/* rate and review button*/}
-                            <motion.button
-                              onClick={() =>
-                                setSelectedBooking({
-                                  id: booking._id,
-                                  roomTypes: types,
-                                  roomIds: ids,
-                                  bookingReference: booking.bookingReference,
-                                })
-                              }
-                              className="group relative flex w-full items-center justify-between gap-4 rounded-xl bg-gradient-to-r from-green-600 to-emerald-500 px-6 py-4 shadow-lg backdrop-blur-md transition-all hover:shadow-xl"
-                              whileHover={{
-                                scale: 1.02,
-                                boxShadow:
-                                  "0 10px 30px -5px rgba(5, 150, 105, 0.3)",
-                              }}
-                              whileTap={{ scale: 0.98 }}
-                            >
-                              {/* 左侧内容 */}
-                              <div className="flex items-center gap-4">
-                                <div className="relative pl-2">
-                                  <Star
-                                    className="h-7 w-7 text-amber-300 transition-all group-hover:scale-110 group-hover:rotate-12"
-                                    fill="currentColor"
-                                  />
-                                  <div className="absolute -inset-4 bg-[radial-gradient(circle,rgba(255,255,255,0.4)_0%,transparent_70%)] opacity-0 transition-opacity group-hover:opacity-30" />
-                                </div>
-                                <div className="text-left">
-                                  <h3 className="text-lg font-semibold text-white">
-                                    Share Your Stay Experience
-                                  </h3>
-                                  <p className="mt-1 text-sm font-medium text-emerald-100">
-                                    Help others choose their perfect room
-                                  </p>
-                                </div>
-                              </div>
-
-                              {/* 右侧装饰 */}
-                              <div className="flex items-center gap-3 pr-2">
-                                <span className="rounded-full bg-white/20 px-3 py-1.5 text-sm font-medium text-white">
-                                  {types.length} Rooms to Review
-                                </span>
-                                <div className="relative h-8 w-8">
-                                  <div className="animate-pulse-scale absolute inset-0 rounded-full bg-white/20" />
-                                  <ArrowRight className="absolute top-1 left-1 h-6 w-6 text-white" />
-                                </div>
-                              </div>
-
-                              {/* 动态光效 */}
-                              <div
-                                className="absolute inset-0 bg-[radial-gradient(circle_at_var(--x)_var(--y),rgba(255,255,255,0.3)_0%,transparent_70%)] opacity-0 transition-opacity group-hover:opacity-30"
-                                // 动态鼠标坐标跟踪（需配合JS事件处理）
-                                style={
-                                  {
-                                    "--x": "calc(100% - 40px)",
-                                    "--y": "50%",
-                                  } as React.CSSProperties &
-                                    Record<string, string>
-                                }
-                              />
-                            </motion.button>
-                          </div>
-                        </motion.div>
-                      )}
+                        {new Date(booking.endDate) < new Date() && (
+                          <Button
+                            onClick={() =>
+                              setSelectedBooking({
+                                id: booking._id,
+                                roomTypes: Array.isArray(booking.roomType)
+                                  ? booking.roomType
+                                  : [booking.roomType],
+                                roomIds: Array.isArray(booking.room)
+                                  ? booking.room.map((room: any) =>
+                                      typeof room === "string"
+                                        ? room
+                                        : room._id,
+                                    )
+                                  : [
+                                      typeof booking.room === "string"
+                                        ? booking.room
+                                        : booking.room._id,
+                                    ],
+                                bookingReference: booking.bookingReference,
+                              })
+                            }
+                            className="bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:opacity-90"
+                          >
+                            <Star size={18} className="mr-2" />
+                            Leave Review
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </motion.div>
+                </motion.article>
+              ))}
+            </motion.div>
+          ) : (
+            <motion.div
+              className="mt-12 text-center"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+            >
+              <div className="inline-block rounded-xl bg-white p-8 shadow-lg">
+                <div className="animate-bounce text-6xl">📭</div>
+                <h3 className="mt-4 text-xl font-semibold text-blue-800">
+                  No Bookings Found
+                </h3>
+                <p className="mt-2 text-blue-500">
+                  Try adjusting your search filters
+                </p>
+                <Button
+                  onClick={resetFilters}
+                  className="mt-4 gap-2 bg-blue-600 hover:bg-blue-700"
+                >
+                  <X size={16} className="mr-2" />
+                  Reset Filters
+                </Button>
               </div>
-            );
-          })
-        ) : (
-          <div className="text-center">
-            <div className="mx-auto max-w-md rounded-xl bg-white p-8 shadow-lg">
-              <div className="text-6xl text-blue-300 animate-pulse">🌊</div>
-              <h3 className="mt-4 text-xl font-semibold text-blue-800">
-                No Active Bookings
-              </h3>
-              <p className="mt-2 text-blue-400">
-                Ready to plan your next room?
-              </p>
-            </div>
-          </div>
-        )}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <RateReviewDialog
           open={selectedBooking !== null}
@@ -340,28 +596,23 @@ const BookingDisplayPage = () => {
   );
 };
 
-export default BookingDisplayPage;
-
+// DetailItem Component
 const DetailItem = ({
   icon,
   label,
   value,
-  iconColor = "text-blue-500",
 }: {
   icon: React.ReactNode;
   label: string;
-  value: any;
-  iconColor?: string;
+  value: React.ReactNode;
 }) => (
-  <div className="flex items-start gap-3">
-    <span className={`text-2xl ${iconColor}`}>{icon}</span>
+  <div className="flex items-start gap-4">
+    <div className="rounded-lg bg-blue-100 p-2 text-blue-500">{icon}</div>
     <div>
-      <p className="text-sm font-medium text-blue-400">{label}</p>
-      {typeof value === "string" || typeof value === "number" ? (
-        <p className="text-md font-semibold text-blue-800">{value}</p>
-      ) : (
-        <div className="text-md font-semibold text-blue-800">{value}</div>
-      )}
+      <p className="text-sm font-medium text-blue-600">{label}</p>
+      <p className="mt-1 text-base font-semibold text-blue-900">{value}</p>
     </div>
   </div>
 );
+
+export default BookingDisplayPage;

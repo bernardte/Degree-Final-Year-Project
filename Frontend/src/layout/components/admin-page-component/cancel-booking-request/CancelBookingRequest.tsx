@@ -13,7 +13,8 @@ import { useState } from "react";
 import useToast from "@/hooks/useToast";
 import axiosInstance from "@/lib/axios";
 import useStatisticStore from "@/stores/useStatisticStore";
-import { ClipboardList, Clock, Loader2, Mail } from "lucide-react";
+import { ClipboardList, Clock, Mail } from "lucide-react";
+import { motion } from "framer-motion";
 
 const CancelBookingRequest = () => {
     const { cancelledBookings, updateBookingStatus, updateCancelBookingRequest, isLoading: isTableLoading, error } = useBookingStore();
@@ -99,12 +100,29 @@ const CancelBookingRequest = () => {
 
     if (isTableLoading) {
       return (
-        <div className="flex items-center justify-center h-full">
-          <Loader2 className="text-blue-500 animate-spin"/>
-        </div>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="flex h-full items-center justify-center space-x-4"
+        >
+          {[...Array(3)].map((_, i) => (
+            <motion.div
+              key={i}
+              className="h-3 w-3 rounded-full bg-blue-400"
+              animate={{
+                y: [0, -20, 0],
+                scale: [1, 1.2, 1],
+              }}
+              transition={{
+                duration: 1.2,
+                repeat: Infinity,
+                delay: i * 0.2,
+              }}
+            />
+          ))}
+        </motion.div>
       );
     }
-
     return (
       <div className="overflow-x-auto">
         <Table className="w-full table-auto border border-zinc-200 text-sm text-zinc-700">

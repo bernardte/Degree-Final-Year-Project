@@ -40,6 +40,8 @@ const BookingCheckOutPage = () => {
   const { showToast } = useToast();
   const [breakfastIncluded, setBreakfastIncluded] = useState<boolean>(false);
   const [loadingTarget, setLoadingTarget] = useState<string | null>(null);
+  const user = localStorage.getItem("user")
+  const isLoggedIn = !!user; 
 
   useEffect(() => {
     if (sessionId) fetchBookingSession(sessionId);
@@ -95,51 +97,72 @@ const BookingCheckOutPage = () => {
         <BreadcrumbList>
           {/* Home with Alert Dialog */}
           <BreadcrumbItem>
-            <AlertDialog open={openDialog} onOpenChange={setOpenDialog}>
-              <AlertDialogTrigger asChild>
-                <BreadcrumbLink
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setOpenDialog(true);
-                  }}
-                  className={
-                    loadingTarget === "/"
-                      ? "font-bold text-gray-700"
-                      : "text-blue-600 hover:underline"
-                  }
-                >
-                  {loadingTarget === "/" ? (
-                    <span className="animate-caret-blink">Loading...</span>
-                  ) : (
-                    "Home"
-                  )}
-                </BreadcrumbLink>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    If you go back to Home, your current booking session will be
-                    deleted.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={async () => {
-                      setOpenDialog(false);
-                      await handleDeleteBookingSession(
-                        bookingSession.sessionId,
-                      );
-                      handleBreadcrumbClick("/");
+            {!isLoggedIn ? (
+              <AlertDialog open={openDialog} onOpenChange={setOpenDialog}>
+                <AlertDialogTrigger asChild>
+                  <BreadcrumbLink
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setOpenDialog(true);
                     }}
+                    className={
+                      loadingTarget === "/"
+                        ? "font-bold text-gray-700"
+                        : "text-blue-600 hover:underline"
+                    }
                   >
-                    Yes, Back to Home
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+                    {loadingTarget === "/" ? (
+                      <span className="animate-caret-blink">Loading...</span>
+                    ) : (
+                      "Home"
+                    )}
+                  </BreadcrumbLink>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      If you go back to Home, your current booking session will
+                      be deleted.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={async () => {
+                        setOpenDialog(false);
+                        await handleDeleteBookingSession(
+                          bookingSession.sessionId,
+                        );
+                        handleBreadcrumbClick("/");
+                      }}
+                    >
+                      Yes, Back to Home
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            ) : (
+              <BreadcrumbLink
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleBreadcrumbClick("/");
+                }}
+                className={
+                  loadingTarget === "/"
+                    ? "font-bold text-gray-700"
+                    : "text-blue-600 hover:underline"
+                }
+              >
+                {loadingTarget === "/" ? (
+                  <span className="animate-caret-blink">Loading...</span>
+                ) : (
+                  "Home"
+                )}
+              </BreadcrumbLink>
+            )}
           </BreadcrumbItem>
 
           <BreadcrumbSeparator />

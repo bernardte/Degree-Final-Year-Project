@@ -13,12 +13,25 @@ import stripe from "../config/stripe.js";
 
 const getUser = async (req, res) => {
   try {
-    const users = await User.find().select("-password");
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 5;
+    const skip = (page - 1) * limit;
+
+    const [users, totalCount] = await Promise.all([
+      User.find().skip(skip).limit(limit).select("-password"),
+      User.countDocuments(),
+    ]);
 
     if (!users) {
       return res.status(400).json({ error: "users not found" });
     }
-    res.status(200).json(users);
+    res
+      .status(200)
+      .json({
+        users,
+        totalPages: Math.ceil(totalCount / limit),
+        currentPage: page,
+      });
   } catch (error) {
     console.log("Error in getUser: ", error.message);
     res.status(500).json({ error: error.message });
@@ -79,9 +92,9 @@ const changeOTPVerificationCode = async (req, res) => {
 
   try {
     const OTP = await OTP.findOneAndUpdate(
-      { superAdminId },//filter
-      { otpCode: newOTP },//update otp
-      { new: true, upsert: true }//if not found then create
+      { superAdminId }, //filter
+      { otpCode: newOTP }, //update otp
+      { new: true, upsert: true } //if not found then create
     );
     res.status(200).json({
       message: "OTP updated successfully",
@@ -135,7 +148,7 @@ const addRoom = async (req, res) => {
   }
 
   const amenitiesArray = amenities.split(","); // ['wifi', 'air conditioning', 'tv']
-  console.log(amenitiesArray)
+  console.log(amenitiesArray);
   const isValid = validateRoomAmenities(amenitiesArray);
 
   if (!isValid) {
@@ -149,7 +162,7 @@ const addRoom = async (req, res) => {
     if (existingRoom) {
       return res.status(400).json({ message: "Room number already exists." });
     }
-    
+
     const imagesUrls = await uploadToCloudinary(imageFile);
     const newRoom = new Room({
       bedType,
@@ -187,12 +200,12 @@ const updateRoom = async (req, res) => {
 
   const adults = parseInt(adultsRaw, 10);
   const children = parseInt(childrenRaw, 10);
-  
+
   console.log(req.body);
   const { roomId } = req.params;
   const { images } = req.files || {};
   let imageUrls = null;
-  
+
   if (!roomId) {
     return res.status(400).json({ error: "Please provide a room ID" });
   }
@@ -221,7 +234,7 @@ const updateRoom = async (req, res) => {
     }
 
     if (images) {
-      //! ensure multiple image uploads in the future 
+      //! ensure multiple image uploads in the future
       const imageArray = Array.isArray(images) ? images : [images];
       imageUrls = await Promise.all(imageArray.map(uploadToCloudinary));
     }
@@ -306,15 +319,31 @@ const updatePaymentStatus = async (req, res) => {
 //use in admin panel to get all bookings
 const getAllBookings = async (req, res) => {
   try {
-    const bookings = await Booking.find()
-      .populate("room", "roomType pricePerNight") // Populate the room field with roomType and pricePerNight
-      .populate("bookingCreatedByUser", "name email");
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 5;
+    //* If page = 1, then skip = 0, meaning no records skipped, start from the first record.
+    //* If page = 2 and limit = 10, then skip = 10, meaning skip the first 10 records, start from the 11th record.
+    //* If page = 3 and limit = 10, then skip = 20, skip the first 20 records, start from the 21st.
+    const skip = (page - 1) * limit; //* skip = (2 - 1) * 5 = 5
+
+    const [bookings, totalCount] = await Promise.all([
+      Booking.find()
+        .skip(skip) // skip first 5 bookings
+        .limit(limit) // get next 5 bookings
+        .populate("room", "roomType pricePerNight")
+        .populate("bookingCreatedByUser", "name email"),
+      Booking.countDocuments(),
+    ]);
 
     if (!bookings || bookings.length === 0) {
       return res.status(404).json({ error: "No bookings found" });
     }
 
-    res.status(200).json(bookings);
+    res.status(200).json({
+      bookings,
+      totalPages: Math.ceil(totalCount / limit),
+      currentPage: page,
+    });
   } catch (error) {
     console.error("Error fetching all bookings: ", error.message);
     res.status(500).json({ error: error.message });
@@ -358,8 +387,10 @@ const updateBookingStatus = async (req, res) => {
       return res.status(404).json({ error: "Booking not found" });
     }
 
-    if(booking.status === status){
-      return res.status(400).json({ error: "Booking status is already " + status });
+    if (booking.status === status) {
+      return res
+        .status(400)
+        .json({ error: "Booking status is already " + status });
     }
 
     booking.status = status; // Update the booking status
@@ -384,97 +415,100 @@ const getAllCancelledBookings = async (req, res) => {
     console.error("Error getAllCancelledBookings: ", error.message);
     return res.status(500).json({ error: error.message });
   }
-}
+};
 
 const updateCancellationRequest = async (req, res) => {
-    const { requestId } = req.params;
-    const { status } = req.body;
-    const userId = req.user._id;
-    console.log(status);
-    let policyNote = "";
-    if (!requestId || requestId.trim() === "") {
-      return res.status(400).json({ error: "Please provide a request ID" });
+  const { requestId } = req.params;
+  const { status } = req.body;
+  const userId = req.user._id;
+  console.log(status);
+  let policyNote = "";
+  if (!requestId || requestId.trim() === "") {
+    return res.status(400).json({ error: "Please provide a request ID" });
+  }
+
+  try {
+    const request = await cancellationRequest
+      .findById(requestId)
+      .populate("bookingId");
+    console.log(request);
+    if (!request) {
+      return res.status(404).json({ error: "Cancellation request not found" });
     }
 
-    try {
-      const request = await cancellationRequest.findById(requestId).populate("bookingId");
-      console.log(request);
-      if (!request) {
-        return res.status(404).json({ error: "Cancellation request not found" });
+    const booking = request.bookingId;
+    if (!booking)
+      return res.status(404).json({ error: "Related booking not found" });
+
+    if (request.status === status) {
+      return res
+        .status(400)
+        .json({ error: "Cancellation request is already " + status });
+    }
+
+    request.status = status; // Update the cancellation request status
+    request.processedAt = new Date(); // Set the processed date
+    request.processedBy = userId; // Set the processed by field
+    await request.save(); // Save the updated cancellation request status
+
+    if (request.status === "approved") {
+      const currentDate = new Date();
+      const checkInDate = new Date(booking.startDate);
+      const hoursBeforeCheckIn = (checkInDate - currentDate) / (1000 * 60 * 60);
+      let refundAmount = 0;
+
+      console.log("Hours before check-in: ", hoursBeforeCheckIn);
+
+      if (hoursBeforeCheckIn > 48) {
+        refundAmount = booking.totalPrice;
+        policyNote =
+          "Full refund as cancellation is more than 48 hours before check-in.";
+      } else if (hoursBeforeCheckIn <= 48 && hoursBeforeCheckIn > 0) {
+        refundAmount = booking.totalPrice * 0.5;
+        policyNote = "50% refund (within 48 hours of check-in)";
+      } else {
+        refundAmount = 0;
+        policyNote = "No refund (after check-in)";
       }
-
-      const booking = request.bookingId;
-      if (!booking)
-        return res.status(404).json({ error: "Related booking not found" });
-
-      if (request.status === status) {
-        return res.status(400).json({ error: "Cancellation request is already " + status });
-      }
-
-      request.status = status; // Update the cancellation request status
-      request.processedAt = new Date(); // Set the processed date
-      request.processedBy = userId; // Set the processed by field
-      await request.save(); // Save the updated cancellation request status
-
-      if (request.status === "approved") {
-        const currentDate = new Date();
-        const checkInDate = new Date(booking.startDate);
-        const hoursBeforeCheckIn =
-          (checkInDate - currentDate) / (1000 * 60 * 60);
-        let refundAmount = 0;
-
-        console.log("Hours before check-in: ", hoursBeforeCheckIn);
-
-        if (hoursBeforeCheckIn > 48) {
-          refundAmount = booking.totalPrice;
-          policyNote =
-            "Full refund as cancellation is more than 48 hours before check-in.";
-        } else if (hoursBeforeCheckIn <= 48 && hoursBeforeCheckIn > 0) {
-          refundAmount = booking.totalPrice * 0.5;
-          policyNote = "50% refund (within 48 hours of check-in)";
-        } else {
-          refundAmount = 0;
-          policyNote = "No refund (after check-in)";
-        }
-        if (
-          refundAmount > 0 &&
-          booking.paymentStatus === "paid" &&
-          booking.paymentIntentId
-        ) {
-          await stripe.refunds.create({
-            amount: Math.round(refundAmount * 100),
-            payment_intent: booking.paymentIntentId,
-            reason: "requested_by_customer",
-          });
-          booking.status = "cancelled"; // Update the booking status to cancelled
-          booking.paymentStatus = "refund"; // Update payment status to refunded
-          booking.refundAmount = refundAmount; // Update total price to the refund amount
-          console.log("Refund amount1: ", refundAmount);
-          for (const roomId of booking.room) {
-            const room = await Room.findById(roomId);
-            if (!room) {
-              return res.status(404).json({ error: "Room not found" });
-            }
-            room.bookings = room.bookings.filter(
-              (bookingId) => bookingId.toString() !== booking._id.toString()
-            );
-            await room.save();
-          }
-
-          await booking.save(); // Save the updated booking status
-        }
-        console.log("Refund amount2: ", refundAmount);
-        return res.status(200).json({
-          message: `Cancellation approved. ${policyNote}`,
-          refund: refundAmount,
-          bookingId: booking._id,
+      if (
+        refundAmount > 0 &&
+        booking.paymentStatus === "paid" &&
+        booking.paymentIntentId
+      ) {
+        await stripe.refunds.create({
+          amount: Math.round(refundAmount * 100),
+          payment_intent: booking.paymentIntentId,
+          reason: "requested_by_customer",
         });
+        booking.status = "cancelled"; // Update the booking status to cancelled
+        booking.paymentStatus = "refund"; // Update payment status to refunded
+        booking.refundAmount = refundAmount; // Update total price to the refund amount
+        console.log("Refund amount1: ", refundAmount);
+        for (const roomId of booking.room) {
+          const room = await Room.findById(roomId);
+          if (!room) {
+            return res.status(404).json({ error: "Room not found" });
+          }
+          room.bookings = room.bookings.filter(
+            (bookingId) => bookingId.toString() !== booking._id.toString()
+          );
+          await room.save();
+        }
+
+        await booking.save(); // Save the updated booking status
       }
-    } catch (error) {
-      console.error("Error updating cancellation request: ", error.message);
-      return res.status(500).json({ error: "Internal Server Error" });
+      console.log("Refund amount2: ", refundAmount);
+      return res.status(200).json({
+        message: `Cancellation approved. ${policyNote}`,
+        refund: refundAmount,
+        bookingId: booking._id,
+      });
     }
-}
+  } catch (error) {
+    console.error("Error updating cancellation request: ", error.message);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+};
 
 const deleteCancellationRequest = async (req, res) => {
   const { requestId } = req.params;

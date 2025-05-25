@@ -7,6 +7,8 @@ interface BookingStore {
   bookings: Bookings[];
   cancelledBookings: CancelBookingRequest[];
   isLoading: boolean;
+  totalPages: number;
+  currentPage: number;
   error: string | null;
   updateCancelBookingRequest: (bookingId: string) => void;
   updateBookingStatus: (
@@ -14,8 +16,9 @@ interface BookingStore {
     newStatus: "confirmed" | "pending" | "cancelled" | "completed",
     paymentStatus?: "paid" | "unpaid" | "refund",
   ) => void;
+  clearBookingInformation: () => void;
   fetchBooking: () => Promise<void>;
-  fetchAllBooking: () => Promise<void>;
+  fetchAllBooking: (page: number) => Promise<void>;
   removeBooking: (bookingId: string) => void;
   fetchAllCancelBookingRequest: () => Promise<void>;
 }
@@ -24,14 +27,19 @@ const useBookingStore = create<BookingStore>((set) => ({
   bookingInformation: [],
   bookings: [],
   cancelledBookings: [],
+  totalPages: 1,
+  currentPage: 1,
   isLoading: false,
   error: null,
+  clearBookingInformation: () => {
+    set({ bookingInformation: [] });
+  },
   updateCancelBookingRequest: (bookingId: string) => {
     set((prevState) => ({
       cancelledBookings: prevState.cancelledBookings.map((booking) =>
         booking.bookingId === bookingId
           ? { ...booking, status: "approved" }
-          : booking
+          : booking,
       ),
     }));
   },
@@ -48,19 +56,19 @@ const useBookingStore = create<BookingStore>((set) => ({
               status: newStatus,
               ...(paymentStatus !== undefined ? { paymentStatus } : {}),
             }
-          : booking
+          : booking,
       ),
     }));
   },
   fetchBooking: async () => {
-    set({ isLoading: true });
+    set({ isLoading: true, error: null });
     axiosInstance
       .get("/api/bookings/get-user-booking")
       .then((response) => {
-        set({ bookingInformation: response.data });
-        console.log(response.data);
-        if (response.data.error) {
-          set({ error: response.data.error });
+        if (response?.data?.error) {
+          set({ error: response.data.error, bookingInformation: [] });
+        } else {
+          set({ bookingInformation: response.data, error: null });
         }
       })
       .catch((error: any) => {
@@ -70,16 +78,18 @@ const useBookingStore = create<BookingStore>((set) => ({
       .finally(() => set({ isLoading: false }));
   },
 
-  fetchAllBooking: async () => {
+  fetchAllBooking: async (page: number, limit = 5) => {
     set({ isLoading: true, error: null });
     axiosInstance
-      .get("/api/admin/get-all-bookings")
+      .get(`/api/admin/get-all-bookings?page=${page}&limit=${limit}`)
       .then((response) => {
-        set({ bookings: response?.data });
+        const { bookings, totalPages, currentPage } = response.data;
+        set({ bookings, totalPages, currentPage });
       })
       .catch((error) =>
         set({
           error: error?.response?.data?.error || error?.response?.data?.message,
+          bookings: []
         }),
       )
       .finally(() => set({ isLoading: false }));
@@ -118,7 +128,6 @@ const useBookingStore = create<BookingStore>((set) => ({
       });
     }
   },
- 
 }));
 
 export default useBookingStore;

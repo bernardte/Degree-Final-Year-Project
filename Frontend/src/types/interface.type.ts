@@ -113,6 +113,7 @@ export interface BookingSession {
   contactEmail: string;
   contactNumber: number;
   additionalDetails: string;
+  roomName: string;
   createdAt: Date;
 }
 

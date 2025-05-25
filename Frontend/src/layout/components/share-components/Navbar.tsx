@@ -116,6 +116,11 @@ const Navbar = () => {
                   <span>View Booking</span>
                 </Link>
               </DropdownMenuItem>
+              <DropdownMenuItem className="cursor-pointer">
+                <Link to={"/pending-booking"}>
+                  <span>Pending Booking</span>
+                </Link>
+              </DropdownMenuItem>
               {(user.role === "admin" || user.role === "superAdmin") &&
                 (!!isAdminVerified) && (
                   <DropdownMenuItem>

@@ -11,6 +11,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import useQueryParams from "@/hooks/useQueryParams";
 import { Loader2 } from "lucide-react";
+import getImageSrc from "@/utils/getImageSrc";
 
 interface FilterContentProps {
   filterRoom: Room[];
@@ -157,7 +158,7 @@ const FilterContent = ({ filterRoom, isLoading, setSelectedRoom, selectedRoom }:
               {/* Image Section */}
               <div className="relative h-64 w-full bg-gray-200">
           <img
-            src={room.images[0]} // Assuming images array exists
+            src={getImageSrc(Array.isArray(room.images) ? room.images[0] : room.images)} // Handles both array and string/File
             alt={room.roomName}
             className="h-full w-full object-cover object-center"
           />

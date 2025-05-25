@@ -27,6 +27,7 @@ import AdminRoomPage from "./pages/Admin room page/AdminRoomPage";
 import AdminEventsPage from "./pages/Admin events page/AdminEventsPage";
 import CancelBookingPage from "./pages/Cancel booking page/CancelBookingPage";
 import AdminFacilityPage from "./pages/Admin-facility-page/AdminFacilityPage";
+import PendingBookingPage from "./pages/Pending booking page/PendingBookingPage";
 
 const App = () => {
   const { user, showLoginPopup, showSignupPopup } = useAuthStore();
@@ -60,11 +61,15 @@ const App = () => {
           />
           <Route path="facilities" element={<FacilitiesPage />} />
           <Route path="event" element={<EventPage />} />
+          <Route path="contact-us" element={<ContactUsPage />} />
           <Route
             path="cancelled-booking-policy"
             element={<CancelBookingPage />}
           />
-          <Route path="contact-us" element={<ContactUsPage />} />
+          <Route
+            path="pending-booking"
+            element={<PendingBookingPage />}
+          />
         </Route>
 
         {/* User Login Route */}

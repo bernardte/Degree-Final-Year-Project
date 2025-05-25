@@ -1,4 +1,4 @@
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import Navbar from "./components/share-components/Navbar";
 import Footer from "./components/share-components/Footer";
 import { useEffect, useState } from "react";
@@ -6,6 +6,11 @@ import { useEffect, useState } from "react";
 const MainLayout = () => {
   const [ displayToTopButton, setDisplayToTopButton ] = useState(false);
   const isCheckoutPage = window.location.pathname.includes("/booking/confirm/");
+  const { pathname } = useLocation();
+  useEffect(() => {
+      window.scrollTo(0, 0);
+  }, [pathname]);
+
   useEffect(() => {
     const handleScroll = () => {
       if (window.scrollY > 1300) {

@@ -9,9 +9,22 @@ import { User, UserRound } from "lucide-react";
 import UsersTable from "./UsersTable";
 import { motion } from "framer-motion";
 import useUserStore from "@/stores/useUserStore";
+import Pagination from "../../share-components/Pagination";
 
-const UserTabContent = () => {
-  const { user: users } = useUserStore(state => state);
+const UserTabContent = ({
+  fetchUser,
+}: {
+  fetchUser: (page: number) => Promise<void>;
+}) => {
+  const {
+    user: users,
+    totalPages,
+    currentPage,
+  } = useUserStore((state) => state);
+  const handlePageChange = (page: number) => {
+    fetchUser(page);
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 30 }}
@@ -54,6 +67,11 @@ const UserTabContent = () => {
           <CardContent className="mt-4">
             <div className="overflow-hidden rounded-xl border border-blue-200 bg-white/70 p-2 shadow-inner backdrop-blur">
               <UsersTable />
+              <Pagination
+                onPageChange={handlePageChange}
+                totalPages={totalPages}
+                currentPage={currentPage}
+              />
             </div>
 
             {/* Status Summary */}

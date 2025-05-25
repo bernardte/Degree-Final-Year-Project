@@ -17,7 +17,7 @@ const CancelBookingForm = () => {
     const [email, setEmail] = useState<string>("");
     const [bookingReference, setBookingReference] = useState<string>("");
     const [errors, setErrors] = useState<{ email?: string; bookingReference?: string }>({});
-    const [isSubmitting, setIsSubmitting] = useState<boolean>(true);
+    const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
     const { showToast } = useToast();
 
     const validateForm = (): boolean => {
@@ -33,8 +33,6 @@ const CancelBookingForm = () => {
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     }
-
-
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
         e.preventDefault();
@@ -52,12 +50,14 @@ const CancelBookingForm = () => {
                 showToast("success", "Your Booking Request has been sent successfully");
                 setEmail("");
                 setBookingReference("");
-                
                 setIsSubmitting(false);
+                showToast("success", response?.data?.message)
             }
         } catch (error: any) {
             showToast("error", error?.response?.data?.error || "An error occurred");
             setIsSubmitting(false);
+        }finally{
+          setIsSubmitting(false);
         }
     }
 
@@ -115,11 +115,12 @@ const CancelBookingForm = () => {
           {/* Submit Button */}
           <button
             type="submit"
-            disabled={!isSubmitting}
+            disabled={isSubmitting}
             className="flex w-full cursor-pointer items-center justify-center rounded-lg bg-blue-600 px-4 py-3 font-semibold text-white transition duration-300 hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-400"
           >
-            {!isSubmitting ? (
+            {isSubmitting ? (
               <>
+              {console.log(isSubmitting)}
                 <Loader className="mr-2 h-5 w-5 animate-spin" />
                 Processing...
               </>
@@ -132,4 +133,4 @@ const CancelBookingForm = () => {
     );
 }
 
-export default CancelBookingForm
+export default CancelBookingForm;

@@ -64,6 +64,10 @@ const createCheckoutSession = async (req, res) => {
       };
 
       lineItems.push(breakfastItem);
+      await BookingSession.updateOne(
+        { sessionId },
+        { breakfastIncluded: breakfastCount }
+      );
     }
 
     // Create Stripe checkout session
