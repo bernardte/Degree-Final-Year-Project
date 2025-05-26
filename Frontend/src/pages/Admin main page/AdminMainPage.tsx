@@ -40,7 +40,7 @@ const UserManagePage = () => {
 
   return (
     <div className="min-h-screen overflow-hidden bg-blue-50/50 px-4 py-8">
-      <div className="mx-auto max-w-7xl overflow-hidden">
+      <div className="mx-auto max-w-7xl">
         {/* Header Section */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-blue-900">Admin Dashboard</h1>
