@@ -25,7 +25,7 @@ const StatisticCard = ({
       whileTap={{ scale: 0.98 }}
     >
       <Card
-        className={`border border-gray-200 bg-white shadow-sm transition-all`}
+        className={`border border-gray-200 bg-white shadow-sm transition-all ${bgColor} hover:shadow-lg`}
       >
         <CardContent className="p-4">
           <motion.div

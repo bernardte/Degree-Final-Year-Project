@@ -5,8 +5,11 @@ import axiosInstance from "@/lib/axios";
 interface FacilityStore {
   facilities: Facility[];
   isLoading: boolean;
+  totalPages: number;
+  currentPage: number;
   error: string | null;
   fetchFacility: () => Promise<void>;
+  fetchPaginatedFacility: (page: number) => Promise<void>;
   removeFacility: (facilityId: string) => void;
   createFacility: (facility: Facility) => void;
   updateFacility: (facilityId: string, updatedFacility: Facility) => void;
@@ -15,8 +18,21 @@ interface FacilityStore {
 const useFacilityStore = create<FacilityStore>((set) => ({
   facilities: [],
   isLoading: false,
+  totalPages: 1,
+  currentPage: 1,
   error: null,
-
+  fetchPaginatedFacility: async (page: number, limit = 5) => {
+    try {
+      set({ isLoading: true, error: null });
+      const response = await axiosInstance.get(`/api/facilities/paginated?page=${page}&limit=${limit}`);
+      const { facility, totalPages, currentPage } = await response.data;
+      set({ facilities: facility, totalPages, currentPage, isLoading: false });
+    } catch (error: any) {
+      set({ error: error.message, isLoading: false });
+    } finally {
+      set({ isLoading: false });
+    }
+  },
   fetchFacility: async() => {
     try {
       set({ isLoading: true, error: null });

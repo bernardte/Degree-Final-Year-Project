@@ -67,11 +67,13 @@ const UserTabContent = ({
           <CardContent className="mt-4">
             <div className="overflow-hidden rounded-xl border border-blue-200 bg-white/70 p-2 shadow-inner backdrop-blur">
               <UsersTable />
-              <Pagination
-                onPageChange={handlePageChange}
-                totalPages={totalPages}
-                currentPage={currentPage}
-              />
+              {totalPages > 1 && (
+                <Pagination
+                  onPageChange={handlePageChange}
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                />
+              )}
             </div>
 
             {/* Status Summary */}

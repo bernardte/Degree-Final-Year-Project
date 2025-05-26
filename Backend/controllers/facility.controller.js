@@ -3,18 +3,44 @@ import Facility from "../models/facilities.model.js";
 import { uploadToCloudinary } from "../utils/uploadToCloudinary.js";
 
 const getFacility = async (req, res) => {
-    try {
-        const facility = await Facility.find();
-        
-        if(!facility){
-            return res.status(404).json({ error: "Facility not found" });
-        }
-
-        res.status(200).json(facility);
-    } catch (error) {
-        console.log("Error in getFacility: ", error.message);
+  try {
+    const facilities = await Facility.find();
+    if(!facilities){
+      return res.status(404).json({ message: "No facilities found" });
     }
+    res.status(200).json(facilities);
+  }catch(error){
+    console.log("Error in getFacility: ", error.message);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
 }
+
+const getAdminPageFacility = async (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 5;
+  const skip = (page - 1) * limit;
+
+  try {
+    const [facility, totalCount] = await Promise.all([
+      Facility.find().skip(skip).limit(limit),
+      Facility.countDocuments(),
+    ]);
+
+    if (!facility) {
+      return res.status(404).json({ error: "Facility not found" });
+    }
+
+    res
+      .status(200)
+      .json({
+        facility,
+        totalPages: Math.ceil(totalCount / limit),
+        currentPage: page,
+      });
+  } catch (error) {
+    console.log("Error in getAdminPageFacility: ", error.message);
+  }
+};
 
 const deleteFacility = async (req, res) => {
     const { facilityId } = req.params;
@@ -121,6 +147,7 @@ const createFacility = async (req, res) => {
 
 export default {
   getFacility,
+  getAdminPageFacility,
   deleteFacility,
   updateFacility,
   createFacility,

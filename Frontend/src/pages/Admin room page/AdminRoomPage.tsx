@@ -5,6 +5,7 @@ import RoomTable from "@/layout/components/admin-page-component/Room-component/R
 import useRoomStore from "@/stores/useRoomStore";
 import { useEffect, useState } from "react";
 import AddNewRoomDialog from "@/layout/components/admin-page-component/dialog-component/AddNewRoomDialog";
+import Pagination from "@/layout/components/share-components/Pagination";
 
 
 // Animation constants
@@ -32,13 +33,15 @@ const cardVariants = {
 };
 
 const AdminRoomPage = () => {
-    const { fetchRooms, isLoading, error, rooms } = useRoomStore();
+    const { fetchPaginatedRooms, isLoading, error, rooms, totalPages, currentPage } = useRoomStore();
     const [ openDialog, setOpenDialog ] = useState<boolean>(false);
     useEffect(() => {
-      fetchRooms();
-    }, [fetchRooms]);
+      fetchPaginatedRooms(1);
+    }, [fetchPaginatedRooms]);
 
-
+    const handlePageChange = (page: number) => {
+      fetchPaginatedRooms(page);
+    }
     return (
       <motion.div
         initial="hidden"
@@ -100,6 +103,13 @@ const AdminRoomPage = () => {
             >
               <div className="before:animate-shine relative overflow-hidden rounded-lg before:absolute before:inset-0 before:-translate-x-full before:bg-gradient-to-r before:from-transparent before:via-white/20 before:to-transparent">
                 <RoomTable isLoading={isLoading} rooms={rooms} error={error} />
+                {totalPages > 1 && (
+                  <Pagination
+                    onPageChange={handlePageChange}
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                  />
+                )}
               </div>
 
               {/* Pagination section */}
@@ -141,7 +151,7 @@ const AdminRoomPage = () => {
                   transition={{ repeat: Infinity, duration: 4 }}
                   className="mb-6 inline-flex rounded-full bg-gradient-to-br from-blue-100 to-blue-50 p-4"
                 >
-                  <DoorClosed className="h-12 w-12 text-blue-400/90 animate-pulse" />
+                  <DoorClosed className="h-12 w-12 animate-pulse text-blue-400/90" />
                 </motion.div>
 
                 {/* Content */}
@@ -150,7 +160,7 @@ const AdminRoomPage = () => {
                     No Room Found
                   </h2>
                   <p className="text-lg leading-relaxed text-blue-500/80">
-                    Start to create a new room 
+                    Start to create a new room
                   </p>
                 </div>
 

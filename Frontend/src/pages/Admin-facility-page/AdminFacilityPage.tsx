@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import AddNewFacilityDialog from "@/layout/components/admin-page-component/dialog-component/AddNewFacilityDialog";
 import FacilityTable from "@/layout/components/admin-page-component/Facility-component/FacilityTable";
+import Pagination from "@/layout/components/share-components/Pagination";
 import useFacilityStore from "@/stores/useFacilityStore";
 import { motion } from "framer-motion";
 import { DoorClosed, PlusCircle } from "lucide-react";
@@ -31,13 +32,15 @@ const containerVariants = {
   };
 
 const AdminFacilityPage = () => {
-    const { fetchFacility, facilities, error, isLoading } = useFacilityStore();
+    const { fetchPaginatedFacility, facilities, error, isLoading, totalPages, currentPage } = useFacilityStore();
     useEffect(() => {
-      fetchFacility();
-    }, [fetchFacility]);
+      fetchPaginatedFacility(1);
+    }, [fetchPaginatedFacility]);
 
     const [ openDialog, setOpenDialog ] = useState<boolean>(false);
-
+    const handlePageChange = (page: number) => {
+      fetchPaginatedFacility(page);
+    }
   return (
     <motion.div
       initial="hidden"
@@ -98,7 +101,18 @@ const AdminFacilityPage = () => {
             }}
           >
             <div className="before:animate-shine relative overflow-hidden rounded-lg before:absolute before:inset-0 before:-translate-x-full before:bg-gradient-to-r before:from-transparent before:via-white/20 before:to-transparent">
-              <FacilityTable isLoading={isLoading} facilities={facilities} error={error} />
+              <FacilityTable
+                isLoading={isLoading}
+                facilities={facilities}
+                error={error}
+              />
+              {totalPages > 1 && (
+                <Pagination
+                  onPageChange={handlePageChange}
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                />
+              )}
             </div>
 
             {/* Pagination section */}

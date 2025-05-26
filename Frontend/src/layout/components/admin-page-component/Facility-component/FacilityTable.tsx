@@ -150,6 +150,7 @@ const FacilityTable = ({ facilities, isLoading: isFacilityTable, error } : Facil
                 <img
                   src={getImageSrc(facility?.image)}
                   alt={facility?.facilitiesName}
+                  className="object-cover w-[160px] h-[130px] flex items-center justify-center"
                 />
               </TableCell>
               <TableCell>

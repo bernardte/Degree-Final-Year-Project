@@ -189,7 +189,7 @@ import getImageSrc from "@/utils/getImageSrc";
               >
                 <TableCell className="text-center">{index + 1}</TableCell>
                 <TableCell>
-                  <img src={getImageSrc(room?.images)} alt={room?.roomType} />
+                  <img src={getImageSrc(room?.images)} alt={room?.roomType} className="object-cover w-[150px] h-[120px]"/>
                 </TableCell>
                 <TableCell>
                   <span className="inline-flex items-center gap-1 text-zinc-700">

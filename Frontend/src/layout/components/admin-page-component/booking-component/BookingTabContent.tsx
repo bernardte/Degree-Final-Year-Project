@@ -65,11 +65,13 @@ const BookingTabContent = ({
             <div className="overflow-hidden rounded-lg border border-blue-200 bg-white/70 p-2 shadow-inner backdrop-blur">
               <div className="w-full overflow-x-auto">
                 <BookingTable />
-                <Pagination
-                  onPageChange={handlePageChange}
-                  totalPages={totalPages}
-                  currentPage={currentPage}
-                />
+                {totalPages > 1 && (
+                  <Pagination
+                    onPageChange={handlePageChange}
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                  />
+                )}
               </div>
             </div>
 

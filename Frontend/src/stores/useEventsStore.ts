@@ -6,26 +6,31 @@ interface eventStore {
     events: Event[];
     isLoading: boolean;
     error: string | null;
-    fetchAllEvents: () => Promise<void>;
+    currentPage: number;
+    totalPages: number;
+    fetchAllEvents: (page: number) => Promise<void>;
     updateEventsStatus: (eventId: string, newStatus: string) => void; 
 }
 
 const useEventsStore = create<eventStore>((set) => ({
   events: [],
   isLoading: false,
+  currentPage: 1,
+  totalPages: 1,
   error: null,
   updateEventsStatus: (eventId: String, newStatus: string) => {
     set((prevState) => ({
       events: prevState.events.map(event => eventId === event._id ? {...event, status: newStatus} : event)
     }))
   },
-  fetchAllEvents: async () => {
+  fetchAllEvents: async (page: number, limit = 5) => {
     set({ isLoading: true, error: null})
     try {
         const response = await axiosInstance.get(
-          "/api/admin/get-all-enquire-event",
+          `/api/admin/get-all-enquire-event?page=${page}&limit=${limit}`,
         );
-        set({ events: response?.data });
+        const { events, totalPages, currentPage } = response?.data;
+        set({ events , totalPages, currentPage });
     } catch (error: any) {
         console.log(error?.response?.data?.message || error?.response?.data?.error);
         set({

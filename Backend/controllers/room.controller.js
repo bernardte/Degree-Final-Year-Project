@@ -3,9 +3,15 @@ import Booking from "../models/booking.model.js";
 import RoomAvailability from "../models/roomAvailability.model.js";
 
 const getAllRooms = async (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 5;
+  const skip = (page - 1) * limit;
   try {
-    const allRooms = await Room.find();
-    res.status(200).json(allRooms);
+    const [rooms, totalCount] = await Promise.all([
+      Room.find().skip(skip).limit(limit),
+      Room.countDocuments(),
+    ]);
+    res.status(200).json({ rooms, totalPages: Math.ceil(totalCount / limit), currentPage: page });
   } catch (error) {
     console.log("Error in getAllRooms: ", error.message);
     res.status(500).json({ error: error.message });

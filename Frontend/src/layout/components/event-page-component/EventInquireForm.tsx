@@ -74,6 +74,7 @@ const EventInquireForm = ({ title }: { title: string }) => {
     try{
       setIsSubmitting(true);
       const response = await axiosInstance.post("/api/event/event-enquiry", formData);
+      console.log(formData);
       if(response.data){
         showToast("success", "successfully send!")
       }
@@ -305,7 +306,7 @@ const EventInquireForm = ({ title }: { title: string }) => {
             disabled={isSubmitting}
             whileHover={{ scale: isSubmitting ? 1 : 1.02 }}
             whileTap={{ scale: isSubmitting ? 1 : 0.98 }}
-            className="w-full rounded-2xl bg-gradient-to-br from-blue-600/95 to-blue-500 py-4.5 text-lg font-bold text-white shadow-lg shadow-blue-300/40 transition-all duration-300 hover:shadow-blue-400/50 disabled:opacity-70"
+            className="w-full rounded-2xl bg-gradient-to-br from-blue-600/95 to-blue-500 py-4.5 text-lg font-bold text-white shadow-lg shadow-blue-300/40 transition-all duration-300 hover:shadow-blue-400/50 disabled:opacity-70 cursor-pointer"
           >
             {isSubmitting ? (
               <div className="flex items-center justify-center gap-2">

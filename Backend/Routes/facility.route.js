@@ -6,6 +6,7 @@ const app = express();
 const router = express.Router();
 
 router.get("/", facilityController.getFacility); 
+router.get("/paginated", facilityController.getAdminPageFacility); 
 
 app.use(protectRoute, verifyRole)
 router.post("/create-facility", facilityController.createFacility);

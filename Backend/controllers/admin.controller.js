@@ -25,13 +25,11 @@ const getUser = async (req, res) => {
     if (!users) {
       return res.status(400).json({ error: "users not found" });
     }
-    res
-      .status(200)
-      .json({
-        users,
-        totalPages: Math.ceil(totalCount / limit),
-        currentPage: page,
-      });
+    res.status(200).json({
+      users,
+      totalPages: Math.ceil(totalCount / limit),
+      currentPage: page,
+    });
   } catch (error) {
     console.log("Error in getUser: ", error.message);
     res.status(500).json({ error: error.message });
@@ -669,14 +667,20 @@ const filterAvailableRoomsForAdmin = async (req, res) => {
 };
 
 const getAllEventsQuery = async (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 5;
+  const skip = (page - 1) * limit;
   try {
-    const events = await Event.find();
+    const [events, totalCount] = await Promise.all([
+      Event.find().skip(skip).limit(limit),
+      Event.countDocuments(),
+    ]);
 
     if (!events) {
       return res.status(404).json({ error: "No events found" });
     }
 
-    res.status(200).json(events);
+    res.status(200).json({ events, totalPages: Math.ceil(totalCount / limit), currentPage: page });
   } catch (error) {
     console.log("Error in getAllEventsQuery: ", error.message);
     res.ststus(500).json({ error: error.message });
@@ -706,7 +710,7 @@ const acceptEvents = async (req, res) => {
       await sendEventResponseEmail(enquiry, true);
     }
 
-    res.status(200).json({ message: `${user} update ${status}` });
+    res.status(200).json({ message: `${user} ${status}` });
     user = null;
   } catch (error) {
     console.log("Error in acceptEvents: ", error.message);
