@@ -2,13 +2,21 @@ import User from "../models/user.model.js";
 import bcrypt from "bcryptjs";
 import { v2 as cloudinary } from "cloudinary";
 import generateTokensAndSetCookies from "../utils/generateTokensAndSetCookies.js";
-import uploadToCloudinary from "../config/cloudinary.js";
+import { uploadToCloudinary } from "../utils/uploadToCloudinary.js";
 
 const signupUser = async (req, res) => {
   const { name, username, email, password } = req.body;
 
   if (!name.trim() || !username.trim() || !email.trim() || !password.trim()) {
     return res.status(400).json({ error: "Please fill in all fields" });
+  }
+
+  if( password.length < 6) {
+    return res.status(400).json({ error: "Password must be at least 6 characters long" });
+  }
+
+  if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email)) {
+    return res.status(400).json({ error: "Invalid email format" });
   }
 
   try {
@@ -118,11 +126,16 @@ const logoutUser = (req, res) => {
 };
 
 const updateUserProfile = async (req, res) => {
-  const { name, email, username } = req.body;
+  const { email, username, newPassword, currentPassword } = req.body;
   const { userId } = req.params;
-  let { profilePic } = req.body;
-
   const logInUserId = req.user._id;
+  let profilePic = null;
+  // Safely assign profilePic if it exists
+  if (req.files && req.files.profilePic) {
+    profilePic = req.files.profilePic;
+  }
+
+  console.log("Profile Pic:", profilePic); // will be null if no file uploaded
   try {
     let user = await User.findById(logInUserId);
     if (!user) return res.status(400).json({ error: "User not found" });
@@ -133,21 +146,45 @@ const updateUserProfile = async (req, res) => {
         .json({ error: "You can only update your own profile" });
     }
 
+    if (newPassword === currentPassword) {
+      return res.status(400).json({
+        error: "New password must be different from the current password.",
+      });
+    }
+
+    if (newPassword && newPassword.length < 6) {
+      return res
+        .status(400)
+        .json({ error: "New password must be at least 6 characters long." });
+    }
+
+    const match = await bcrypt.compare(currentPassword, user.password);
+    if (!match) {
+      return res.status(400).json({ error: "Current password is incorrect" });
+    }
+
     if (profilePic) {
       if (user.profilePic) {
         await cloudinary.uploader.destroy(
           user.profilePic.split("/").pop().split(".")[0]
         );
       }
-
+      console.log("profilePic: ", profilePic);
       const uploadResponse = await uploadToCloudinary(profilePic);
-      profilePic = uploadResponse.secure_url;
+      profilePic = uploadResponse;
+      console.log("profilePic: ", profilePic);
     }
 
-    user.name = name || user.name;
     user.email = email || user.email;
     user.username = username || user.username;
-    user.profilePic = profilePic || user.profilePic;
+    if (newPassword) {
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      user.password = hashedPassword;
+    }
+
+    if (profilePic) {
+      user.profilePic = profilePic;
+    }
 
     user = await user.save();
 
@@ -166,6 +203,20 @@ const updateUserProfile = async (req, res) => {
     console.log("Error in updateUserProfile: ", error.message);
   }
 };
+
+const getCurrentLoginUser = async (req, res) => {
+  const userId = req.user._id;
+  try {
+    const user = await User.findById(userId).select("-password -isOTPVerified");
+    if (!user) {
+      return res.status(400).json({ error: "User not found" });
+    }
+    return res.status(200).json(user);
+  } catch (error) {
+    console.log("Error in getCurrentLoginUser: ", error.message);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+}
 
 // TODO: must change otp after have admin controller
 const verifyOTP = async (req, res) => {
@@ -206,7 +257,7 @@ const verifyOTP = async (req, res) => {
 
 const getUserProfile = async (req, res) => {
   const logInUserId = req.user._id;
-  const user = await User.findById(logInUserId).select("-password");
+  const user = await User.findById(logInUserId).select("-password -isOTPVerified");
   if (!user) {
     return res.status(400).json({ error: "User not found" });
 }
@@ -228,4 +279,5 @@ export default {
   logoutUser,
   updateUserProfile,
   verifyOTP,
+  getCurrentLoginUser
 };

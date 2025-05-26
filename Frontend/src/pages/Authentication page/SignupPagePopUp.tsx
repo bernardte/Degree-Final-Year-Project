@@ -50,6 +50,8 @@ const SignupPagePopUp = () => {
 
     if (!input.password) {
       error.password = "Password is required";
+    }else if (input.password.length < 6) {
+      error.password = "Password must be at least 6 characters long";
     }
 
     return error;

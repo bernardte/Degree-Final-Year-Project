@@ -10,6 +10,7 @@ interface authStore {
   isAdminVerified: boolean;
   showLoginPopup: boolean;
   showSignupPopup: boolean;
+  profilePic: string | null;
   user: User | null;
   token: string | null;
   roles: string | null;
@@ -19,7 +20,7 @@ interface authStore {
   setOpenLoginPopup: (open: boolean) => void;
   setOpenSignupPopup: (open: boolean) => void;
   setIsAdmin: (verifyAdmin: boolean) => void;
-  login: (user: User, token: string, role: string) => void;
+  login: (user: User, token: string, role: string, profilePic: string) => void;
   logout: () => void;
 }
 
@@ -36,6 +37,7 @@ const useAuthStore = create<authStore>()(
         user: null,
         token: null,
         roles: null,
+        profilePic: null,
 
         setIsAuthenticated: (authentication) =>
           set({ isAuthenticated: authentication }),
@@ -51,11 +53,11 @@ const useAuthStore = create<authStore>()(
         setIsAdmin: (verifyAdmin) =>
           set({ isAdmin: verifyAdmin }, false, "SET_ADMIN"),
 
-        login: (user, token, role) => {
+        login: (user, token, role, profilePic) => {
           console.log("user", user);
           console.log("role", role);
           set(
-            { user, token, isAuthenticated: true, roles: role },
+            { user, token, isAuthenticated: true, roles: role, profilePic: profilePic },
             false,
             "LOGIN",
           );
@@ -108,6 +110,7 @@ const useAuthStore = create<authStore>()(
           roles: state.roles,
           isAuthenticated: state.isAuthenticated,
           isAdmin: state.isAdmin,
+          profilePic: state.profilePic,
         }),
       },
     ),

@@ -80,7 +80,7 @@ const UsersTable = () => {
         <TableHeader className="sticky top-0 z-10 bg-blue-100 text-xs tracking-wider text-zinc-700 uppercase">
           <TableRow>
             <TableHead>Index</TableHead>
-            <TableHead className="w-[60px]"></TableHead>
+            <TableHead className="w-[60px]">Avatar</TableHead>
             <TableHead className="min-w-[160px]">Fullname</TableHead>
             <TableHead className="min-w-[160px]">Username</TableHead>
             <TableHead className="min-w-[160px] text-center">Email</TableHead>
@@ -100,8 +100,8 @@ const UsersTable = () => {
               <TableCell>
                 <img
                   src={
-                    user.imageUrl
-                      ? user.imageUrl
+                    user.profilePic
+                      ? user.profilePic
                       : "https://ui-avatars.com/api/?name=" +
                         encodeURIComponent(user.name || "User")
                   }

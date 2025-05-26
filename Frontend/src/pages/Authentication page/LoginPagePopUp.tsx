@@ -71,7 +71,7 @@ const LoginPagePopUp = () => {
       }
 
       console.log(data.role);
-      login(data, data.token, data.role); // Store user data
+      login(data, data.token, data.role, data.profilePic); // Store user data
       setIsAuthenticated(true);
       setIsAdmin(data.role === "admin" || data.role === "superAdmin");
 

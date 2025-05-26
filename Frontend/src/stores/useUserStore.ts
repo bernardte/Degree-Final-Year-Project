@@ -4,6 +4,7 @@ import axiosInstance from "@/lib/axios";
 
 interface userStore {
     user: User[];
+    currentLoginUser: User | null;
     error: string | null;
     isLoading: boolean;
     currentPage: number;
@@ -11,11 +12,13 @@ interface userStore {
     updateRole: (userId: string, newRole: "superAdmin" | "admin" | "user") => void;
     setUser: (user: User[]) => void;
     fetchUser: (page: number) => Promise<void>;
+    fetchCurrentLoginUser: () => Promise<void>;
 }
 
 const useUserStore = create<userStore>((set) => ({
   user: [],
   error: null,
+  currentLoginUser: null,
   isLoading: false,
   currentPage: 1,
   totalPages: 1,
@@ -35,6 +38,19 @@ const useUserStore = create<userStore>((set) => ({
     } catch (error: any) {
       console.log("Error in fetchUser: ", error?.response?.data?.error);
       set({ error: error?.response?.data?.error, user: [] });
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+  fetchCurrentLoginUser: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await axiosInstance.get("/api/users/getCurrentLoginUser");
+      const user = response?.data;
+      set({ currentLoginUser: user });
+    } catch (error: any) {
+      console.log("Error in fetchUser: ", error?.response?.data?.error);
+      set({ error: error?.response?.data?.error, currentLoginUser: null });
     } finally {
       set({ isLoading: false });
     }
