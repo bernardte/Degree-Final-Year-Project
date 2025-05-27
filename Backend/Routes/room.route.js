@@ -4,7 +4,8 @@ import protectRoute from "../middleware/protectRoute.js";
 import accessControl from "../middleware/accessControl.js";
 const router = express.Router();
 
-router.get("/", roomControllers.getAllRooms);
+router.get("/", roomControllers.paginatedAllRooms);
+router.get("/get-all-rooms", roomControllers.getAllRooms);
 router.get("/room/:roomId", roomControllers.getRoomById);
 router.get("/most-booking-room", roomControllers.getMostBookingRoom);
 router.get("/get-each-room-type", roomControllers.getOneRoomPerType);

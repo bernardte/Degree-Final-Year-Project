@@ -22,7 +22,7 @@ const getAdminPageFacility = async (req, res) => {
 
   try {
     const [facility, totalCount] = await Promise.all([
-      Facility.find().skip(skip).limit(limit),
+      Facility.find().skip(skip).limit(limit).sort({ createdAt: -1 }),
       Facility.countDocuments(),
     ]);
 

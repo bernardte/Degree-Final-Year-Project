@@ -72,7 +72,7 @@ const useRoomStore = create<roomStore>((set) => ({
   fetchRooms: async () => {
     set({ isLoading: true, error: null });
     try {
-      const response = await axiosInstance.get("/api/rooms/");
+      const response = await axiosInstance.get("/api/rooms/get-all-rooms");
       set({ rooms: response.data });
     } catch (error: any) {
       set({ isLoading: false, error: error.message, rooms: [] });

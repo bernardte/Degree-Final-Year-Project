@@ -4,7 +4,7 @@ import { v2 as cloudinary } from "cloudinary";
 import Booking from "../models/booking.model.js";
 import Room from "../models/room.model.js";
 import RoomAvailability from "../models/roomAvailability.model.js";
-import cancellationRequest from "../models/cancellationRequest.model.js";
+import CancellationRequest from "../models/cancellationRequest.model.js";
 import Event from "../models/event.model.js";
 import User from "../models/user.model.js";
 import sendEventResponseEmail from "../utils/sendEventResponseEmail.js";
@@ -329,7 +329,8 @@ const getAllBookings = async (req, res) => {
         .skip(skip) // skip first 5 bookings
         .limit(limit) // get next 5 bookings
         .populate("room", "roomType pricePerNight")
-        .populate("bookingCreatedByUser", "name email"),
+        .populate("bookingCreatedByUser", "name email")
+        .sort({ createdAt: -1 }),
       Booking.countDocuments(),
     ]);
 
@@ -404,13 +405,37 @@ const updateBookingStatus = async (req, res) => {
 
 const getAllCancelledBookings = async (req, res) => {
   try {
-    const cancelledBookings = await cancellationRequest.find();
+    const cancelledBookings = await CancellationRequest.find().sort({
+      createdAt: -1,
+    });
     if (!cancelledBookings || cancelledBookings.length === 0) {
       return res.status(200).json({ message: "No cancelled bookings found" });
     }
     return res.status(200).json(cancelledBookings);
   } catch (error) {
     console.error("Error getAllCancelledBookings: ", error.message);
+    return res.status(500).json({ error: error.message });
+  }
+};
+
+const getAllAcceptCancelledBookings = async (req, res) => {
+  try {
+    // Find all approved cancellations and populate the processedBy (admin) and users (who requested)
+    const cancelledBookings = await CancellationRequest.find({
+      status: "approved",
+    })
+      .populate("processedBy", "name email role profilePic")
+      .sort({ createdAt: -1 });
+
+    console.log("test: ", cancelledBookings);
+
+    if (!cancelledBookings || cancelledBookings.length === 0) {
+      return res.status(200).json({ error: "No cancelled bookings found" });
+    }
+
+    return res.status(200).json(cancelledBookings);
+  } catch (error) {
+    console.log("Error getAllAceptCancelledBookings: ", error.message);
     return res.status(500).json({ error: error.message });
   }
 };
@@ -426,9 +451,9 @@ const updateCancellationRequest = async (req, res) => {
   }
 
   try {
-    const request = await cancellationRequest
-      .findById(requestId)
-      .populate("bookingId");
+    const request = await CancellationRequest.findById(requestId).populate(
+      "bookingId"
+    );
     console.log(request);
     if (!request) {
       return res.status(404).json({ error: "Cancellation request not found" });
@@ -514,11 +539,11 @@ const deleteCancellationRequest = async (req, res) => {
     return res.status(400).json({ error: "Please provide a request ID" });
   }
   try {
-    const request = await cancellationRequest.findById(requestId);
+    const request = await CancellationRequest.findById(requestId);
     if (!request) {
       return res.status(404).json({ error: "Cancellation request not found" });
     }
-    await cancellationRequest.deleteOne({ _id: requestId });
+    await CancellationRequest.deleteOne({ _id: requestId });
     res.status(200).json({ message: "Cancellation request has been rejected" });
   } catch (error) {
     console.error("Error deleting cancellation request: ", error.message);
@@ -554,7 +579,7 @@ const deleteBooking = async (req, res) => {
       ); // Remove the booking from the room's bookings array
       await room.save();
     }
-    await cancellationRequest.deleteOne({ bookingId: booking._id });
+    await CancellationRequest.deleteOne({ bookingId: booking._id });
     res.status(200).json({ message: "Booking deleted successfully" });
   } catch (error) {
     console.error("Error deleting booking: ", error.message);
@@ -672,7 +697,7 @@ const getAllEventsQuery = async (req, res) => {
   const skip = (page - 1) * limit;
   try {
     const [events, totalCount] = await Promise.all([
-      Event.find().skip(skip).limit(limit),
+      Event.find().skip(skip).limit(limit).sort({ createdAt: -1 }),
       Event.countDocuments(),
     ]);
 
@@ -680,7 +705,13 @@ const getAllEventsQuery = async (req, res) => {
       return res.status(404).json({ error: "No events found" });
     }
 
-    res.status(200).json({ events, totalPages: Math.ceil(totalCount / limit), currentPage: page });
+    res
+      .status(200)
+      .json({
+        events,
+        totalPages: Math.ceil(totalCount / limit),
+        currentPage: page,
+      });
   } catch (error) {
     console.log("Error in getAllEventsQuery: ", error.message);
     res.ststus(500).json({ error: error.message });
@@ -758,6 +789,7 @@ export default {
   getAllBookings,
   updateBookingStatus,
   getAllCancelledBookings,
+  getAllAcceptCancelledBookings,
   updateCancellationRequest,
   deleteCancellationRequest,
   deleteBooking,

@@ -121,7 +121,7 @@ const TitleSection = ({ open }: { open: boolean }) => {
               transition={{ delay: 0.125 }}
               onClick={() => {
                 navigate("/admin-profile"),
-                localStorage.removeItem("selectedSidebarOption");
+                  localStorage.removeItem("selectedSidebarOption");
               }}
             >
               {user ? (
@@ -159,7 +159,7 @@ const Logo = () => {
         <img
           src={user?.profilePic || "https://ui-avatars.com/api/?name=Admin"}
           alt={user?.username || "Admin"}
-          className="object-cover h-10 w-10 rounded-md"
+          className="h-10 w-10 rounded-md object-cover"
         />
       </Link>
     </motion.div>
@@ -182,15 +182,16 @@ const Option = ({
   titleColor: string;
   title: string;
   selected: string;
-  setSelected: (title: string) => void;
   open: boolean;
   notify?: number;
+  setSelected: (title: string) => void;
   link?: () => void;
 }) => {
+  const isProfileSelected = localStorage.getItem("selectedSidebarOption");
   return (
     <motion.button
       layout
-      className={`relative flex h-12 w-full cursor-pointer items-center rounded-md transition-colors ${selected === title ? "bg-indigo-100 text-indigo-800" : "text-slate-500 hover:bg-slate-100"}`}
+      className={`relative flex h-12 w-full cursor-pointer items-center rounded-md transition-colors ${selected === title && isProfileSelected ? "bg-indigo-100 text-indigo-800" : "text-slate-500 hover:bg-slate-100"}`}
       onClick={() => {
         setSelected(title);
         localStorage.setItem("selectedSidebarOption", title);

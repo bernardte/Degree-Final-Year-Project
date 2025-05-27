@@ -47,7 +47,6 @@ const CancelBookingForm = () => {
                 bookingReference,
             })
             if(response?.data){
-                showToast("success", "Your Booking Request has been sent successfully");
                 setEmail("");
                 setBookingReference("");
                 setIsSubmitting(false);

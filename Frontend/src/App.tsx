@@ -29,6 +29,7 @@ import CancelBookingPage from "./pages/Cancel booking page/CancelBookingPage";
 import AdminFacilityPage from "./pages/Admin-facility-page/AdminFacilityPage";
 import PendingBookingPage from "./pages/Pending booking page/PendingBookingPage";
 import ProfilePage from "./pages/ProfilePage/ProfilePage";
+import { ROLE } from "./constant/roleList";
 
 const App = () => {
   const { user, showLoginPopup, showSignupPopup } = useAuthStore();
@@ -67,10 +68,7 @@ const App = () => {
             path="cancelled-booking-policy"
             element={<CancelBookingPage />}
           />
-          <Route
-            path="pending-booking"
-            element={<PendingBookingPage />}
-          />
+          <Route path="pending-booking" element={<PendingBookingPage />} />
         </Route>
 
         {/* User Login Route */}
@@ -79,9 +77,9 @@ const App = () => {
           <Route path="/display-booking" element={<BookingDisplayPage />} />
         </Route>
 
-        {/* Admin and Manager Routes */}
+        {/* Admin and SuperAdmin Routes */}
         <Route
-          element={<RoleBasedProvider allowedRoles={["admin", "superAdmin"]} />}
+          element={<RoleBasedProvider allowedRoles={[ROLE.Admin, ROLE.SuperAdmin]} />}
         >
           <Route element={<AdminPageMainLayout />}>
             <Route path="/verify-admin-otp" element={<VerifyAdminOtpPage />} />

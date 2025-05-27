@@ -8,11 +8,18 @@ import { useEffect, useState } from "react";
 import DashboardStatistic from "@/layout/components/admin-page-component/statistic-component/DashboardStatistic";
 import CancelBookingRequest from "@/layout/components/admin-page-component/cancel-booking-request/CancelBookingRequest";
 import { Users, Calendar, AlertCircle, Loader } from "lucide-react";
+import AcceptCancellationBookingTable from "@/layout/components/cancel-booking-page-component/Accepted Cancellation Booking/AcceptCancellationBookingTable";
+import RequireRole from "@/permission/RequireRole";
+import { ROLE } from "@/constant/roleList";
 
 const UserManagePage = () => {
   // State management hooks
   const { fetchUser } = useUserStore();
-  const { fetchAllBooking, fetchAllCancelBookingRequest } = useBookingStore();
+  const {
+    fetchAllBooking,
+    fetchAllAcceptCancelledBooking,
+    fetchAllCancelBookingRequest,
+  } = useBookingStore();
   const { fetchAllStatisticCardData } = useStatisticStore();
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState("Booking");
@@ -24,6 +31,7 @@ const UserManagePage = () => {
         fetchUser(1),
         fetchAllBooking(1),
         fetchAllStatisticCardData(),
+        fetchAllAcceptCancelledBooking(),
         fetchAllCancelBookingRequest(),
       ]);
       setIsLoading(false);
@@ -60,6 +68,16 @@ const UserManagePage = () => {
           </h2>
           <CancelBookingRequest />
         </div>
+        {/* Booking Accept Cancellation Section */}
+        <RequireRole allowedRoles={[ROLE.SuperAdmin]}>
+          <div className="mb-8 rounded-xl border border-blue-200 bg-white p-6 shadow-sm">
+            <h2 className="mb-4 flex items-center text-xl font-semibold text-blue-900">
+              <AlertCircle className="mr-2 h-6 w-6 stroke-[1.5] text-blue-500" />
+              Accepted Cancellation Booking
+            </h2>
+            <AcceptCancellationBookingTable />
+          </div>
+        </RequireRole>
 
         {/* Main Content Tabs */}
         <Tabs
@@ -89,12 +107,12 @@ const UserManagePage = () => {
           <div className="rounded-lg bg-blue-50/30 p-4">
             {activeTab === "Booking" && (
               <TabsContent value="Booking">
-                <BookingTabContent fetchAllBooking={fetchAllBooking}/>
+                <BookingTabContent fetchAllBooking={fetchAllBooking} />
               </TabsContent>
             )}
             {activeTab === "Users" && (
               <TabsContent value="Users">
-                <UserTabContent fetchUser={fetchUser}/>
+                <UserTabContent fetchUser={fetchUser} />
               </TabsContent>
             )}
           </div>

@@ -6,6 +6,7 @@ interface BookingStore {
   bookingInformation: Bookings[];
   bookings: Bookings[];
   cancelledBookings: CancelBookingRequest[];
+  acceptCancelledBookingsRequest: CancelBookingRequest[];
   isLoading: boolean;
   totalPages: number;
   currentPage: number;
@@ -21,12 +22,14 @@ interface BookingStore {
   fetchAllBooking: (page: number) => Promise<void>;
   removeBooking: (bookingId: string) => void;
   fetchAllCancelBookingRequest: () => Promise<void>;
+  fetchAllAcceptCancelledBooking: () => Promise<void>;
 }
 
 const useBookingStore = create<BookingStore>((set) => ({
   bookingInformation: [],
   bookings: [],
   cancelledBookings: [],
+  acceptCancelledBookingsRequest: [],
   totalPages: 1,
   currentPage: 1,
   isLoading: false,
@@ -60,6 +63,30 @@ const useBookingStore = create<BookingStore>((set) => ({
       ),
     }));
   },
+  fetchAllAcceptCancelledBooking: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await axiosInstance.get("/api/admin/get-all-accept-cancelled-bookings-request");
+      console.log("fetchAllAcceptCancelledBooking: ", response?.data);
+      set({ acceptCancelledBookingsRequest: response.data });
+    } catch (error: any) {
+      console.error("Full error in fetchAllAcceptCancelledBooking: ", error);
+      if (error.response) {
+        console.error("Backend responded with: ", error.response.data);
+        set({ error: error.response.data?.error });
+      } else if (error.request) {
+        console.error("Request was made but no response: ", error.request);
+        set({ error: "No response received from server." });
+      } else {
+        console.error(
+          "Something went wrong setting up request: ",
+          error.message,
+        );
+        set({ error: error.message });
+      }
+    }
+  },
+  
   fetchBooking: async () => {
     set({ isLoading: true, error: null });
     axiosInstance

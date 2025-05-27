@@ -14,6 +14,7 @@ interface authStore {
   user: User | null;
   token: string | null;
   roles: string | null;
+  setCurrentLoginUser: (user: User) => void;
   setIsAuthenticated: (authentication: boolean) => void;
   setAuthLoading: (loading: boolean) => void;
   setIsAdminVerified: (verification: boolean) => void;
@@ -48,6 +49,10 @@ const useAuthStore = create<authStore>()(
         setIsAdminVerified: (verification) => {
           set({ isAdminVerified: verification }, false, "SET_ADMIN_VERIFICATION")
           localStorage.setItem("admin-verified", String(verification));
+        },
+
+        setCurrentLoginUser: (user: User) => {
+          set({ user: user })
         },
 
         setIsAdmin: (verifyAdmin) =>

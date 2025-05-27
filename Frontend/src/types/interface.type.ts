@@ -87,6 +87,8 @@ export interface CancelBookingRequest {
   requestedAt: Date;
   status: "pending" | "approved" | "decline";
   checkInDate: Date;
+  processedBy: User;
+  processedAt: Date;
 }
 
 export interface BookingSession {

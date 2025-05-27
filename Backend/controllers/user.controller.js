@@ -158,9 +158,12 @@ const updateUserProfile = async (req, res) => {
         .json({ error: "New password must be at least 6 characters long." });
     }
 
-    const match = await bcrypt.compare(currentPassword, user.password);
-    if (!match) {
-      return res.status(400).json({ error: "Current password is incorrect" });
+    if(newPassword && currentPassword){
+      const match = await bcrypt.compare(currentPassword, user.password);
+
+      if (!match) {
+        return res.status(400).json({ error: "Current password is incorrect" });
+      }
     }
 
     if (profilePic) {
@@ -197,6 +200,7 @@ const updateUserProfile = async (req, res) => {
       email: user.email,
       username: user.username,
       profilePic: user.profilePic,
+      role: user.role
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
