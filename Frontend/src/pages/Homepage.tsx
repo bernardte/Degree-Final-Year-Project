@@ -7,9 +7,11 @@ import images from "@/constant/carouselImageList";
 import service from "../constant/serviceList";
 import breakfastList from "@/constant/breakfastList";
 import LocationSection from "@/layout/components/map/LocationSection";
+import { useState } from "react";
+import RoutingDirection from "@/layout/components/map/RoutingDirection";
 
 const Homepage = () => {
-
+  const [direction, setDirection] = useState<string[]>([]);
   return (
     <div>
       <Carousel images={images} />
@@ -28,13 +30,19 @@ const Homepage = () => {
         <GridList
           title="Breakfast, Included With Your Stay"
           list={breakfastList}
-          getName={item => item.name}//loop inside the component in the map function to get the list name
-          getImage={item => item.image}//loop inside the component in the map function to get the list image
+          getName={(item) => item.name} //loop inside the component in the map function to get the list name
+          getImage={(item) => item.image} //loop inside the component in the map function to get the list image
         />
       </div>
 
-      <div className="flex items-center justify-center bg-gradient-to-b from-transparent to-cyan-500/20 text-center md:flex md:flex-row md:items-center">
-        <LocationSection title="Our Location" />
+      <div className="flex flex-col items-center justify-center bg-gradient-to-b from-transparent to-cyan-500/20 px-4 text-center">
+        <LocationSection title="Our Location" setDirection={setDirection} />
+
+        {direction.length > 0 && (
+          <div className="mt-10 w-full max-w-6xl">
+            <RoutingDirection direction={direction} />
+          </div>
+        )}
       </div>
     </div>
   );

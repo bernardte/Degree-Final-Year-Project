@@ -119,6 +119,8 @@ const addRoom = async (req, res) => {
   } = req.body;
 
   const imageFile = req.files.images;
+  const galleryImageFile = req.files.galleryImage || [];
+  console.log(galleryImageFile);
   // parse capacity string into an object
   const { Adults, Children } = JSON.parse(capacity);
   if (
@@ -130,6 +132,7 @@ const addRoom = async (req, res) => {
     !pricePerNight ||
     !amenities ||
     !imageFile ||
+    !galleryImageFile ||
     !roomDetails ||
     Adults === undefined ||
     Children === undefined
@@ -144,7 +147,7 @@ const addRoom = async (req, res) => {
       .status(400)
       .json({ error: "Adults count must be between 1 and 4" });
   }
-
+  const uploadImages = [imageFile, ...galleryImageFile];
   const amenitiesArray = amenities.split(","); // ['wifi', 'air conditioning', 'tv']
   console.log(amenitiesArray);
   const isValid = validateRoomAmenities(amenitiesArray);
@@ -161,7 +164,12 @@ const addRoom = async (req, res) => {
       return res.status(400).json({ message: "Room number already exists." });
     }
 
-    const imagesUrls = await uploadToCloudinary(imageFile);
+    // 🔄 Upload images in parallel
+    const uploadPromises = uploadImages.map((image) =>
+      uploadToCloudinary(image)
+    );
+    const imageUrls = await Promise.all(uploadPromises);
+    console.log("All image URLs: ", imageUrls);
     const newRoom = new Room({
       bedType,
       roomName,
@@ -171,7 +179,7 @@ const addRoom = async (req, res) => {
       description,
       pricePerNight,
       amenities: amenitiesArray,
-      images: imagesUrls,
+      images: imageUrls,
       capacity: {
         children: Children,
         adults: Adults,
@@ -185,10 +193,12 @@ const addRoom = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
 const updateRoom = async (req, res) => {
   const {
     roomNumber,
     roomType,
+    roomDetails,
     description,
     pricePerNight,
     amenities,
@@ -198,61 +208,223 @@ const updateRoom = async (req, res) => {
 
   const adults = parseInt(adultsRaw, 10);
   const children = parseInt(childrenRaw, 10);
-
-  console.log(req.body);
   const { roomId } = req.params;
-  const { images } = req.files || {};
-  let imageUrls = null;
 
-  if (!roomId) {
-    return res.status(400).json({ error: "Please provide a room ID" });
-  }
+  const files = req.files || {};
+  const imageInput = files.images || null; // Cover
+  const galleryInput = files.galleryImages || []; // Gallery
 
-  if (adults < 1 || adults > 5) {
-    return res
-      .status(400)
-      .json({ error: "Adults count must be between 1 and 5" });
-  }
-
-  const isValid = validateRoomAmenities(amenities);
-  console.log(isValid);
-
-  if (!isValid) {
-    return res.status(400).json({ error: "Invalid amenities" });
-  }
+  const coverImages = Array.isArray(imageInput)
+    ? imageInput
+    : imageInput
+    ? [imageInput]
+    : [];
+  const galleryImages = Array.isArray(galleryInput)
+    ? galleryInput
+    : galleryInput
+    ? [galleryInput]
+    : [];
 
   try {
+    if (!roomId)
+      return res.status(400).json({ error: "Please provide a room ID" });
+    if (adults < 1 || adults > 5)
+      return res
+        .status(400)
+        .json({ error: "Adults count must be between 1 and 5" });
+
+    const isValid = validateRoomAmenities(amenities);
+    if (!isValid) return res.status(400).json({ error: "Invalid amenities" });
+
     const room = await Room.findById(roomId);
-    if (!room) {
-      return res.status(404).json({ error: "Room not found" });
-    }
-    if (images && room.images) {
-      const imgId = room.images[0]?.split("/").pop().split(".")[0];
-      await cloudinary.uploader.destroy(imgId);
+    if (!room) return res.status(404).json({ error: "Room not found" });
+
+    let newImages = [...room.images]; // Default: keep existing
+
+    // If a new cover image was uploaded
+    if (coverImages.length > 0) {
+      const oldCoverPublicId = room.images?.[0]
+        ?.split("/")
+        ?.pop()
+        ?.split(".")?.[0];
+      if (oldCoverPublicId) await cloudinary.uploader.destroy(oldCoverPublicId);
+
+      const [uploadedCover] = await Promise.all(
+        coverImages.map(uploadToCloudinary)
+      );
+      newImages[0] = uploadedCover; // Replace cover image
     }
 
-    if (images) {
-      //! ensure multiple image uploads in the future
-      const imageArray = Array.isArray(images) ? images : [images];
-      imageUrls = await Promise.all(imageArray.map(uploadToCloudinary));
+    // ✅ If new gallery images were uploaded
+    if (galleryImages.length > 0) {
+      const uploadedGallery = await Promise.all(
+        galleryImages.map(uploadToCloudinary)
+      );
+
+      // Decide whether to append or replace gallery images:
+      // Replace existing gallery images (after index 0)
+      newImages = [
+        newImages[0], // ✅ 保留封面图
+        ...newImages.slice(1), // ✅ 保留旧 gallery 图
+        ...uploadedGallery, // ✅ 添加新上传的 gallery 图
+      ];
     }
+
+    // ✅ Update fields
     room.roomNumber = roomNumber || room.roomNumber;
     room.roomType = roomType || room.roomType;
+    room.roomDetails = roomDetails || room.roomDetails;
     room.description = description || room.description;
     room.pricePerNight = pricePerNight || room.pricePerNight;
     room.amenities = amenities || room.amenities;
-    room.images = imageUrls || room.images;
     room.capacity = {
       adults: adults || room.capacity.adults,
       children: children || room.capacity.children,
     };
+    room.images = newImages;
+
+    room.images.forEach((url) => console.log("URL: ", url));
+
+
     await room.save();
     res.status(200).json(room);
   } catch (error) {
-    console.log("Error in updateRoom: ", error.message);
+    console.error("Error in updateRoom:", error.message);
     res.status(500).json({ error: error.message });
   }
 };
+
+
+const updateRoomStatus = async (req, res) => {
+  const { roomId } = req.params;
+  const { isActivate } = req.body;
+  console.log(isActivate);
+  try {
+    const room = await Room.findById({_id: roomId}).select("isActivate roomName");
+    if (!room) {
+      return res.status(404).json({ error: "Room not found" });
+    }
+
+    if (room.isActivate === isActivate) {
+      return res.status(400).json({ error: "Room status is the same" });
+    }
+
+    if(!isActivate){
+      const today = new Date();
+
+      const futureBooking = await Booking.find({
+        room: roomId,
+        endDate: { $gte: today}
+      }).sort({ checkOutDate: -1 })
+
+      if(futureBooking.length > 0){
+        const lastBooking = futureBooking[0];
+        console.log("last booking: ", lastBooking);
+        return res.status(400).json({
+          nextAvailableDeactivationDate: lastBooking.endDate,
+          message: `You can deactivate this room after ${new Date(
+            lastBooking.endDate
+          ).toLocaleDateString()} due to current room is being booked`,
+        });
+      }
+    }
+
+    room.isActivate = isActivate;
+    await room.save();
+    res.status(200).json(room);     
+  } catch (error) {
+    console.log('Error in updateRoomStatus: ', error.message);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+const updateImageGallery = async(req, res) => {
+  const { roomId } = req.params;
+  const galleryImages = req.files?.["galleryImages[]"];
+  console.log(galleryImages);
+  try {
+    const room = await Room.findById(roomId).select("images");
+    if (!room) {
+      return res.status(404).json({ error: "Room not found" });
+    }
+    
+    const files = Array.isArray(galleryImages)
+      ? galleryImages
+      : [galleryImages];
+      const uploadedUrls = await Promise.all(
+        files.map(async (image) => {
+          const imageUrls = await uploadToCloudinary(image);
+          return imageUrls; // or result.url depending on your utility
+        })
+      );
+
+      room.images = [...room.images, ...uploadedUrls];
+      await room.save();
+
+      res.status(200).json({
+        message: "Gallery images uploaded successfully",
+        images: room.images,
+      });
+
+  }catch(error){
+    console.log('Error in updateImageGallery: ', error.message);
+    res.status(500).json({ error: error.message })
+  }
+}
+
+const updateScheduleRoomStatus = async (req, res) => {
+  const { roomId } = req.params;
+  const {date, cancel} = req.body;
+  console.log(date, cancel);
+  try {
+      const room = await Room.findById({_id: roomId});
+      if (!room) {
+        return res.status(404).json({ error: "Room not found" });
+      }
+
+      cancel === true
+        ? (room.scheduledDeactivationDate = null)
+        : (room.scheduledDeactivationDate = date);
+      await room.save();
+      res.status(200).json(room);
+  } catch (error) {
+    console.log("Error in updateScheduleRoomStatus: ", error.message);
+    res.status(500).json({ error: error.message });
+  }
+}
+
+const deleteRoomImageGallery = async (req, res) => {
+  const { roomId } = req.params;
+  const index = req.body.imageIndex;
+  const imageIndex = parseInt(index);
+  console.log(imageIndex);
+
+  try {
+    const room = await Room.findById({ _id: roomId });
+    if (!room) {
+      return res.status(404).json({ error: "Room not found" });
+    }
+
+    if (typeof index !== "number" || index < 0 || index >= room.images.length) {
+      return res.status(400).json({ error: "Invalid image index" });
+    }
+
+    //extract the image URL to delete
+    const imageUrl = room.images[imageIndex];
+    const publicId = imageUrl.split("/").pop().split(".")[0];
+
+    // Delete from Cloudinary
+    await cloudinary.uploader.destroy(publicId);
+    const remove = room.images.splice(imageIndex, 1);
+    await room.save();
+
+    console.log("deleteRoomImageGallery: ", room.images);
+    return res.status(200).json(room.images);
+  } catch (error) {
+    console.log("Error in deleteRoomImageGallery: ", error.message);
+    res.status(500).json({ error: error.message });
+  }
+}
 
 const deleteRoom = async (req, res) => {
   const { roomId } = req.params;
@@ -277,12 +449,13 @@ const deleteRoom = async (req, res) => {
     }
 
     // Extract image ID from image URL
-    const imageUrl = Array.isArray(room.images) ? room.images[0] : room.images;
-    const imgId = imageUrl.split("/").pop().split(".")[0];
-
+    const images = Array.isArray(room.images) ? room.images : [room.images];
     // Delete image from Cloudinary
-    await cloudinary.uploader.destroy(imgId);
-
+    const deletePromises = images.map((imageUrl) => {
+      const imgId = imageUrl.split("/").pop().split(".")[0];
+      return cloudinary.uploader.destroy(imgId);
+    });
+    await Promise.all(deletePromises);
     // Delete the room from DB
     await Room.findByIdAndDelete(roomId);
 
@@ -784,6 +957,10 @@ export default {
   changeOTPVerificationCode,
   addRoom,
   updateRoom,
+  updateRoomStatus,
+  updateScheduleRoomStatus,
+  updateImageGallery,
+  deleteRoomImageGallery,
   deleteRoom,
   updatePaymentStatus,
   getAllBookings,

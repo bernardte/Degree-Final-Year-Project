@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { SetStateAction, useEffect, useState } from "react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L, { Icon } from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -13,7 +13,7 @@ const hotelIcon = new Icon({
   iconSize: [38, 38],
 });
 
-const Location = ({ title }: { title: string }) => {
+const Location = ({ title, setDirection }: { title: string, setDirection: React.Dispatch<SetStateAction<string []>> }) => {
   const [city, setCity] = useState("");
   const [userLocation, setUserLocation] = useState<[number, number] | null>(
     null,
@@ -21,6 +21,7 @@ const Location = ({ title }: { title: string }) => {
   const [nearestHotel, setNearestHotel] = useState<
     (typeof markerList)[0] | null
   >(null);
+
   const [showDistance, setShowDistance] = useState(false);
   const { showToast } = useToast();
 
@@ -72,7 +73,7 @@ const Location = ({ title }: { title: string }) => {
 
   return (
     <div className="relative h-[370px] w-screen">
-      <h2 className="bg-gradient-to-r from-cyan-500 to-blue-600 bg-clip-text text-center text-5xl font-bold text-transparent pb-8">
+      <h2 className="bg-gradient-to-r from-cyan-500 to-blue-600 bg-clip-text pb-8 text-center text-5xl font-bold text-transparent">
         {title}
       </h2>
       <MapContainer
@@ -110,9 +111,11 @@ const Location = ({ title }: { title: string }) => {
           <Routing
             from={userLocation}
             to={nearestHotel.geoCode as [number, number]}
+            onInstruction={setDirection}
           />
         )}
       </MapContainer>
+
 
       {/* Search bar at the bottom center of the screen */}
       <div className="absolute bottom-6 left-1/2 z-[10] flex w-[90%] max-w-xl -translate-x-1/2 transform flex-col items-center justify-between gap-4 rounded-lg border border-gray-200 bg-white p-4 shadow-lg sm:flex-row">

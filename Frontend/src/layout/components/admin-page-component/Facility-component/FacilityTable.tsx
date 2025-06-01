@@ -10,6 +10,7 @@ import { AnimatePresence } from "framer-motion";
 import EditFacilityDialog from "../dialog-component/EditFacilityDialog";
 import useFacilityStore from "@/stores/useFacilityStore";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Switch } from "@/components/ui/switch";
 
 interface FacilityTableProps {
     facilities: Facility[];
@@ -58,6 +59,38 @@ const FacilityTable = ({ facilities, isLoading: isFacilityTable, error } : Facil
             setIsEditModalOpen(true);
         }
     }
+
+    const updateFacilityStatus = async (
+      facilityId: string,
+      facilityStatus: boolean,
+    ) => {
+      try {
+        const response = await axiosInstance.patch(
+          "/api/facilities/update-facility-status/" + facilityId,
+          { isActivate: !facilityStatus },
+        );
+        if (response?.data) {
+          showToast(
+            "success",
+            response?.data?.facility.facilitiesName +
+              " updated " +
+              (response?.data?.facility.isActivate === true ? "activate" : "deactivate") +
+              " successfully",
+          );
+          console.log("facility data: ", response?.data?.facility);
+          useFacilityStore
+            .getState()
+            .updateFacility(facilityId, response?.data?.facility);
+        }
+      } catch (error: any) {
+        const message =
+          error?.response?.data?.message || error?.response?.data?.error;
+        if (message?.includes("Access denied")) {
+          showToast("warn", error?.response?.data?.message);
+        }
+        showToast("error", error?.response?.data?.error);
+      }
+    };
 
     async function handleEdit(updatedFacility: Facility): Promise<void> {
       if (!selectedFacility) return;
@@ -117,7 +150,6 @@ const FacilityTable = ({ facilities, isLoading: isFacilityTable, error } : Facil
         </div>
       );
     }
-
    
 
   return (
@@ -134,6 +166,7 @@ const FacilityTable = ({ facilities, isLoading: isFacilityTable, error } : Facil
               Facility Details
             </TableHead>
             <TableHead className="min-w-[160px] text-center">Businnes Hours</TableHead>
+            <TableHead>Facility Status</TableHead>
             <TableHead className="min-w-[120px] text-center">Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -178,6 +211,11 @@ const FacilityTable = ({ facilities, isLoading: isFacilityTable, error } : Facil
                 <div className="inline-flex items-center rounded-full bg-green-50 px-3 py-1 text-sm font-medium text-green-700">
                   <Clock className="mr-2 h-4 w-4" />
                   {facility.openTime} - {facility.closeTime}
+                </div>
+              </TableCell>
+              <TableCell>
+                <div className="flex items-center justify-center rounded-full">
+                  <Switch checked={facility?.isActivate} onCheckedChange={() => updateFacilityStatus(facility._id, facility.isActivate) } />
                 </div>
               </TableCell>
               <TableCell className="text-right text-blue-500">

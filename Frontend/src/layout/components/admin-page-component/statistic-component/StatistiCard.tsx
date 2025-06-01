@@ -27,7 +27,7 @@ const StatisticCard = ({
       <Card
         className={`border border-gray-200 bg-white shadow-sm transition-all ${bgColor} hover:shadow-lg`}
       >
-        <CardContent className="p-4">
+        <CardContent className="p-3">
           <motion.div
             className="flex items-center gap-4"
             whileHover={{

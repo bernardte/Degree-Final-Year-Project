@@ -48,17 +48,19 @@ const UserManagePage = () => {
 
   return (
     <div className="min-h-screen overflow-hidden bg-blue-50/50 px-4 py-8">
-      <div className="mx-auto max-w-7xl">
+      <div className="mx-auto max-w-7xl overflow-hidden">
         {/* Header Section */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-blue-900">Admin Dashboard</h1>
+          <h1 className="text-3xl font-bold text-blue-900 overflow-hidden">Admin Dashboard</h1>
           <p className="text-blue-600/80">
             Manage bookings, users, and platform statistics
           </p>
         </div>
 
         {/* Statistics Grid */}
-        <DashboardStatistic />
+        <div className="px-4 overflow-hidden">
+          <DashboardStatistic />
+        </div>
 
         {/* Cancel Requests Section */}
         <div className="mb-8 rounded-xl border border-blue-200 bg-white p-6 shadow-sm">

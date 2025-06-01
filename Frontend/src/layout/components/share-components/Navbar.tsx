@@ -53,7 +53,11 @@ const Navbar = () => {
       className={`fixed top-0 z-50 m-0 h-[60px] w-full overflow-hidden p-4 transition-all duration-600 ${navbar ? "animate-fadeInDown overflow-hidden bg-[#3d60ca] shadow-md" : "animate-fadeInUp overflow-hidden bg-transparent"}`}
     >
       <Link to={"/"}>
-        <img src="/Logo 2.png" alt="Logo" className="absolute left-0 top-0 h-[60px] w-[100px] rounded-full object-cover transition-all duration-500 ease-in-out hover:scale-110" />
+        <img
+          src="/Logo 2.png"
+          alt="Logo"
+          className="absolute top-0 left-0 h-[60px] w-[100px] rounded-full object-cover transition-all duration-500 ease-in-out hover:scale-110"
+        />
       </Link>
       <ul className="flex items-center justify-center gap-[3rem] p-1">
         {list.map((link) => (
@@ -76,8 +80,7 @@ const Navbar = () => {
       </ul>
 
       {!user ? (
-        <div className="group absolute top-3 right-0 mr-[50px] mt-1 flex items-center justify-center rounded-xl border-3 border-white transition-all duration-300 hover:border-blue-500 focus:ring-0 focus:outline-none">
-          
+        <div className="group absolute top-3 right-0 mt-1 mr-[50px] flex items-center justify-center rounded-xl border-3 border-white transition-all duration-300 hover:border-blue-500 focus:ring-0 focus:outline-none">
           <button
             className={`group:hover:transition-colors group:hover:duration:500 group:hover:ease-in-out flex cursor-pointer items-center justify-center gap-2 px-3 py-1 font-bold text-white group-hover:rounded-xl ${navbar && "bg-transparent"} duration-300 group-hover:text-blue-500`}
             onClick={() => setOpenLoginPopup(true)}
@@ -125,9 +128,14 @@ const Navbar = () => {
                 </Link>
               </DropdownMenuItem>
               {(user.role === "admin" || user.role === "superAdmin") &&
-                (!!isAdminVerified) && (
+                !!isAdminVerified && (
                   <DropdownMenuItem>
-                    <Link to={"/admin-portal"}>Admin Portal</Link>
+                    <Link
+                      to={"/admin-portal"}
+                      onClick={() => localStorage.setItem("selectedSidebarOption", "Dashboard")}
+                    >
+                      Admin Portal
+                    </Link>
                   </DropdownMenuItem>
                 )}
               <DropdownMenuItem

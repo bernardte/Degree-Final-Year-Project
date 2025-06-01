@@ -4,10 +4,11 @@ import { uploadToCloudinary } from "../utils/uploadToCloudinary.js";
 
 const getFacility = async (req, res) => {
   try {
-    const facilities = await Facility.find();
+    const facilities = await Facility.find({ isActivate: true });
     if(!facilities){
       return res.status(404).json({ message: "No facilities found" });
     }
+    console.log(facilities);
     res.status(200).json(facilities);
   }catch(error){
     console.log("Error in getFacility: ", error.message);
@@ -107,6 +108,26 @@ const updateFacility = async (req, res) => {
   }
 };
 
+const updateFacilityStatus = async (req, res) => {
+  const { facilityId } = req.params;
+  const { isActivate } = req.body;
+  try {
+    const facility = await Facility.findById(facilityId).select("isActivate facilitiesName");
+    if (!facility) {
+      return res.status(404).json({ error: "Facility not found" });
+    }
+    facility.isActivate = isActivate;
+    await facility.save();
+    res.status(200).json({
+      message: `Facility status updated successfully`,
+      facility,
+    });
+  }catch(error){
+    console.log("Error in updateFacilityStatus: ", error.message);
+    res.status(500).json({ error: error.message });
+  }
+}
+
 const createFacility = async (req, res) => {
   const { facilitiesName, description, openTime, closeTime } = req.body;
   const image = req.files?.image;
@@ -150,5 +171,6 @@ export default {
   getAdminPageFacility,
   deleteFacility,
   updateFacility,
+  updateFacilityStatus,
   createFacility,
 };

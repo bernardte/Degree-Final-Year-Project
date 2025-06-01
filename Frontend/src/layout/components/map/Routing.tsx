@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { SetStateAction, useEffect } from "react";
 import { useMap } from "react-leaflet";
 import L from "leaflet";
 
@@ -17,9 +17,10 @@ declare module "leaflet" {
 interface RoutingProps {
   from: [number, number];
   to: [number, number];
+  onInstruction: React.Dispatch<SetStateAction<string[]>>;
 }
 
-const Routing = ({ from, to }: RoutingProps) => {
+const Routing = ({ from, to, onInstruction }: RoutingProps) => {
   const map = useMap();
 
   useEffect(() => {
@@ -42,6 +43,25 @@ const Routing = ({ from, to }: RoutingProps) => {
       createMarker: () => null, // Disable default marker creation
     }).addTo(map);
 
+    //listen for the routes found
+    routingControl.on("routesfound", (e: any) => {
+      const route = e.routes[0];
+      const instructions: string[] = [];
+
+      route.instructions?.forEach((instruction: any) => {
+        instructions.push(instruction.text);
+      });
+
+      // If no instructions array, fallback to segments
+      if(!instructions.length && route?.instructions === null){
+       route?.segments?.forEach((segment: any) => {
+        instructions.push(segment.instruction.text);
+       });
+      }
+      if(onInstruction){
+        onInstruction(instructions);
+      }
+    });
     return () => {
       map.removeControl(routingControl);
     };

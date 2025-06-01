@@ -1,6 +1,6 @@
 import axiosInstance from "@/lib/axios";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import useToast from "@/hooks/useToast";
 import { Link } from "react-router";
 import useAuthStore from "@/stores/useAuthStore";
@@ -30,6 +30,15 @@ const SignupPagePopUp = () => {
   const [error, setError] = useState<FormError>({});
   const { showToast } = useToast();
   const { setOpenLoginPopup } = useAuthStore();
+
+  useEffect(() => {
+    const originalStyle = window.getComputedStyle(window.document.body).overflow;
+    window.document.body.style.overflow = "hidden";
+
+    return () => {
+      window.document.body.style.overflow = originalStyle;
+    }
+  }, [])
 
   const handleError = (): FormError => {
     const error: FormError = {};

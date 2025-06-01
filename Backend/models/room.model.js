@@ -47,13 +47,7 @@ const roomSchema = mongoose.Schema(
     ],
     bedType: {
       type: String,
-      enum: [
-        "King",
-        "Queen",
-        "Single",
-        "Double",
-        "Twin",
-      ]
+      enum: ["King", "Queen", "Single", "Double", "Twin"],
     },
     images: [
       {
@@ -70,6 +64,14 @@ const roomSchema = mongoose.Schema(
         ref: "booking",
       },
     ],
+    isActivate: {
+      type: Boolean,
+      default: true,
+    },
+    scheduledDeactivationDate: { 
+      type: Date, 
+      default: null 
+    },
     // average rating
     rating: {
       type: Number,

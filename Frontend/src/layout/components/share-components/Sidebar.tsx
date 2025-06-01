@@ -80,8 +80,8 @@ const Sidebar = () => {
           Icon={Bell}
           title="Notification"
           selected={selected}
-          titleColor="text-rose-700"
-          IconColor="text-rose-600"
+          titleColor="text-yellow-400"
+          IconColor="text-yellow-400"
           setSelected={setSelected}
           link={() => navigate("/admin-notification")}
           open={open}

@@ -90,7 +90,7 @@ const BookingTable = () => {
           <TableHeader className="sticky top-0 z-10 bg-blue-100 text-xs tracking-wider text-zinc-700 uppercase">
             <TableRow>
               <TableHead className="min-w-[80px] text-center">Index</TableHead>
-              <TableHead className="min-w-[160px]">Fullname</TableHead>
+              <TableHead className="min-w-[10px]">Fullname</TableHead>
               <TableHead className="min-w-[180px] text-center">
                 Booking Reference
               </TableHead>

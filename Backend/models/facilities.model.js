@@ -21,6 +21,10 @@ const facilitiesSchema = mongoose.Schema({
     type: String,
     required: false,
   },
+  isActivate: {
+    type: Boolean,
+    default: true,
+  },
   openTime: {
     type: String,
     required: true,

@@ -33,7 +33,7 @@ const cardVariants = {
 };
 
 const AdminRoomPage = () => {
-    const { fetchPaginatedRooms, isLoading, error, rooms, totalPages, currentPage } = useRoomStore();
+    const { fetchPaginatedRooms, isLoading, error, rooms, totalPages, currentPage } = useRoomStore(state => state);
     const [ openDialog, setOpenDialog ] = useState<boolean>(false);
     useEffect(() => {
       fetchPaginatedRooms(1);

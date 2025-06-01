@@ -37,6 +37,26 @@ router.put(
   accessControl("rooms", "update_room"),
   adminControllers.updateRoom
 );
+router.patch(
+  "/schedule-deactivation/:roomId",
+  accessControl("rooms", "update_room"),
+  adminControllers.updateScheduleRoomStatus
+);
+router.patch(
+  "/update-room-status/:roomId",
+  accessControl("rooms", "update_room"),
+  adminControllers.updateRoomStatus
+); //update room status
+router.patch(
+  "/updateImageGallery/:roomId",
+  accessControl("rooms", "update_room"),
+  adminControllers.updateImageGallery
+);
+router.delete(
+  "/delete-room-image-gallery/:roomId",
+  accessControl("rooms", "delete_room"),
+  adminControllers.deleteRoomImageGallery
+);
 router.delete(
   "/delete-room/:roomId",
   accessControl("rooms", "delete_room"),
@@ -68,19 +88,25 @@ router.get(
   adminControllers.filterAvailableRoomsForAdmin
 ); //filter all available room
 
-router.get("/get-all-cancelled-bookings-request", adminControllers.getAllCancelledBookings); // Get all cancelled bookings
+router.get(
+  "/get-all-cancelled-bookings-request",
+  adminControllers.getAllCancelledBookings
+); // Get all cancelled bookings
 router.get(
   "/get-all-accept-cancelled-bookings-request",
+  accessControl("payments", "view_all"),
   adminControllers.getAllAcceptCancelledBookings
-);//get accept cancelled bookings
-router.patch("/update-cancellation-request/:requestId", accessControl("booking", "cancel_any"), adminControllers.updateCancellationRequest); // Update cancellation request status
+); //get accept cancelled bookings
+router.patch(
+  "/update-cancellation-request/:requestId",
+  accessControl("booking", "cancel_any"),
+  adminControllers.updateCancellationRequest
+); // Update cancellation request status
 router.delete(
   "/delete-cancellation-request/:requestId",
-  accessControl("booking", "cancel_any")
-  ,
+  accessControl("booking", "cancel_any"),
   adminControllers.deleteCancellationRequest
 ); // Delete cancellation request
-
 
 router.patch(
   "/update-event-status/:eventId",

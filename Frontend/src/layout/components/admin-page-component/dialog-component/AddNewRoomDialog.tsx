@@ -40,6 +40,8 @@ import {
   DoorClosed,
   Ruler,
   Loader2,
+  Images,
+  X,
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
@@ -80,6 +82,8 @@ const AddNewRoomDialog = ({ open, onClose }: AddNewRoomDialogProps) => {
   });
 
   const [roomImage, setRoomImage] = useState<File | null>(null);
+  const [galleryImages, setGalleryImages] = useState<File[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { showToast } = useToast();
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
@@ -123,6 +127,13 @@ const AddNewRoomDialog = ({ open, onClose }: AddNewRoomDialogProps) => {
       if (roomImage) {
         formData.append("images", roomImage);
       }
+
+      if(galleryImages && galleryImages.length > 0){
+        galleryImages.forEach( image => {
+          formData.append("galleryImage", image);
+        });
+      } 
+
       console.log(roomImage);
       Object.entries(roomData).forEach(([key, value]) => {
         if (key === "capacity") {
@@ -141,7 +152,7 @@ const AddNewRoomDialog = ({ open, onClose }: AddNewRoomDialogProps) => {
         },
       );
 
-      showToast("success", "Room added successfully 🎉");
+      showToast("success", "Room added successfully");
       useRoomStore.getState().createNewRoom(response?.data);
       resetForm();
       onClose();
@@ -151,6 +162,57 @@ const AddNewRoomDialog = ({ open, onClose }: AddNewRoomDialogProps) => {
       setIsLoading(false);
     }
   };
+
+  const handleOnDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleOnDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleOnDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+
+  const handleOnDrop = (e: React.DragEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const items = e.dataTransfer.items;
+    Array.from(items).forEach((item) => {
+      //!get entry file item
+      const entry = item.webkitGetAsEntry();
+      //* get file directory
+      if(entry?.isDirectory){
+        //* get within file directory file
+        const reader = (entry as FileSystemDirectoryEntry).createReader();
+        reader.readEntries((entries) => {
+          entries.forEach((entry) => {
+            //* get each file image
+            if (entry.isFile) {
+              //* get each file property and save in the setter setGalleryImages
+              (entry as FileSystemFileEntry).file(f => {
+                setGalleryImages((prev) => [...prev, f as File])
+                console.log(typeof f);
+              })
+            }
+          })
+        })
+      } else {
+        // get file
+        if (entry && entry.isFile) {
+          (entry as FileSystemFileEntry).file((f) => {
+            setGalleryImages((prev) => [...prev, f as File]);
+            console.log(f);
+          });
+        }
+      }
+    });
+  }
 
   // Validate form fields
   const validateForm = () => {
@@ -206,6 +268,7 @@ const AddNewRoomDialog = ({ open, onClose }: AddNewRoomDialogProps) => {
     });
     setRoomImage(null);
     setSelectedAmenities([]);
+    setGalleryImages([]);
   };
 
   // Handle API errors
@@ -218,6 +281,11 @@ const AddNewRoomDialog = ({ open, onClose }: AddNewRoomDialogProps) => {
         ? error?.response?.data?.message
         : message,
     );
+  };
+
+  // handle remove image gallery
+  const handleRemoveImage = (index: number) => {
+    setGalleryImages((prev) => prev.filter((_, i) => i !== index));
   };
 
   return (
@@ -375,7 +443,60 @@ const AddNewRoomDialog = ({ open, onClose }: AddNewRoomDialogProps) => {
                       />
                     </div>
                   </div>
+                  {/* Image gallery */}
+                  <div>
+                    <Label className="mb-2 flex font-medium text-blue-600">
+                      <Images className="h-4 w-4" />
+                      Room Gallery Images
+                    </Label>
+                    <div
+                      onDragEnter={handleOnDragEnter}
+                      onDragOver={handleOnDragOver}
+                      onDragLeave={handleOnDragLeave}
+                      onDrop={handleOnDrop}
+                      className={`group relative cursor-pointer rounded-xl border-2 border-dashed p-6 text-center transition-colors ${isDragging ? "border-gray-500 bg-blue-50" : "border-blue-200 bg-white"} hover:border-blue-400`}
+                    >
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                        // @ts-ignore
+                        webkitdirectory
+                        onChange={(e) => {
+                          if (e.target.files) {
+                            setGalleryImages(Array.from(e.target.files));
+                          }
+                        }}
+                      />
+                      <p className="text-sm text-blue-600">
+                        {galleryImages.length > 0
+                          ? `${galleryImages.length} image${galleryImages.length > 1 ? "s" : ""} selected`
+                          : "Click or drag to upload multiple gallery images"}
+                      </p>
+                    </div>
 
+                    {galleryImages.length > 0 && (
+                      <div className="mt-4 grid grid-cols-3 gap-3">
+                        {galleryImages.map((file, idx) => (
+                          <div key={idx} className="group relative">
+                            <img
+                              src={URL.createObjectURL(file)}
+                              alt={`Gallery ${idx}`}
+                              className="h-40 w-full rounded object-cover"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveImage(idx)}
+                              className="absolute top-1 right-1 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+                            >
+                              <X size={15} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                   <div>
                     <FormField
                       icon={<Bell className="h-4 w-4" />}
@@ -443,13 +564,16 @@ const AddNewRoomDialog = ({ open, onClose }: AddNewRoomDialogProps) => {
                       Cancel
                     </Button>
                     <Button onClick={handleSave} disabled={isLoading}>
-                      {isLoading && (
+                      {isLoading ? (
                         <>
                           <span>Saving</span>
                           <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
                         </>
+                      ) : (
+                        <>
+                          <span>Save Room</span>
+                        </>
                       )}
-                      Save Room
                     </Button>
                   </DialogFooter>
                 </div>
@@ -529,10 +653,12 @@ const CapacityInputs = ({
   capacity: { Adults: number; Children: number };
   handleChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }) => (
-  <motion.div className="space-y-2"
-  initial={{ opacity: 0, y: 10 }}
-  animate={{ opacity: 1, y: 0 }}
-  transition={{ duration: 0.4, delay: 0.1 }}>
+  <motion.div
+    className="space-y-2"
+    initial={{ opacity: 0, y: 10 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.4, delay: 0.1 }}
+  >
     <Label className="flex items-center gap-2 font-medium text-blue-600">
       <User className="h-4 w-4" />
       Occupancy

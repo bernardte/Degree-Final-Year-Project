@@ -20,7 +20,7 @@ const paginatedAllRooms = async (req, res) => {
 
 const getAllRooms = async (req, res) => {
   try {
-    const rooms = await Room.find();
+    const rooms = await Room.find({ isActivate: true });
     if(!rooms){
       return res.status(404).json({ message: "No rooms found" });
     }
@@ -50,6 +50,9 @@ const getRoomById = async (req, res) => {
 const getMostBookingRoom = async (req, res) => {
   try {
     const mostBookingRoom = await Room.aggregate([
+      {
+        $match: { isActivate: true }
+      },
       // Lookup bookings (optional, since you already store booking references)
       {
         $lookup: {
@@ -114,6 +117,9 @@ const getOneRoomPerType = async (req, res) => {
   try {
     const rooms = await Room.aggregate([
       {
+        $match: { isActivate: true }
+      },
+      {
         $sort: { createdAt: -1 }, //sort by most recent or any other criteria
       },
       {
@@ -150,7 +156,9 @@ const filterRooms = async (req, res) => {
       children = 0,
     } = req.query;
 
-    const filter = {};
+    const filter = {
+      isActivate: true,
+    };
 
     if (roomType) {
       filter.roomType = roomType;

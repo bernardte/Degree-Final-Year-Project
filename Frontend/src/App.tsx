@@ -34,6 +34,7 @@ import { ROLE } from "./constant/roleList";
 const App = () => {
   const { user, showLoginPopup, showSignupPopup } = useAuthStore();
 
+
   return (
     <>
       {/* public route */}
