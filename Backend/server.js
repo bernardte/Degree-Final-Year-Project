@@ -15,7 +15,7 @@ import refreshTokenRoute from "./Routes/refreshToken.route.js";
 import checkoutRoute from "./Routes/checkout.route.js";
 import eventRoute from "./Routes/event.route.js";
 import bookingStatusUpdater from "./cronjob/bookingStatusUpdater.js";
-
+import roomStatusScheduler from "./cronjob/roomStatusScheduler.js";
 
 dotenv.config();
 const app = express();
@@ -59,4 +59,5 @@ app.listen(PORT, async () => {
     console.log("Server is running on port", PORT);
     await connnectDB();
     bookingStatusUpdater.start();
+    roomStatusScheduler.start();
 })

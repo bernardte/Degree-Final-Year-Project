@@ -3,7 +3,7 @@ import Booking from "../models/booking.model.js";
 
 
 const bookingStatusUpdater = cron.schedule(
-  "0 0 * * *",
+  "*/15 * * * *",
   async () => {
     const today = new Date();
     today.setHours(0, 0, 0, 0); // Set time to start of the day (00:00)

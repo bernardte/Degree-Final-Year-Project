@@ -19,7 +19,7 @@ export interface Room {
   roomDetails: string;
   pricePerNight: number;
   amenities: Amenity[];
-  images: string | File ;
+  images: (string | File)[];
   capacity: {
     adults: number;
     children?: number;
@@ -28,6 +28,7 @@ export interface Room {
   bookings: Bookings[];
   rating: number;
   reviews: Reviews[];
+  isActivate: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -39,7 +40,7 @@ export enum Amenity {
   MiniFridge = "mini fridge",
   PrivateBathroom = "private bathroom",
   RoomService = "room service",
-  InRoomSafe = "in room_safe",
+  InRoomSafe = "in room safe",
   Sofa = "sofa",
   DeskLamp = "desk lamp",
 }
@@ -133,6 +134,7 @@ export interface Facility {
   iconColor: string;
   openTime: string;
   closeTime: string;
+  isActivate: boolean;
   image: string | File;
 }
 

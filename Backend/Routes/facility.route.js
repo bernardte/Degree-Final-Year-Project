@@ -5,18 +5,19 @@ import verifyRole from "../middleware/verifyRoles.js";
 const app = express();
 const router = express.Router();
 
-router.get("/", facilityController.getFacility); 
-router.get("/paginated", facilityController.getAdminPageFacility); 
+router.get("/", facilityController.getFacility);
+router.get("/paginated", facilityController.getAdminPageFacility);
 
-app.use(protectRoute, verifyRole)
+app.use(protectRoute, verifyRole);
 router.post("/create-facility", facilityController.createFacility);
+router.patch(
+  "/update-facility-status/:facilityId",
+  facilityController.updateFacilityStatus
+);
 router.delete(
   "/delete-facility/:facilityId",
   facilityController.deleteFacility
 );
-router.put(
-  "/update-facility/:facilityId",
-  facilityController.updateFacility
-);
+router.put("/update-facility/:facilityId", facilityController.updateFacility);
 
 export default router;

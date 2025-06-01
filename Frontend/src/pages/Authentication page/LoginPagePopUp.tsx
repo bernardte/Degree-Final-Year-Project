@@ -25,31 +25,43 @@ const LoginPagePopUp = () => {
   const { showToast } = useToast();
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement | null>(null);
-  const [ error, setError ] = useState<FormError>({});
+  const [error, setError] = useState<FormError>({});
 
   useEffect(() => {
     if (inputRef.current) inputRef.current.focus();
   }, []);
 
+  useEffect(() => {
+    // Disable background scroll
+    const originalStyle = window.getComputedStyle(document.body).overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      // Re-enable scroll on cleanup
+      document.body.style.overflow = originalStyle;
+    };
+  }, []);
+  
+
   const handleError = (): FormError => {
     const errror: FormError = {};
     if (!input.email) {
-      errror.email = 'Email is required';
+      errror.email = "Email is required";
     } else if (emailValidation(input.email)) {
-      errror.email = 'Invalid email format';
+      errror.email = "Invalid email format";
     }
 
     if (!input.password) {
-      errror.password = 'Password is required';
+      errror.password = "Password is required";
     }
 
     return errror;
-  }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const validateForm = handleError();
-    if (Object.keys(validateForm).length > 0){
+    if (Object.keys(validateForm).length > 0) {
       setError(validateForm);
       return;
     }
@@ -75,7 +87,10 @@ const LoginPagePopUp = () => {
       setIsAuthenticated(true);
       setIsAdmin(data.role === "admin" || data.role === "superAdmin");
 
-      if (data.role === "admin" || data.role === "superAdmin" && !data.isOTPVerified) {
+      if (
+        data.role === "admin" ||
+        (data.role === "superAdmin" && !data.isOTPVerified)
+      ) {
         showToast("info", "Please verify OTP to continue as admin.");
         navigate("/verify-admin-otp");
         // navigate("/verify-admin-otp", {

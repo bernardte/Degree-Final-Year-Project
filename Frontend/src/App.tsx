@@ -35,6 +35,7 @@ import AdminBookingCalendarPage from "./pages/AdminBookingCalendarPage/AdminBook
 const App = () => {
   const { user, showLoginPopup, showSignupPopup } = useAuthStore();
 
+
   return (
     <>
       {/* public route */}

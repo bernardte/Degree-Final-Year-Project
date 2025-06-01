@@ -31,6 +31,7 @@ interface roomStore {
   fetchPaginatedRooms: (page: number) => Promise<void>;
   fetchEachRoomsType: () => Promise<void>;
   fetchRoomById: (id: string | undefined) => Promise<void>;
+  removeRoomImage: (roomId: string, imageIndex: number) => void;
   //! record is a utility type that allow the definition of an
   //! object structure with specific key and value types.
   //! It is defined as Record<K, T>, where K represents
@@ -147,6 +148,17 @@ const useRoomStore = create<roomStore>((set) => ({
       rooms: prevState.rooms.filter((room) => room._id !== roomId),
       filterRoom: prevState.rooms.filter((room) => room._id !== roomId),
     }));
+  },
+
+  removeRoomImage: (roomId: string, imageIndex: number) => {
+    set((prevState) => {
+      const updateRooms = prevState.rooms.map((room) => room._id === roomId ? {
+        ...room,
+        images: room.images.filter((_, index) => index !== imageIndex)
+      }: room);
+
+      return { rooms: updateRooms }
+    })
   },
 
   updateRoomById: (roomId: string, updatedRoomData?: Partial<Room>) => {
