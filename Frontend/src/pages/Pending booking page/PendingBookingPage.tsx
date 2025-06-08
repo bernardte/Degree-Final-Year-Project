@@ -207,8 +207,10 @@ const PendingBookingPage = () => {
                           <div className="rounded-lg bg-blue-100/50 p-3">
                             <BedDouble className="h-8 w-8 text-blue-600" />
                           </div>
-                          <h2 className="text-2xl font-bold text-blue-900">
-                            {booking.roomName}
+                          <h2 className="block text-2xl font-bold break-words text-blue-900">
+                            {Array.isArray(booking.roomName)
+                              ? booking.roomName.join(", ")
+                              : booking.roomName || "No Room Assigned"}
                           </h2>
                         </div>
 

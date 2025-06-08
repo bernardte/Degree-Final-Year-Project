@@ -19,6 +19,8 @@ import EditRoomDialog from "../dialog-component/EditRoomDialog";
 import getImageSrc from "@/utils/getImageSrc";
 import { Switch } from "@/components/ui/switch";
 import ScheduleDeactivation from "../dialog-component/ScheduleDeactivation";
+import RequireRole from "@/permission/RequireRole";
+import { ROLE } from "@/constant/roleList";
 
 const RoomTable = ({
   isLoading,
@@ -212,8 +214,13 @@ const RoomTable = ({
               Room Price
             </TableHead>
             <TableHead className="min-w-[160px]">Room Number</TableHead>
-            <TableHead className="min-w-[100px]">Status</TableHead>
-            <TableHead className="min-w-[120px] text-center">Actions</TableHead>
+
+            <RequireRole allowedRoles={[ROLE.SuperAdmin]}>
+              <TableHead className="min-w-[100px]">Status</TableHead>
+              <TableHead className="min-w-[120px] text-center">
+                Actions
+              </TableHead>
+            </RequireRole>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -313,21 +320,25 @@ const RoomTable = ({
                   </span>
                 </div>
               </TableCell>
-              <TableCell>
-                <div className="flex items-center">
-                  <Switch
-                    checked={room?.isActivate}
-                    onCheckedChange={() =>
-                      handleRoomStatus(room._id, room?.isActivate)
-                    }
-                  />
-                </div>
-              </TableCell>
+              <RequireRole allowedRoles={[ROLE.SuperAdmin]}>
+                <TableCell>
+                  <div className="flex items-center">
+                    <Switch
+                      checked={room?.isActivate}
+                      onCheckedChange={() =>
+                        handleRoomStatus(room._id, room?.isActivate)
+                      }
+                    />
+                  </div>
+                </TableCell>
+              </RequireRole>
               <TableCell className="text-right text-blue-500">
                 <ActionButton
                   loading={loading}
                   onDelete={() => handleDelete(room._id, room.roomName)}
                   onEdit={() => handelEditClick(room._id)}
+                  allowedDeleteRoles={[ROLE.SuperAdmin]}
+                  allowedEditRoles={[ROLE.SuperAdmin]}
                 />
               </TableCell>
             </TableRow>

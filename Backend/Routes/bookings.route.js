@@ -14,6 +14,13 @@ router.delete(
   "/:sessionId/remove-room/:roomId",
   bookingControllers.removeRoomFromBookingSession
 );//delete booking session
-router.get("/get-user-booking", protectRoute, accessControl("booking", "view_own"), bookingControllers.getBookingByUser);
+router.get("/get-user-booking", protectRoute, verifyRoles, accessControl("booking", "view_own"), bookingControllers.getBookingByUser);
+
+//delete cancel booking request
+router.delete(
+  "/deleteAllCancellationBookingRequest", protectRoute, verifyRoles,
+  accessControl("booking", "cancel_any"),
+  bookingControllers.handleDeleteAllCancelled
+);
 
 export default router;

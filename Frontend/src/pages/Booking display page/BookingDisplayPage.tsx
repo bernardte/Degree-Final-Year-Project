@@ -524,7 +524,7 @@ const BookingDisplayPage = () => {
                           View Invoice
                         </Button>
 
-                        {new Date(booking.endDate) < new Date() && (
+                        {(new Date(booking.endDate) < new Date() && booking.status !== "cancelled" ) && (
                           <Button
                             onClick={() =>
                               setSelectedBooking({
