@@ -9,6 +9,7 @@ import { ClipboardList, Clock, Loader2, Mail, User, UserRoundCog } from "lucide-
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import axiosInstance from "@/lib/axios";
 import { Room } from "@/types/interface.type";
+import { ROLE } from "@/constant/roleList";
 
 const BookingTable = () => {
     const { bookings, isLoading, error, updateBookingStatus, removeBooking } = useBookingStore((state) => state);
@@ -58,7 +59,7 @@ const BookingTable = () => {
 
        } catch (error: any) {
         const message = error?.response?.data?.error || error?.response?.data?.message;
-        if (message.includes("Access Denied")) {
+        if (message.includes("Access denied")) {
           showToast("warn", error?.response?.data?.message);
           return;
         }
@@ -201,7 +202,7 @@ const BookingTable = () => {
                   </TableCell>
                   <TableCell>
                     <span
-                      className={`flex justify-center items-center gap-1 rounded-full px-2 py-1 text-center ${booking?.paymentStatus === "paid" ? "bg-green-300 text-emerald-700" : "bg-sky-200 text-sky-800"} capitalize`}
+                      className={`flex items-center justify-center gap-1 rounded-full px-2 py-1 text-center ${booking?.paymentStatus === "paid" ? "bg-green-300 text-emerald-700" : "bg-sky-200 text-sky-800"} capitalize`}
                     >
                       {booking?.paymentStatus}
                     </span>
@@ -250,6 +251,7 @@ const BookingTable = () => {
                           ? "Save"
                           : "Edit"
                       }
+                      allowedDeleteRoles={[ROLE.SuperAdmin]}
                       onDelete={() => handleDelete(booking._id)}
                     />
                   </TableCell>

@@ -430,11 +430,12 @@ const getBookingSessionByUser = async (req, res) => {
 
       const bookingSessionsWithUserName = bookingSessions.map(session => {
         const sessionObject = session.toObject();
+        const roomIds = Array.isArray(sessionObject.roomId) ? sessionObject.roomId : [sessionObject.roomId];
         return {
           ...sessionObject,
           customerName:
             user?.name || sessionObject.guestDetails?.contactName || null,
-          roomName: roomNameMap[sessionObject.roomId],
+          roomName: roomIds.map((id) => roomNameMap[id.toString()] || "Unknown Room")
         };
       });
 
@@ -486,8 +487,20 @@ const removeRoomFromBookingSession = async (req, res) => {
 
     res.status(200).json({ message: "Room removed successfully", bookingSession });
   }catch(error){
-    console.log("Error in remove Room From Booking Session: ", error.message)
-    res.status(500).json({ error: "Internal Server Error"})
+    console.log("Error in remove Room From Booking Session: ", error.message);
+    res.status(500).json({ error: "Internal Server Error"});
+  }
+}
+
+const handleDeleteAllCancelled = async (req, res) => {
+  try {
+    await BookingSession.deleteMany({ status: "cancelled" });
+    await CancellationRequest.deleteMany();
+    res.status(200).json({ message: "All cancelled booking sessions deleted successfully" });
+
+  } catch (error) {
+    console.log("Error in remove Room From Booking Session: ", error.message);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 }
 
@@ -500,4 +513,5 @@ export default {
   getBookingSessionByUser,
   deleteBookingSession,
   removeRoomFromBookingSession,
+  handleDeleteAllCancelled,
 };

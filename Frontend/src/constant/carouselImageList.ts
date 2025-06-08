@@ -1,5 +1,5 @@
 const images = [
-    "/balcony room.png",
+    "/balcony room - Copy.png",
     "/deluxe room.png",
     "/double bedroom.png",
     "/sea view room.png",

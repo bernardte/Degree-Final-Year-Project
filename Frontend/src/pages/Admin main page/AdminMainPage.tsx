@@ -11,6 +11,7 @@ import { Users, Calendar, AlertCircle, Loader } from "lucide-react";
 import AcceptCancellationBookingTable from "@/layout/components/cancel-booking-page-component/Accepted Cancellation Booking/AcceptCancellationBookingTable";
 import RequireRole from "@/permission/RequireRole";
 import { ROLE } from "@/constant/roleList";
+import { Button } from "@/components/ui/button";
 
 const UserManagePage = () => {
   // State management hooks
@@ -21,6 +22,7 @@ const UserManagePage = () => {
     fetchAllCancelBookingRequest,
   } = useBookingStore();
   const { fetchAllStatisticCardData } = useStatisticStore();
+  const { handleDeleteAllAcceptCancelledBooking, acceptCancelledBookingsRequest } = useBookingStore(state => state);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState("Booking");
 
@@ -51,14 +53,16 @@ const UserManagePage = () => {
       <div className="mx-auto max-w-7xl overflow-hidden">
         {/* Header Section */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-blue-900 overflow-hidden">Admin Dashboard</h1>
+          <h1 className="overflow-hidden text-3xl font-bold text-blue-900">
+            Admin Dashboard
+          </h1>
           <p className="text-blue-600/80">
             Manage bookings, users, and platform statistics
           </p>
         </div>
 
         {/* Statistics Grid */}
-        <div className="px-4 overflow-hidden">
+        <div className="overflow-hidden px-4">
           <DashboardStatistic />
         </div>
 
@@ -73,10 +77,22 @@ const UserManagePage = () => {
         {/* Booking Accept Cancellation Section */}
         <RequireRole allowedRoles={[ROLE.SuperAdmin]}>
           <div className="mb-8 rounded-xl border border-blue-200 bg-white p-6 shadow-sm">
-            <h2 className="mb-4 flex items-center text-xl font-semibold text-blue-900">
-              <AlertCircle className="mr-2 h-6 w-6 stroke-[1.5] text-blue-500" />
-              Accepted Cancellation Booking
-            </h2>
+            <div className="flex justify-between">
+              <h2 className="mb-4 flex items-center text-xl font-semibold text-blue-900">
+                <AlertCircle className="mr-2 h-6 w-6 stroke-[1.5] text-blue-500" />
+                Accepted Cancellation Booking
+              </h2>
+
+              {acceptCancelledBookingsRequest.length > 0 && (
+                <Button
+                  className="cursor-pointer bg-rose-600 hover:bg-rose-500"
+                  onClick={handleDeleteAllAcceptCancelledBooking}
+                >
+                  Delete All
+                </Button>
+              )}
+              
+            </div>
             <AcceptCancellationBookingTable />
           </div>
         </RequireRole>

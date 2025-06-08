@@ -546,15 +546,16 @@ const getBookingByUserId = async (req, res) => {
 //update by admin select by and drop down list
 const updateBookingStatus = async (req, res) => {
   const { bookingId } = req.params;
-  const { status } = req.body; // Assuming status is the field to be updated
-  if (!status.trim() === "" || !bookingId.trim() === "") {
+  const { status } = req.body;
+
+  if (!status?.trim() || !bookingId?.trim()) {
     return res
       .status(400)
       .json({ error: "Please provide a booking ID and status" });
   }
 
   try {
-    const booking = await Booking.findById(bookingId);
+    const booking = await Booking.findById(bookingId).populate("room");
     if (!booking) {
       return res.status(404).json({ error: "Booking not found" });
     }
@@ -565,11 +566,78 @@ const updateBookingStatus = async (req, res) => {
         .json({ error: "Booking status is already " + status });
     }
 
-    booking.status = status; // Update the booking status
-    await booking.save(); // Save the updated booking status
-    return res
-      .status(200)
-      .json({ message: `successfully update to ${status}` });
+    if (status === "cancelled") {
+      // Prevent same-day cancellation
+      const today = new Date().toDateString();
+      const checkInDateStr = new Date(booking.startDate).toDateString();
+      if (today === checkInDateStr) {
+        return res
+          .status(400)
+          .json({ error: "Cannot cancel booking on the same day" });
+      }
+
+      // Refund logic
+      let refundAmount = 0;
+      let policyNote = "";
+
+      const currentDate = new Date();
+      const checkInDate = new Date(booking.startDate);
+      const hoursBeforeCheckIn = (checkInDate - currentDate) / (1000 * 60 * 60);
+
+      if (hoursBeforeCheckIn > 48) {
+        refundAmount = booking.totalPrice;
+        policyNote = "Full refund (more than 48 hours before check-in)";
+      } else if (hoursBeforeCheckIn <= 48 && hoursBeforeCheckIn > 0) {
+        refundAmount = booking.totalPrice * 0.5;
+        policyNote = "50% refund (within 48 hours of check-in)";
+      } else {
+        refundAmount = 0;
+        policyNote = "No refund (after check-in started)";
+      }
+
+      if (
+        refundAmount > 0 &&
+        booking.paymentStatus === "paid" &&
+        booking.paymentIntentId
+      ) {
+        await stripe.refunds.create({
+          amount: Math.round(refundAmount * 100),
+          payment_intent: booking.paymentIntentId,
+          reason: "requested_by_customer",
+        });
+
+        booking.paymentStatus = "refund";
+        booking.refundAmount = refundAmount;
+      }
+
+      // Remove from room bookings
+      for (const roomId of booking.room) {
+        const room = await Room.findById(roomId);
+        if (room) {
+          room.bookings = room.bookings.filter(
+            (bId) => bId.toString() !== booking._id.toString()
+          );
+          await room.save();
+        }
+      }
+
+      booking.status = "cancelled";
+      await booking.save();
+
+      return res.status(200).json({
+        message: `Booking cancelled. ${policyNote}`,
+        refund: refundAmount,
+        bookingId: booking._id,
+      });
+    } else {
+      // Just update the status (e.g., to 'confirmed')
+      booking.status = status;
+      await booking.save();
+
+      return res
+        .status(200)
+        .json({ message: `Booking status changed to '${status}'.` });
+    }
   } catch (error) {
     console.error("Error updating booking: ", error.message);
     return res.status(500).json({ error: error.message });

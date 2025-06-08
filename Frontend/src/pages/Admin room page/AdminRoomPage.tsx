@@ -6,6 +6,8 @@ import useRoomStore from "@/stores/useRoomStore";
 import { useEffect, useState } from "react";
 import AddNewRoomDialog from "@/layout/components/admin-page-component/dialog-component/AddNewRoomDialog";
 import Pagination from "@/layout/components/share-components/Pagination";
+import RequireRole from "@/permission/RequireRole";
+import { ROLE } from "@/constant/roleList";
 
 
 // Animation constants
@@ -72,22 +74,24 @@ const AdminRoomPage = () => {
             </motion.p>
           </div>
 
-          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-            <Button
-              variant="default"
-              className="flex items-center gap-2 transition-all hover:shadow-md"
-              onClick={() => setOpenDialog(true)}
-            >
-              <motion.span
-                animate={{ rotate: 0 }}
-                whileHover={{ rotate: 90 }}
-                transition={{ type: "spring" }}
+          <RequireRole allowedRoles={[ROLE.SuperAdmin]}>
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Button
+                variant="default"
+                className="flex items-center gap-2 transition-all hover:shadow-md"
+                onClick={() => setOpenDialog(true)}
               >
-                <PlusCircle className="h-5 w-5" />
-              </motion.span>
-              <span className="font-semibold">Add New Room</span>
-            </Button>
-          </motion.div>
+                <motion.span
+                  animate={{ rotate: 0 }}
+                  whileHover={{ rotate: 90 }}
+                  transition={{ type: "spring" }}
+                >
+                  <PlusCircle className="h-5 w-5" />
+                </motion.span>
+                <span className="font-semibold">Add New Room</span>
+              </Button>
+            </motion.div>
+          </RequireRole>
         </motion.div>
 
         {/* Table card */}

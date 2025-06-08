@@ -23,6 +23,7 @@ interface BookingStore {
   removeBooking: (bookingId: string) => void;
   fetchAllCancelBookingRequest: () => Promise<void>;
   fetchAllAcceptCancelledBooking: () => Promise<void>;
+  handleDeleteAllAcceptCancelledBooking: () => Promise<void>;
 }
 
 const useBookingStore = create<BookingStore>((set) => ({
@@ -34,6 +35,17 @@ const useBookingStore = create<BookingStore>((set) => ({
   currentPage: 1,
   isLoading: false,
   error: null,
+  handleDeleteAllAcceptCancelledBooking: async () => {
+    try {
+        const response = await axiosInstance.delete("/api/bookings/deleteAllCancellationBookingRequest");
+        if(response?.data){
+          set({acceptCancelledBookingsRequest: []})
+        }
+
+    } catch (error: any) {
+      set({ error: error?.response?.data?.error || error?.response?.data?.message})
+    }
+  },
   clearBookingInformation: () => {
     set({ bookingInformation: [] });
   },
