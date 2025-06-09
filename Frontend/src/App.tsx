@@ -30,6 +30,7 @@ import AdminFacilityPage from "./pages/Admin-facility-page/AdminFacilityPage";
 import PendingBookingPage from "./pages/Pending booking page/PendingBookingPage";
 import ProfilePage from "./pages/ProfilePage/ProfilePage";
 import { ROLE } from "./constant/roleList";
+import AdminBookingCalendarPage from "./pages/AdminBookingCalendarPage/AdminBookingCalendarPage";
 
 const App = () => {
   const { user, showLoginPopup, showSignupPopup } = useAuthStore();
@@ -86,6 +87,7 @@ const App = () => {
             <Route path="/admin-portal" element={<AdminMainPage />} />
             <Route path="/admin-profile" element={<ProfilePage />} />
             <Route path="/admin-facility" element={<AdminFacilityPage />} />
+            <Route path="/admin-booking-calendar" element={<AdminBookingCalendarPage />} />
             <Route path="/admin-room" element={<AdminRoomPage />} />
             <Route path="/admin-event" element={<AdminEventsPage />} />
           </Route>

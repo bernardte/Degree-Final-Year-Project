@@ -52,6 +52,7 @@ export interface Reviews {
 }
 
 export interface Bookings {
+  title: any;
   _id: string;
   bookingCreatedByUser: User;
   contactName: string;

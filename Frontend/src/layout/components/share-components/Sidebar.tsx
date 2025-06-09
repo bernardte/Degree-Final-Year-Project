@@ -7,6 +7,7 @@ import {
   Bell,
   Calendar1,
   LayoutGrid,
+  CalendarRange,
 } from "lucide-react";
 import { useState } from "react";
 import { motion } from "framer-motion";
@@ -74,6 +75,16 @@ const Sidebar = () => {
           selected={selected}
           setSelected={setSelected}
           link={() => navigate("/admin-event")}
+          open={open}
+        />
+        <Option
+          Icon={CalendarRange}
+          title="Reservation Calendar"
+          titleColor="text-blue-700"
+          IconColor="text-blue-700"
+          selected={selected}
+          setSelected={setSelected}
+          link={() => navigate("/admin-booking-calendar")}
           open={open}
         />
         <Option

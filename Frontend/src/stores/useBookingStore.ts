@@ -19,6 +19,7 @@ interface BookingStore {
   ) => void;
   clearBookingInformation: () => void;
   fetchBooking: () => Promise<void>;
+  fetchAllBookingViewInCalendar: () => Promise<void>;
   fetchAllBooking: (page: number) => Promise<void>;
   removeBooking: (bookingId: string) => void;
   fetchAllCancelBookingRequest: () => Promise<void>;
@@ -66,7 +67,9 @@ const useBookingStore = create<BookingStore>((set) => ({
   fetchAllAcceptCancelledBooking: async () => {
     set({ isLoading: true, error: null });
     try {
-      const response = await axiosInstance.get("/api/admin/get-all-accept-cancelled-bookings-request");
+      const response = await axiosInstance.get(
+        "/api/admin/get-all-accept-cancelled-bookings-request",
+      );
       console.log("fetchAllAcceptCancelledBooking: ", response?.data);
       set({ acceptCancelledBookingsRequest: response.data });
     } catch (error: any) {
@@ -86,7 +89,7 @@ const useBookingStore = create<BookingStore>((set) => ({
       }
     }
   },
-  
+
   fetchBooking: async () => {
     set({ isLoading: true, error: null });
     axiosInstance
@@ -116,10 +119,21 @@ const useBookingStore = create<BookingStore>((set) => ({
       .catch((error) =>
         set({
           error: error?.response?.data?.error || error?.response?.data?.message,
-          bookings: []
+          bookings: [],
         }),
       )
       .finally(() => set({ isLoading: false }));
+  },
+
+  fetchAllBookingViewInCalendar: async () => {
+    set({ isLoading: true, error: null });
+    axiosInstance
+      .get("/api/admin/get-all-bookings-view-in-calendar")
+      .then((response) => {
+        set({ bookings: response.data, error: null });
+      }).catch((error: any) => {
+        set({error: error?.response?.data?.error || error?.response?.data?.message})
+      });
   },
 
   removeBooking: (bookingId: string) => {

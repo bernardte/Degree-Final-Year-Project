@@ -349,6 +349,47 @@ const getAllBookings = async (req, res) => {
   }
 };
 
+const getAllBookingsViewInCalendar = async (req, res) => {
+  try {
+    const bookings = await Booking.find()
+      .populate("bookingCreatedByUser", "name email") // Make sure this is populated
+      .populate("room", "roomNumber roomType")
+      .select(
+        "bookingReference contactEmail contactName contactNumber startDate endDate status bookingCreatedByUser room totalGuests totalPrice"
+      );
+
+      const mappedBookings = bookings.flatMap((booking) => {
+        const fallbackUser = booking.bookingCreatedByUser || {};
+        console.log(booking.startDate);
+        return booking.room.map((roomObj) => ({
+          _id: `${booking._id}-${roomObj._id}`, // Unique per room
+          bookingReference: booking.bookingReference,
+          title: `Room ${roomObj.roomType || "N/A"} - ${
+            booking.contactName || fallbackUser.name || "Unknown"
+          } - ${roomObj.roomNumber}`,
+          roomType: roomObj.roomType || "N/A",
+          contactEmail: booking.contactEmail || fallbackUser.email || "N/A",
+          contactName: booking.contactName || fallbackUser.name || "N/A",
+          contactNumber: booking.contactNumber || "N/A",
+          startDate: booking.startDate,
+          endDate: booking.endDate,
+          status: booking.status,
+          totalGuests: (booking.totalGuests?.adults || 0) + (booking.totalGuests?.children || 0),
+          totalPrice: booking.totalPrice,
+          allDay: true,
+        }));
+      });
+      
+    res.status(200).json(mappedBookings);
+  } catch (error) {
+    console.error(
+      "Error fetching getAllBookingsViewInCalendar: ",
+      error.message
+    );
+    res.status(500).json({ error: error.message });
+  }
+};
+
 //user and admin use
 const getBookingByUserId = async (req, res) => {
   const { userId } = req.params;
@@ -705,13 +746,11 @@ const getAllEventsQuery = async (req, res) => {
       return res.status(404).json({ error: "No events found" });
     }
 
-    res
-      .status(200)
-      .json({
-        events,
-        totalPages: Math.ceil(totalCount / limit),
-        currentPage: page,
-      });
+    res.status(200).json({
+      events,
+      totalPages: Math.ceil(totalCount / limit),
+      currentPage: page,
+    });
   } catch (error) {
     console.log("Error in getAllEventsQuery: ", error.message);
     res.ststus(500).json({ error: error.message });
@@ -787,6 +826,7 @@ export default {
   deleteRoom,
   updatePaymentStatus,
   getAllBookings,
+  getAllBookingsViewInCalendar,
   updateBookingStatus,
   getAllCancelledBookings,
   getAllAcceptCancelledBookings,

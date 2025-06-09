@@ -55,6 +55,11 @@ router.get(
   adminControllers.getAllBookings
 ); // Get all bookings
 router.get(
+  "/get-all-bookings-view-in-calendar",
+  accessControl("booking", "view_all"),
+  adminControllers.getAllBookingsViewInCalendar
+);
+router.get(
   "/get-booking-by-user/:userId",
   accessControl("booking", "view"),
   adminControllers.getBookingByUserId
@@ -68,19 +73,24 @@ router.get(
   adminControllers.filterAvailableRoomsForAdmin
 ); //filter all available room
 
-router.get("/get-all-cancelled-bookings-request", adminControllers.getAllCancelledBookings); // Get all cancelled bookings
+router.get(
+  "/get-all-cancelled-bookings-request",
+  adminControllers.getAllCancelledBookings
+); // Get all cancelled bookings
 router.get(
   "/get-all-accept-cancelled-bookings-request",
   adminControllers.getAllAcceptCancelledBookings
-);//get accept cancelled bookings
-router.patch("/update-cancellation-request/:requestId", accessControl("booking", "cancel_any"), adminControllers.updateCancellationRequest); // Update cancellation request status
+); //get accept cancelled bookings
+router.patch(
+  "/update-cancellation-request/:requestId",
+  accessControl("booking", "cancel_any"),
+  adminControllers.updateCancellationRequest
+); // Update cancellation request status
 router.delete(
   "/delete-cancellation-request/:requestId",
-  accessControl("booking", "cancel_any")
-  ,
+  accessControl("booking", "cancel_any"),
   adminControllers.deleteCancellationRequest
 ); // Delete cancellation request
-
 
 router.patch(
   "/update-event-status/:eventId",
