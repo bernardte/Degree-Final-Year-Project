@@ -76,7 +76,7 @@ const BookingTooltip = ({ booking, children }: BookingTooltipProps) => {
     <TooltipProvider delayDuration={200}>
       <Tooltip>
         <TooltipTrigger asChild>{children}</TooltipTrigger>
-        <TooltipContent className="min-w-[300px] rounded-xl border-0 bg-white p-0 shadow-xl">
+        <TooltipContent className="min-w-[300px] rounded-xl border-0 bg-white p-0 shadow-xl z-10000">
           <div
             className="rounded-t-xl px-4 py-3 font-bold text-white"
             style={{ backgroundColor: getBookingStatusColor(booking.status) }}
