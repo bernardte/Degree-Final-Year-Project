@@ -588,6 +588,7 @@ const getBookingByUserId = async (req, res) => {
 const updateBookingStatus = async (req, res) => {
   const { bookingId } = req.params;
   const { status } = req.body;
+  const userId = req.user._id;
 
   if (!status?.trim() || !bookingId?.trim()) {
     return res
@@ -596,6 +597,8 @@ const updateBookingStatus = async (req, res) => {
   }
 
   try {
+
+    const currentEditUserFullName = await User.findById({ _id: userId }).select("name");
     const booking = await Booking.findById(bookingId).populate("room");
     if (!booking) {
       return res.status(404).json({ error: "Booking not found" });
@@ -649,6 +652,23 @@ const updateBookingStatus = async (req, res) => {
 
         booking.paymentStatus = "refund";
         booking.refundAmount = refundAmount;
+
+        const existingCancellationRequest = await CancellationRequest.findOne({
+          bookingId: booking._id,
+        });
+
+        if (!existingCancellationRequest) {
+          const newCancellationRequest = new CancellationRequest({
+            bookingId: booking._id,
+            bookingReference: booking.bookingReference,
+            email: booking.userEmail || booking.contactEmail,
+            processedBy: currentEditUserFullName,
+            status: "approved",
+            checkInDate: booking.startDate,
+            processedAt: new Date(),
+          });
+          await newCancellationRequest.save();
+        }
       }
 
       // Remove from room bookings
@@ -680,7 +700,7 @@ const updateBookingStatus = async (req, res) => {
         .json({ message: `Booking status changed to '${status}'.` });
     }
   } catch (error) {
-    console.error("Error updating booking: ", error.message);
+    console.error("Error updating booking Status: ", error.message);
     return res.status(500).json({ error: error.message });
   }
 };
