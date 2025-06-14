@@ -1,13 +1,14 @@
 import { ComponentType } from "react";
 
 export interface User {
-    _id: string;
-    name: string;
-    username: string;
-    email: string;
-    role: string;
-    profilePic: string ;
-    token: string;
+  _id: string;
+  name: string;
+  username: string;
+  email: string;
+  role: string;
+  profilePic: string;
+  loyaltyTier: string;
+  token: string;
 };
 
 export interface Room {
@@ -157,4 +158,31 @@ export interface Event {
   totalGuests: number,
   additionalInfo?: string,
   status: string,
+}
+
+// Mock data for demonstration
+export interface RewardSettings {
+  bookingRewardPoints: number,
+  earningRatio: number,
+  minRedeemPoints: number,
+  maxRedeemPoints: number,
+  rewardProgramEnabled: boolean,
+  tierMultipliers: {
+    bronze: number,
+    silver: number,
+    gold: number,
+    platinum: number,
+  };
+};
+
+export interface RewardHistories{
+  _id: string,
+  user: User,
+  bookingId: Bookings["_id"][],
+  bookingReference: string,
+  points: number,
+  description: string,
+  type: "redeem" | "earn"
+  source: "booking" | "redeemption" | "others"
+  createdAt: Date
 }

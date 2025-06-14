@@ -95,7 +95,6 @@ const AdminEventsPage = () => {
             <span className="text-sm text-gray-500">
               Showing {events.length} results
             </span>
-            <div className="flex space-x-2">{/* Pagination controls */}</div>
           </motion.div>
         </motion.div>
       ) : (

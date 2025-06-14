@@ -70,6 +70,10 @@ const policies = {
     update: isSuperAdmin,
     create: isSuperAdmin,
   },
+  rewardPoints: {
+    update: isSuperAdmin,
+    create: isSuperAdmin,
+  }
 };
 
 export default policies;

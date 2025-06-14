@@ -10,6 +10,7 @@ import {
   Mail,
   Loader,
   User,
+  BadgeCheck,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import useUserStore from "@/stores/useUserStore";
@@ -265,6 +266,19 @@ const Profile = () => {
             </div>
           </div>
 
+          {/* Loyalty Tier */}
+          <div className="space-y-2">
+            <label className="flex items-center font-medium text-gray-700">
+              <BadgeCheck className="mr-2 h-5 w-5 text-blue-600" />
+              Loyalty Tier
+            </label>
+            <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+              <span className="font-medium text-gray-700 capitalize">
+                {currentLoginUser?.loyaltyTier}
+              </span>
+            </div>
+          </div>
+
           {/* Password Update Section */}
           <div className="space-y-6 border-t border-gray-200 pt-8">
             <h3 className="text-xl font-semibold text-gray-900">
@@ -381,7 +395,7 @@ const Profile = () => {
             <button
               type="button"
               onClick={() => navigate(-1)}
-              className="flex items-center rounded-lg px-6 py-2.5 bg-rose-200 text-gray-600 transition-colors cursor-pointer hover:bg-rose-300"
+              className="flex cursor-pointer items-center rounded-lg bg-rose-200 px-6 py-2.5 text-gray-600 transition-colors hover:bg-rose-300"
             >
               <X className="mr-2 h-5 w-5 text-rose-500" />
               Cancel
@@ -389,7 +403,7 @@ const Profile = () => {
             <button
               type="submit"
               disabled={isLoading}
-              className="flex items-center rounded-lg bg-gradient-to-r from-indigo-600 to-blue-500 px-6 py-2.5 cursor-pointer text-white transition-all hover:from-indigo-700 hover:to-blue-600 disabled:opacity-70"
+              className="flex cursor-pointer items-center rounded-lg bg-gradient-to-r from-indigo-600 to-blue-500 px-6 py-2.5 text-white transition-all hover:from-indigo-700 hover:to-blue-600 disabled:opacity-70"
             >
               {isLoading ? (
                 <>

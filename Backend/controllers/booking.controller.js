@@ -8,6 +8,8 @@ import CancellationRequest from "../models/cancellationRequest.model.js";
 import generateAndUploadQRCode from "../utils/generateAndUploadQRCode.js";
 import { differenceInCalendarDays } from "date-fns";
 import mongoose from "mongoose";
+import SystemSetting from "../models/systemSetting.model.js";
+import RewardHistory from "../models/rewardHistory.model.js";
 
 const createBooking = async (req, res) => {
   const { bookingSessionId, specialRequests } = req.body;
@@ -34,23 +36,22 @@ const createBooking = async (req, res) => {
       guestUserId = session.guestDetails._id;
     }
 
-   const {
-     roomId,
-     checkInDate,
-     checkOutDate,
-     userId,
-     totalGuest,
-     totalPrice,
-     paymentMethod,
-     paymentStatus,
-     paymentIntentId,
-     breakfastIncluded,
-     contactName,
-     contactEmail,
-     contactNumber,
-     guestDetails,
-   } = session;
-    
+    const {
+      roomId,
+      checkInDate,
+      checkOutDate,
+      userId,
+      totalGuest,
+      totalPrice,
+      paymentMethod,
+      paymentStatus,
+      paymentIntentId,
+      breakfastIncluded,
+      contactName,
+      contactEmail,
+      contactNumber,
+      guestDetails,
+    } = session;
 
     if (new Date(checkOutDate) <= new Date(checkInDate)) {
       return res
@@ -119,10 +120,10 @@ const createBooking = async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    const roomDetails = rooms.map(room => ({
+    const roomDetails = rooms.map((room) => ({
       roomType: room.roomType,
-      roomNumber: room.roomNumber
-    }));// get each room details
+      roomNumber: room.roomNumber,
+    })); // get each room details
     const { adults, children } = totalGuest;
 
     const qrCodeData = {
@@ -134,8 +135,10 @@ const createBooking = async (req, res) => {
         roomNumber,
       })),
     };
-    
-    const qrCodePublicURLfromCloudinary  = await generateAndUploadQRCode(qrCodeData);
+
+    const qrCodePublicURLfromCloudinary = await generateAndUploadQRCode(
+      qrCodeData
+    );
 
     const bookingData = {
       username: user?.username || contactName,
@@ -153,6 +156,40 @@ const createBooking = async (req, res) => {
     newBooking.qrCodeImageURL = qrCodePublicURLfromCloudinary;
 
     await newBooking.save();
+
+    //? earn point for the login user.
+    if(user){
+      const setting = await SystemSetting.findOne({
+        key: "rewardPointsSetting",
+      });
+      const pointsPerNight = setting?.value.bookingRewardPoints || 0; //* default 0 reward points
+  
+      const nights = Math.ceil(
+        (new Date(checkOutDate) - new Date(checkInDate)) / (1000 * 60 * 60 * 24)
+      );
+      const roomsBooked = rooms.length;
+      const loyaltyTierRatio = setting?.value.tierMultipliers;
+      const userLoyaltyTier = user.loyaltyTier;
+      const tierMultipliers = loyaltyTierRatio[userLoyaltyTier.toLowerCase()];
+
+      const basedPoints = nights * roomsBooked * pointsPerNight;
+      const rewardPoints = Math.round(basedPoints * tierMultipliers);
+
+      // increase user reward points
+      user.rewardPoints = (user.rewardPoints || 0) + rewardPoints;
+      await user.save();
+
+      // create history reward points
+      await RewardHistory.create({
+        user: user._id,
+        bookingId: newBooking._id,
+        bookingReference: newBooking.bookingReference,
+        points: rewardPoints,
+        description: `Earned for booking ${rooms.length} room(s) for ${nights} night(s)`,
+        type: "earn",
+        source: "booking",
+      });
+    }
 
     const emailToSend =
       user?.email || contactEmail || session?.guestDetails?.contactEmail;
@@ -177,10 +214,7 @@ const cancelBooking = async (req, res) => {
   try {
     const booking = await Booking.findOne({
       bookingReference,
-      $or: [
-        { userEmail: email },
-        { contactEmail: email },
-      ]
+      $or: [{ userEmail: email }, { contactEmail: email }],
     });
     if (!booking) {
       return res.status(404).json({ error: "Booking not found" });
@@ -188,7 +222,7 @@ const cancelBooking = async (req, res) => {
 
     const currentDate = new Date();
     const checkInDate = new Date(booking.startDate);
-    
+
     const msUntilCheckIn = checkInDate - currentDate;
 
     const totalHours = Math.max(
@@ -200,19 +234,27 @@ const cancelBooking = async (req, res) => {
 
     console.log("daysUntilCheckIn: ", daysUntilCheckIn);
     console.log("hoursLeftAfterDays: ", hoursLeftAfterDays);
-    
 
-    if(booking.status === "completed"){
-      return res.status(400).json({ error: "Booking already completed, cancellation not possible." });
+    if (booking.status === "completed") {
+      return res
+        .status(400)
+        .json({
+          error: "Booking already completed, cancellation not possible.",
+        });
     }
 
     const cancellationRequest = await CancellationRequest.findOne({
       bookingId: booking._id,
       email: email,
     });
-    
+
     if (cancellationRequest) {
-      return res.status(400).json({ error: "Your request is already pending, please wait for our admin to process it." });
+      return res
+        .status(400)
+        .json({
+          error:
+            "Your request is already pending, please wait for our admin to process it.",
+        });
     }
 
     const newCancellationRequest = new CancellationRequest({
@@ -224,13 +266,14 @@ const cancelBooking = async (req, res) => {
 
     await newCancellationRequest.save();
 
-    res.status(200).json({ message: "Your Cancel Booking Request has send to our staff. "})
-
+    res
+      .status(200)
+      .json({ message: "Your Cancel Booking Request has send to our staff. " });
   } catch (error) {
     console.log("Error in cancelBooking: ", error.message);
     res.status(500).json({ error: error.message });
   }
-}
+};
 
 const getBookingByUser = async (req, res) => {
   const userId = req.user._id;
@@ -241,7 +284,7 @@ const getBookingByUser = async (req, res) => {
     const userBookingInformation = await Booking.find({
       userType: "user",
       bookingCreatedByUser: new mongoose.Types.ObjectId(userId),
-  }).sort({ createdAt: -1 });
+    }).sort({ createdAt: -1 });
 
     console.log(userBookingInformation);
 
@@ -257,22 +300,22 @@ const getBookingByUser = async (req, res) => {
     const rooms = await Room.find({ _id: { $in: roomIds } });
 
     const roomsTypeMap = rooms.reduce((acc, room) => {
-      acc[room._id] = room.roomType
+      acc[room._id] = room.roomType;
       return acc;
-    }, {})
+    }, {});
 
     console.log(roomsTypeMap);
 
-   const bookingDetails = userBookingInformation.map((booking) => {
-     const roomType = booking.room?.map(id => {
-      const key = id.toString()
-      return roomsTypeMap[key]
-     }) // Optional chaining for safety
-     return {
-       ...booking.toObject(),
-       roomType: roomType || "unknown",
-     };
-   });
+    const bookingDetails = userBookingInformation.map((booking) => {
+      const roomType = booking.room?.map((id) => {
+        const key = id.toString();
+        return roomsTypeMap[key];
+      }); // Optional chaining for safety
+      return {
+        ...booking.toObject(),
+        roomType: roomType || "unknown",
+      };
+    });
 
     console.log(bookingDetails);
     res.status(200).json(bookingDetails);
@@ -309,7 +352,6 @@ const createBookingSession = async (req, res) => {
 
   console.log(userEmail);
 
-
   // 2) Core validation
   if (
     !roomId ||
@@ -337,13 +379,15 @@ const createBookingSession = async (req, res) => {
   try {
     const sessionId = uuidv4();
 
-    const userId = await User.findOne({ email: userEmail }).select("_id").lean();//convert to object instead of mongodb docs
+    const userId = await User.findOne({ email: userEmail })
+      .select("_id")
+      .lean(); //convert to object instead of mongodb docs
 
     const rangebetweenCheckInCheckOutDate = differenceInCalendarDays(
       new Date(checkOutDate),
       new Date(checkInDate)
-    )
-    const actualtotalPrice = rangebetweenCheckInCheckOutDate * totalPrice; 
+    );
+    const actualtotalPrice = rangebetweenCheckInCheckOutDate * totalPrice;
 
     // 4) Build the document
     const session = new BookingSession({
@@ -414,48 +458,54 @@ const getBookingSession = async (req, res) => {
 };
 
 const getBookingSessionByUser = async (req, res) => {
-    const userId = req.user._id;
-    try {
-      const bookingSessions = await BookingSession.find({ userId });
-      if(!bookingSessions){
-        return res.status(404).json({ error: "No booking sessions found! "});
-      }
-
-      const rooms = await Room.find({_id: { $in: bookingSessions.flatMap(session => session.roomId) } });
-      const roomNameMap = rooms.reduce((acc, room) => {
-        acc[room._id.toString()] = room.roomName;
-        return acc;
-      }, {});
-      const user = await User.findById(userId).select("name");
-
-      const bookingSessionsWithUserName = bookingSessions.map(session => {
-        const sessionObject = session.toObject();
-        const roomIds = Array.isArray(sessionObject.roomId) ? sessionObject.roomId : [sessionObject.roomId];
-        return {
-          ...sessionObject,
-          customerName:
-            user?.name || sessionObject.guestDetails?.contactName || null,
-          roomName: roomIds.map((id) => roomNameMap[id.toString()] || "Unknown Room")
-        };
-      });
-
-      console.log("Booking Sessions: ", bookingSessionsWithUserName);
-
-      return res.status(200).json(bookingSessionsWithUserName);
-    } catch (error) {
-      console.log("Error in getBookingByUser: ", error.message);
-      res.status(500).json({ error: error.messgae });
+  const userId = req.user._id;
+  try {
+    const bookingSessions = await BookingSession.find({ userId });
+    if (!bookingSessions) {
+      return res.status(404).json({ error: "No booking sessions found! " });
     }
-}
+
+    const rooms = await Room.find({
+      _id: { $in: bookingSessions.flatMap((session) => session.roomId) },
+    });
+    const roomNameMap = rooms.reduce((acc, room) => {
+      acc[room._id.toString()] = room.roomName;
+      return acc;
+    }, {});
+    const user = await User.findById(userId).select("name");
+
+    const bookingSessionsWithUserName = bookingSessions.map((session) => {
+      const sessionObject = session.toObject();
+      const roomIds = Array.isArray(sessionObject.roomId)
+        ? sessionObject.roomId
+        : [sessionObject.roomId];
+      return {
+        ...sessionObject,
+        customerName:
+          user?.name || sessionObject.guestDetails?.contactName || null,
+        roomName: roomIds.map(
+          (id) => roomNameMap[id.toString()] || "Unknown Room"
+        ),
+      };
+    });
+
+    console.log("Booking Sessions: ", bookingSessionsWithUserName);
+
+    return res.status(200).json(bookingSessionsWithUserName);
+  } catch (error) {
+    console.log("Error in getBookingByUser: ", error.message);
+    res.status(500).json({ error: error.messgae });
+  }
+};
 
 const deleteBookingSession = async (req, res) => {
   const { sessionId } = req.params;
-  console.log(sessionId)
+  console.log(sessionId);
   try {
     const result = await BookingSession.findOneAndDelete({ sessionId });
     console.log("your result: ", result);
 
-    if(!result){
+    if (!result) {
       return res.status(404).json({ error: "Session not found or expired" });
     }
 
@@ -464,45 +514,52 @@ const deleteBookingSession = async (req, res) => {
     console.log("Error in deleteBookingSession: ", error.message);
     res.status(500).json({ error: "Internal Server Error" });
   }
-}
+};
 
 const removeRoomFromBookingSession = async (req, res) => {
-  const { sessionId, roomId} = req.params;
+  const { sessionId, roomId } = req.params;
 
   console.log(sessionId, roomId);
 
-  if(!sessionId || !roomId){
+  if (!sessionId || !roomId) {
     return res.status(400).json({ error: "Invalid request" });
   }
 
   try {
-    const bookingSession = await BookingSession.findOne({ sessionId: sessionId });
-    
-    if(!bookingSession){
-      return res.status(404).json({ error: "Booking Session Not Found "});
+    const bookingSession = await BookingSession.findOne({
+      sessionId: sessionId,
+    });
+
+    if (!bookingSession) {
+      return res.status(404).json({ error: "Booking Session Not Found " });
     }
 
-    bookingSession.roomId = bookingSession.roomId.filter(id => id.toString() !== roomId);
-    await bookingSession.save()
+    bookingSession.roomId = bookingSession.roomId.filter(
+      (id) => id.toString() !== roomId
+    );
+    await bookingSession.save();
 
-    res.status(200).json({ message: "Room removed successfully", bookingSession });
-  }catch(error){
+    res
+      .status(200)
+      .json({ message: "Room removed successfully", bookingSession });
+  } catch (error) {
     console.log("Error in remove Room From Booking Session: ", error.message);
-    res.status(500).json({ error: "Internal Server Error"});
+    res.status(500).json({ error: "Internal Server Error" });
   }
-}
+};
 
 const handleDeleteAllCancelled = async (req, res) => {
   try {
     await BookingSession.deleteMany({ status: "cancelled" });
     await CancellationRequest.deleteMany();
-    res.status(200).json({ message: "All cancelled booking sessions deleted successfully" });
-
+    res
+      .status(200)
+      .json({ message: "All cancelled booking sessions deleted successfully" });
   } catch (error) {
     console.log("Error in remove Room From Booking Session: ", error.message);
     res.status(500).json({ error: "Internal Server Error" });
   }
-}
+};
 
 export default {
   createBooking,

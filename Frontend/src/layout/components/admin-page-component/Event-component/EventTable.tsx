@@ -106,7 +106,7 @@ const EventTable = ({
             <TableHead>phone number</TableHead>
             <TableHead>Event Date</TableHead>
             <TableHead>Additional Info</TableHead>
-            <TableHead className="pl-5 text-center">Status</TableHead>
+            <TableHead className="pl-9 text-center">Status</TableHead>
             <TableHead className="min-w-[140px] text-center">Actions</TableHead>
           </TableRow>
         </TableHeader>
