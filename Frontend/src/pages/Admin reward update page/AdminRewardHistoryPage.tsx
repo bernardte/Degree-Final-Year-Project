@@ -1,6 +1,6 @@
 // AdminRewardHistoryPage.tsx
 import { useState, useEffect } from "react";
-import RewardHistoryTable from "@/layout/components/admin-page-component/reward-history-components/rewardHistoryTable";
+import RewardHistoryTable from "@/layout/components/admin-page-component/reward-history-components/RewardHistoryTable";
 import useSystemSettingStore from "@/stores/useSystemSettingStore";
 import { Button } from "@/components/ui/button";
 import {

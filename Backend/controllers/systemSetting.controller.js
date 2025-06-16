@@ -46,7 +46,7 @@ const getAllRewardPointHistory = async (req, res) => {
   }
 };
   
-
+ 
 export default {
   updateRewardPointSetting,
   getRewardPointSetting,

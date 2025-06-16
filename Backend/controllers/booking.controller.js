@@ -10,6 +10,7 @@ import { differenceInCalendarDays } from "date-fns";
 import mongoose from "mongoose";
 import SystemSetting from "../models/systemSetting.model.js";
 import RewardHistory from "../models/rewardHistory.model.js";
+import { calculateLoyaltyTier } from "../logic function/calculatedLoyaltyTier.js";
 
 const createBooking = async (req, res) => {
   const { bookingSessionId, specialRequests } = req.body;
@@ -163,32 +164,49 @@ const createBooking = async (req, res) => {
         key: "rewardPointsSetting",
       });
       const pointsPerNight = setting?.value.bookingRewardPoints || 0; //* default 0 reward points
+      const rewardProgramActivate = setting?.value?.rewardProgramEnabled
+      if(rewardProgramActivate === true){
+
+        const nights = Math.ceil(
+          (new Date(checkOutDate) - new Date(checkInDate)) / (1000 * 60 * 60 * 24)
+        );
+        const roomsBooked = rooms.length;
+        const loyaltyTierRatio = setting?.value.tierMultipliers;
+        const userLoyaltyTier = user.loyaltyTier;
+        const tierMultipliers = loyaltyTierRatio[userLoyaltyTier.toLowerCase()];
   
-      const nights = Math.ceil(
-        (new Date(checkOutDate) - new Date(checkInDate)) / (1000 * 60 * 60 * 24)
-      );
-      const roomsBooked = rooms.length;
-      const loyaltyTierRatio = setting?.value.tierMultipliers;
-      const userLoyaltyTier = user.loyaltyTier;
-      const tierMultipliers = loyaltyTierRatio[userLoyaltyTier.toLowerCase()];
+        const basedPoints = nights * roomsBooked * pointsPerNight;
+        const rewardPoints = Math.round(basedPoints * tierMultipliers);
+        user.totalSpent += newBooking.totalPrice;
+        const newLoyalthyTier = calculateLoyaltyTier(user.totalSpent);
+        // increase user reward points
+        user.rewardPoints = (user.rewardPoints || 0) + rewardPoints;
+        if(user.loyaltyTier !== newLoyalthyTier){
+          user.loyaltyTier = newLoyalthyTier;
+          await RewardHistory.create({
+            user: user._id,
+            bookingId: newBooking._id,
+            bookingReference: newBooking.bookingReference,
+            points: 0,
+            description: `Loyalty tier upgraded to ${newLoyalthyTier}`,
+            type: "tier-upgrade",
+            source: "loyalty",
+          });
+        }
+        
+        await user.save();
 
-      const basedPoints = nights * roomsBooked * pointsPerNight;
-      const rewardPoints = Math.round(basedPoints * tierMultipliers);
-
-      // increase user reward points
-      user.rewardPoints = (user.rewardPoints || 0) + rewardPoints;
-      await user.save();
-
-      // create history reward points
-      await RewardHistory.create({
-        user: user._id,
-        bookingId: newBooking._id,
-        bookingReference: newBooking.bookingReference,
-        points: rewardPoints,
-        description: `Earned for booking ${rooms.length} room(s) for ${nights} night(s)`,
-        type: "earn",
-        source: "booking",
-      });
+        // create history reward points
+        await RewardHistory.create({
+          user: user._id,
+          bookingId: newBooking._id,
+          bookingReference: newBooking.bookingReference,
+          points: rewardPoints,
+          description: `Earned for booking ${rooms.length} room(s) for ${nights} night(s)`,
+          type: "earn",
+          source: "booking",
+        });
+      }
     }
 
     const emailToSend =

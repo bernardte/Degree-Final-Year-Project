@@ -21,9 +21,9 @@ const usersSchema = mongoose.Schema(
       default: false,
     },
     loyaltyTier: {
-        type: String,
-        enum: ["bronze", "silver", "gold", "platinum"],
-        default: "bronze",
+      type: String,
+      enum: ["bronze", "silver", "gold", "platinum"],
+      default: "bronze",
     },
     password: {
       type: String,
@@ -40,6 +40,10 @@ const usersSchema = mongoose.Schema(
       required: false,
     },
     rewardPoints: {
+      type: Number,
+      default: 0,
+    },
+    totalSpent: {
       type: Number,
       default: 0,
     },

@@ -26,12 +26,12 @@ const rewardHistorySchema = mongoose.Schema(
     },
     type: {
       type: String,
-      enum: ["redeem", "earn"],
+      enum: ["redeem", "earn", "tier-upgrade"],
       required: true,
     },
     source: {
       type: String,
-      enum: ["booking", "redemption", "others"],
+      enum: ["booking", "redemption", "loyalty", "others"],
       required: true,
     },
   },

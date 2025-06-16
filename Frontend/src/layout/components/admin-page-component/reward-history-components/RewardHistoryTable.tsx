@@ -12,6 +12,8 @@ import {
   ChevronDown,
   ChevronUp,
   AlertCircle,
+  TrendingUp,
+  Ban,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -39,7 +41,9 @@ const RewardHistoryTable = ({
   const renderTypeIcon = (type: string) => {
     if (type === "earn") {
       return <Plus size={16} className="text-green-500" />;
-    }
+    }else if (type === "upgrade"){
+      return <Ban size={16} className="text-gray-500" />;
+    } 
     return <Minus size={16} className="text-red-500" />;
   };
 
@@ -48,8 +52,10 @@ const RewardHistoryTable = ({
     switch (source) {
       case "booking":
         return <DollarSign size={16} className="text-blue-500" />;
-      case "Redemption":
+      case "redemption":
         return <Gift size={16} className="text-orange-500" />;
+      case "loyalty":
+        return <TrendingUp size={16} className="text-yellow-500" />;
       default:
         return <Gift size={16} className="text-gray-500" />;
     }
@@ -171,6 +177,12 @@ const RewardHistoryTable = ({
                   </th>
                   <th
                     scope="col"
+                    className="px-6 py-3 text-center text-xs font-medium tracking-wider text-gray-500 uppercase"
+                  >
+                    Description
+                  </th>
+                  <th
+                    scope="col"
                     className="cursor-pointer px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase"
                     onClick={() => requestSort("createdAt")}
                   >
@@ -197,6 +209,9 @@ const RewardHistoryTable = ({
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <Skeleton className="h-4 w-24" />
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <Skeleton className="h-4 w-32" />
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <Skeleton className="h-4 w-32" />
@@ -257,8 +272,11 @@ const RewardHistoryTable = ({
                           </span>
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-900">
+                      <td className={`px-6 py-4 text-sm text-gray-900 ${!reward.bookingReference ? "text-center" : null} `}>
                         {reward.bookingReference || "-"}
+                      </td>
+                      <td className={`px-6 py-4 text-sm ${reward.type === "earn" ?  "text-emerald-600" : reward.type === "redeem" ? "text-rose-500" : "text-blue-500" }`}>
+                        {reward.description || "-"}
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-500">
                         {formatDateInBookingCheckOut(reward.createdAt)}

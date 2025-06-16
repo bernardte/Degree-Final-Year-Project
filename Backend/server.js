@@ -14,6 +14,7 @@ import statisticRoute from "./Routes/statistic.route.js";
 import refreshTokenRoute from "./Routes/refreshToken.route.js";
 import checkoutRoute from "./Routes/checkout.route.js";
 import eventRoute from "./Routes/event.route.js";
+import rewardRoute from "./Routes/reward.route.js";
 import systemSettingRoute from "./Routes/systemSetting.route.js";
 import bookingStatusUpdater from "./cronjob/bookingStatusUpdater.js";
 import roomStatusScheduler from "./cronjob/roomStatusScheduler.js";
@@ -55,6 +56,7 @@ app.use("/api/statistic", statisticRoute);
 app.use("/api/refreshToken", refreshTokenRoute);
 app.use("/api/checkout", checkoutRoute);
 app.use("/api/event", eventRoute);
+app.use("/api/reward", rewardRoute);
 app.use("/api/systemSetting", systemSettingRoute);
 
 app.listen(PORT, async () => {

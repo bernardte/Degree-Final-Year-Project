@@ -101,8 +101,8 @@ const Sidebar = () => {
               path: "/admin-reward-setting",
             },
             {
-              label: "Reward Package",
-              path: "/admin-reward-package",
+              label: "Reward Management",
+              path: "/admin-reward-redemption",
             },
             {
               label: "Reward History",
@@ -350,9 +350,9 @@ const SidebarDropdown = ({
                       : ""
                   }`}
                   layout
-                  // initial={{ opacity: 0, y: 12 }}
-                  // animate={{ opacity: 1, y: 0 }}
-                  // transition={{ delay: 0.125 }}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.125 }}
                 >
                   {item.label}
                 </motion.button>

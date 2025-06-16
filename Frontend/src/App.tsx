@@ -33,6 +33,7 @@ import { ROLE } from "./constant/roleList";
 import AdminBookingCalendarPage from "./pages/AdminBookingCalendarPage/AdminBookingCalendarPage";
 import AdminRewardSettingPage from "./pages/Admin reward update page/AdminRewardSettingPage";
 import AdminRewardHistoryPage from "./pages/Admin reward update page/AdminRewardHistoryPage";
+import AdminRewardRedemptionPage from "./pages/Admin reward update page/AdminRewardRedemptionPage";
 
 const App = () => {
   const { user, showLoginPopup, showSignupPopup } = useAuthStore();
@@ -94,6 +95,7 @@ const App = () => {
             <Route path="/admin-room" element={<AdminRoomPage />} />
             <Route path="/admin-event" element={<AdminEventsPage />} />
             <Route path="/admin-reward-setting" element={<AdminRewardSettingPage />} />
+            <Route path="/admin-reward-redemption" element={<AdminRewardRedemptionPage />} />
             <Route path="/admin-reward-history" element={<AdminRewardHistoryPage />} />
           </Route>
         </Route>

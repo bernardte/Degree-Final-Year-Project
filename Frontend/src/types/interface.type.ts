@@ -186,3 +186,13 @@ export interface RewardHistories{
   source: "booking" | "redeemption" | "others"
   createdAt: Date
 }
+
+export interface Reward {
+  _id: string,
+  name: string,
+  description: string,
+  points: number,
+  category: string,
+  status: "active" | "inactive",
+  icon: string
+}
