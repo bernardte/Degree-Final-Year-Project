@@ -7,8 +7,12 @@ import accessControl from "../middleware/accessControl.js";
 const router = express.Router();
 router.use(protectRoute, verifyRoles);
 router
-  .route("/reward")
+  .route("/rewards")
   .post(accessControl("rewardPoints", "create"), rewardContoller.addReward)
   .get(rewardContoller.fetchRewardList);
+router
+  .route("/rewards/:rewardId")
+  .delete(accessControl("rewardPoints", "delete"), rewardContoller.deleteReward)
+  .patch(accessControl("rewardPoints", "update"), rewardContoller.editReward)
 
 export default router;

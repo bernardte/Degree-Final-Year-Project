@@ -297,6 +297,12 @@ const SidebarDropdown = ({
   const isParentActive =
     items.some((item) => item.label === selected) || selected === label;
 
+  useEffect(() => {
+    if (!open && expanded) {
+      setExpanded(false);
+    }
+  }, [open]);
+
   return (
     <div>
       <motion.button
@@ -329,11 +335,14 @@ const SidebarDropdown = ({
         {expanded && open && (
           <motion.div
             key="dropdown"
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="ml-8 overflow-hidden"
+            initial={{ opacity: 0, scaleY: 0.9, transformOrigin: "top" }}
+            animate={{ opacity: 1, scaleY: 1 }}
+            exit={{ opacity: 0, scaleY: 0.9 }}
+            transition={{
+              duration: 0.2,
+              ease: "easeInOut",
+            }}
+            className="ml-8 origin-top overflow-hidden"
           >
             <div className="space-y-1 py-1">
               {items.map((item) => (

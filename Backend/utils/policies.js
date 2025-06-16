@@ -73,6 +73,7 @@ const policies = {
   rewardPoints: {
     update: isSuperAdmin,
     create: isSuperAdmin,
+    delete: isSuperAdmin,
   }
 };
 

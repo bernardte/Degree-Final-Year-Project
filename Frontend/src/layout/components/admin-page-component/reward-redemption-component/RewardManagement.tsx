@@ -1,5 +1,5 @@
 // src/components/RewardRedemptionManagement.js
-import { useState, useEffect,  JSX } from "react";
+import { useState, useEffect, JSX } from "react";
 import {
   Gift,
   Bed,
@@ -19,78 +19,47 @@ import FilterSearch from "./FilterSearch";
 import RewardTable from "./RewardTable";
 import { Reward } from "@/types/interface.type";
 import ShowRewardModal from "./ShowRewardModal";
+import useRewardStore from "@/stores/useRewardStore";
+import useApiRequest from "@/hooks/useApiRequest";
 
-const RewardRedemptionManagement = () => {
-  // State for rewards data
-  const [rewards, setRewards] = useState(() => {
-    const savedRewards = localStorage.getItem("rewards");
-    return savedRewards
-      ? JSON.parse(savedRewards)
-      : [
-          {
-            id: 1,
-            name: "Free Night Stay",
-            description: "Complimentary one-night stay in a standard room",
-            points: 10000,
-            category: "Accommodation",
-            status: "Active",
-            icon: "Bed",
-          },
-          {
-            id: 2,
-            name: "Breakfast Package",
-            description: "Daily breakfast for two during stay",
-            points: 1500,
-            category: "Dining",
-            status: "Active",
-            icon: "Utensils",
-          },
-          {
-            id: 3,
-            name: "Room Upgrade",
-            description: "Complimentary room upgrade upon availability",
-            points: 5000,
-            category: "Accommodation",
-            status: "Active",
-            icon: "Sparkles",
-          },
-          {
-            id: 4,
-            name: "Spa Treatment",
-            description: "60-minute spa treatment for one",
-            points: 3000,
-            category: "Experience",
-            status: "Inactive",
-            icon: "Heart",
-          },
-        ];
-  });
-
+const RewardManagement = () => {
   // State for form inputs
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<Reward>({
     _id: "",
     name: "",
     description: "",
     points: 0,
     category: "Accommodation",
-    status: "Active",
+    status: "active",
     icon: "Bed",
   });
-
   // State for editing
   const [isEditing, setIsEditing] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCategory, setFilterCategory] = useState("All");
   const [filterStatus, setFilterStatus] = useState("All");
+  const {
+    fetchAllRewardList,
+    isLoading,
+    error,
+    addRewards,
+    rewards: storeRewards,
+    deleteReward,
+    updateNewReward
+  } = useRewardStore((state) => state);
+  const { request, isLoading: loading } = useApiRequest();
 
-  // Save rewards to localStorage whenever they change
   useEffect(() => {
-    localStorage.setItem("rewards", JSON.stringify(rewards));
-  }, [rewards]);
+    fetchAllRewardList();
+  }, [fetchAllRewardList]);
 
   // Handle form input changes
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >,
+  ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
@@ -99,23 +68,40 @@ const RewardRedemptionManagement = () => {
   };
 
   // Handle form submission
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>, rewardId: string) => {
     e.preventDefault();
 
     if (isEditing) {
-      // Update existing reward
-      setRewards(
-        rewards.map((reward: Reward) =>
-          reward._id === formData._id ? formData : reward,
-        ),
-      );
+      const updateReward = await request(
+        "patch",
+        `/reward/rewards/${rewardId}`,
+        formData,
+        {},
+        "update Successful",
+        "success"
+      )
+      if(updateReward){
+        setIsEditing(false);
+        setShowModal(false);
+        updateNewReward(updateReward);
+      }
     } else {
-      // Add new reward
-      const newReward = {
-        ...formData,
-        id: Date.now(), // Simple unique ID
-      };
-      setRewards([...rewards, newReward]);
+      const newReward = await request(
+        "post",
+        "/reward/rewards",
+        formData,
+        {},
+        "Added Successful",
+        "success",
+      );
+      if (newReward) {
+        addRewards(newReward);
+        console.log(newReward);
+        setFilterCategory("All");
+        setFilterStatus("All");
+        setSearchTerm("");
+        setShowModal(false);
+      }
     }
 
     // Reset form and close modal
@@ -132,8 +118,9 @@ const RewardRedemptionManagement = () => {
 
   // Delete a reward
   const handleDelete = (rewardId: string) => {
-    if (window.confirm("Are you sure you want to delete this reward?")) {
-      setRewards(rewards.filter((reward: Reward) => reward._id !== rewardId));
+    if (rewardId) {
+      request("delete", `/reward/rewards/${rewardId}`, {}, {}, "Delete Reward Successful", "success");
+      deleteReward(rewardId);
     }
   };
 
@@ -145,7 +132,7 @@ const RewardRedemptionManagement = () => {
       description: "",
       points: 0,
       category: "Accommodation",
-      status: "Active",
+      status: "active",
       icon: "Bed",
     });
     setIsEditing(false);
@@ -190,18 +177,29 @@ const RewardRedemptionManagement = () => {
   };
 
   // Filter rewards based on search and filters
-  const filteredRewards = rewards.filter((reward: Reward) => {
-    const matchesSearch =
-      reward.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      reward.description.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredRewards = storeRewards.filter((reward: Reward) => {
+    const name = reward?.name?.toLowerCase() || "";
+    const description = reward?.description?.toLowerCase() || "";
+    const search = searchTerm?.toLowerCase() || "";
+
+    const matchesSearch = name.includes(search) || description.includes(search);
 
     const matchesCategory =
-      filterCategory === "All" || reward.category === filterCategory;
+      filterCategory === "All" || reward?.category === filterCategory;
     const matchesStatus =
-      filterStatus === "All" || reward.status === filterStatus;
+      filterStatus === "All" || reward?.status === filterStatus;
 
     return matchesSearch && matchesCategory && matchesStatus;
   });
+
+  if (isLoading) {
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <div className="h-12 w-12 animate-spin rounded-full border-t-2 border-b-2 border-blue-500"></div>
+        <span className="ml-2 text-gray-600">Loading...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">
@@ -209,7 +207,7 @@ const RewardRedemptionManagement = () => {
       <RewardHeader setShowModal={setShowModal} />
 
       {/* Stats Cards */}
-      <StatsCard rewards={rewards} />
+      <StatsCard rewards={storeRewards} />
 
       {/* Filters and Search */}
       <FilterSearch
@@ -223,6 +221,7 @@ const RewardRedemptionManagement = () => {
 
       {/* Rewards Table */}
       <RewardTable
+        error={error}
         filteredRewards={filteredRewards}
         getIconComponent={getIconComponent}
         handleEdit={handleEdit}
@@ -240,10 +239,11 @@ const RewardRedemptionManagement = () => {
           getIconComponent={getIconComponent}
           formData={formData}
           setFormData={setFormData}
+          loading={loading}
         />
       )}
     </div>
   );
 };
 
-export default RewardRedemptionManagement;
+export default RewardManagement;

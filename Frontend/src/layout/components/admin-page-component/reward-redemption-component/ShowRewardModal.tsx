@@ -1,4 +1,5 @@
-import { Save, X } from "lucide-react";
+import { Reward } from "@/types/interface.type";
+import { Loader2, Save, X } from "lucide-react";
 import {JSX} from "react";
 
 // Get icon component based on string
@@ -18,7 +19,7 @@ const iconKeys = [
   type IconName = (typeof iconKeys)[number];
 
 type FormData = {
-    _id: string,
+    _id?: string,
     name: string,
     description: string,
     points: number,
@@ -31,7 +32,10 @@ interface showRewardModalProps {
   isEditing: boolean;
   setShowModal: React.Dispatch<React.SetStateAction<boolean>>;
   resetForm: () => void;
-  handleSubmit: (e: React.ChangeEvent<HTMLFormElement>) => void;
+  handleSubmit: (
+    e: React.FormEvent<HTMLFormElement>,
+    rewardId: string,
+  ) => Promise<void>;
   handleChange: (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
@@ -39,15 +43,8 @@ interface showRewardModalProps {
   ) => void;
   getIconComponent: (IconName: IconName | string) => JSX.Element;
   formData: FormData;
-  setFormData: React.Dispatch<React.SetStateAction<{
-  _id: string;
-  name: string;
-  description: string;
-  points: number;
-  category: string;
-  status: string;
-  icon: string;
-}>>
+  setFormData: React.Dispatch<React.SetStateAction<Reward>>;
+  loading: boolean;
 }
 
 const ShowRewardModal = ({
@@ -59,7 +56,9 @@ const ShowRewardModal = ({
   getIconComponent,
   formData,
   setFormData,
+  loading,
 } : showRewardModalProps) => {
+
   return (
     <div className="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-md">
       <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white shadow-2xl">
@@ -79,7 +78,10 @@ const ShowRewardModal = ({
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="mt-6 space-y-6">
+          <form
+            onSubmit={(e) => handleSubmit(e, formData?._id ?? "")}
+            className="mt-6 space-y-6"
+          >
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               <div>
                 <label
@@ -158,8 +160,8 @@ const ShowRewardModal = ({
                   value={formData.status}
                   onChange={handleChange}
                 >
-                  <option value="Active">Active</option>
-                  <option value="Inactive">Inactive</option>
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
                 </select>
               </div>
 
@@ -229,9 +231,14 @@ const ShowRewardModal = ({
               </button>
               <button
                 type="submit"
-                className="flex items-center rounded-lg bg-indigo-600 px-4 py-2 font-medium text-white hover:bg-indigo-700"
+                className={`flex items-center rounded-lg px-4 py-2 font-medium text-white ${loading ? "bg-black/90 text-white" : "bg-indigo-600 hover:bg-indigo-700"}`}
+                disabled={loading}
               >
-                <Save className="mr-2" size={18} />
+                {!loading ? (
+                  <Save className="mr-2" size={18} />
+                ) : (
+                  <Loader2 className="mr-2 animate-spin text-white" size={18} />
+                )}
                 {isEditing ? "Update Reward" : "Create Reward"}
               </button>
             </div>

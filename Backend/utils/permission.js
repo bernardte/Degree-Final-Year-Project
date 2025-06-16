@@ -29,7 +29,7 @@ const permissions = {
     events: ["view_all", "update_event_status", "reject_event_status"],
     OTP: ["view", "update", "create"],
     rateAndReview: ["create"],
-    rewardPoints: ["update", "create"],
+    rewardPoints: ["update", "create", "delete"],
   },
 
   user: {

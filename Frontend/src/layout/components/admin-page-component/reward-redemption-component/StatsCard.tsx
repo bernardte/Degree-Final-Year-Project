@@ -17,7 +17,7 @@ const StatsCard = ({ rewards } : { rewards: Reward[] }) => {
         </div>
       </div>
 
-      <div className="rounded-xl border-l-4 border-green-500 bg-white p-6 shadow-md">
+      <div className="rounded-lg border-l-4 border-green-500 bg-white p-6 shadow-md">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-2xl font-bold text-gray-800">

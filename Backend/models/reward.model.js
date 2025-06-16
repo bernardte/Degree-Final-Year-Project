@@ -26,7 +26,7 @@ const RewardSchema = new mongoose.Schema({
         type: String,
         required: true,
     }
-})
+}, {timestamps: true})
 
 const Reward = mongoose.model("reward", RewardSchema);
 
