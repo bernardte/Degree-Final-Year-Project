@@ -27,6 +27,7 @@ export interface Room {
   };
   bedType: "King" | "Queen" | "Single" | "Double" | "Twin";
   bookings: Bookings[];
+  breakfastIncluded: boolean;
   rating: number;
   reviews: Reviews[];
   isActivate: boolean;

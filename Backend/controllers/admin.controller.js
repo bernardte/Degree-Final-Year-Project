@@ -10,6 +10,7 @@ import User from "../models/user.model.js";
 import sendEventResponseEmail from "../utils/sendEventResponseEmail.js";
 import OTP from "../models/adminOTP.model.js";
 import stripe from "../config/stripe.js";
+import { normalizeToArray } from "../logic function/normalizeToArray.js";
 
 const getUser = async (req, res) => {
   try {
@@ -116,12 +117,13 @@ const addRoom = async (req, res) => {
     amenities,
     capacity,
     roomDetails,
+    breakfastIncluded,
   } = req.body;
 
   const imageFile = req.files.images;
-  const galleryImageFile = req.files.galleryImage || [];
-  console.log(galleryImageFile);
-  // parse capacity string into an object
+  const galleryImageFile = normalizeToArray(req.files?.galleryImage);
+
+
   const { Adults, Children } = JSON.parse(capacity);
   if (
     !bedType ||
@@ -134,6 +136,7 @@ const addRoom = async (req, res) => {
     !imageFile ||
     !galleryImageFile ||
     !roomDetails ||
+    !breakfastIncluded ||
     Adults === undefined ||
     Children === undefined
   ) {
@@ -164,7 +167,7 @@ const addRoom = async (req, res) => {
       return res.status(400).json({ message: "Room number already exists." });
     }
 
-    // 🔄 Upload images in parallel
+    // Upload images in parallel
     const uploadPromises = uploadImages.map((image) =>
       uploadToCloudinary(image)
     );
@@ -184,6 +187,7 @@ const addRoom = async (req, res) => {
         children: Children,
         adults: Adults,
       },
+      breakfastIncluded: breakfastIncluded === "true" ? true : false,
     });
 
     await newRoom.save();
@@ -209,21 +213,14 @@ const updateRoom = async (req, res) => {
   const adults = parseInt(adultsRaw, 10);
   const children = parseInt(childrenRaw, 10);
   const { roomId } = req.params;
+  const breakfastIncluded = req.body.breakfastIncluded === "true";
+  console.log("breakfastIncluded: ", req.body.breakfastIncluded);
 
   const files = req.files || {};
   const imageInput = files.images || null; // Cover
-  const galleryInput = files.galleryImages || []; // Gallery
-
-  const coverImages = Array.isArray(imageInput)
-    ? imageInput
-    : imageInput
-    ? [imageInput]
-    : [];
-  const galleryImages = Array.isArray(galleryInput)
-    ? galleryInput
-    : galleryInput
-    ? [galleryInput]
-    : [];
+  const galleryInput = normalizeToArray(files?.galleryImages); // Gallery
+  const coverImages = normalizeToArray(imageInput);
+  const galleryImages = normalizeToArray(galleryInput);
 
   try {
     if (!roomId)
@@ -255,7 +252,7 @@ const updateRoom = async (req, res) => {
       newImages[0] = uploadedCover; // Replace cover image
     }
 
-    // ✅ If new gallery images were uploaded
+    // If new gallery images were uploaded
     if (galleryImages.length > 0) {
       const uploadedGallery = await Promise.all(
         galleryImages.map(uploadToCloudinary)
@@ -264,9 +261,9 @@ const updateRoom = async (req, res) => {
       // Decide whether to append or replace gallery images:
       // Replace existing gallery images (after index 0)
       newImages = [
-        newImages[0], // ✅ 保留封面图
-        ...newImages.slice(1), // ✅ 保留旧 gallery 图
-        ...uploadedGallery, // ✅ 添加新上传的 gallery 图
+        newImages[0], // ✅ keep cover image
+        ...newImages.slice(1), // ✅ keep old gallery images
+        ...uploadedGallery, // ✅ include new gallery images
       ];
     }
 
@@ -277,6 +274,7 @@ const updateRoom = async (req, res) => {
     room.description = description || room.description;
     room.pricePerNight = pricePerNight || room.pricePerNight;
     room.amenities = amenities || room.amenities;
+    room.breakfastIncluded = breakfastIncluded || room.breakfastIncluded;
     room.capacity = {
       adults: adults || room.capacity.adults,
       children: children || room.capacity.children,

@@ -18,6 +18,7 @@ import {
   User,
   Users,
   Info,
+  Croissant
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import useToast from "@/hooks/useToast";
@@ -352,9 +353,16 @@ const RoomInformationPage = () => {
                       </span>
                       <span className="ml-2 text-gray-500">/ night</span>
                     </div>
-                    <p className="mt-1 text-gray-600">
-                      Excluded complimentary breakfast
-                    </p>
+                    {room.breakfastIncluded ? (
+                      <p className="mt-1 flex items-center font-medium text-green-600">
+                        <Croissant size={18} className="mr-1.5" />
+                        Breakfast included
+                      </p>
+                    ) : (
+                      <p className="mt-1 text-gray-600">
+                        Excluded complimentary breakfast
+                      </p>
+                    )}
                   </div>
 
                   <Link

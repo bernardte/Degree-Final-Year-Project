@@ -29,6 +29,10 @@ const roomSchema = mongoose.Schema(
       type: Number,
       required: true,
     },
+    breakfastIncluded: {
+      type: Boolean,
+      default: false,
+    },
     amenities: [
       {
         type: String,

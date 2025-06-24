@@ -7,7 +7,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ActionButton } from "../../share-components/ActionButton";
-import { DoorClosed, Loader2, Wallet } from "lucide-react";
+import { Croissant, DoorClosed, Loader2, Wallet } from "lucide-react";
 import formatCurrency from "@/utils/formatCurrency";
 import axiosInstance from "@/lib/axios";
 import useToast from "@/hooks/useToast";
@@ -116,6 +116,8 @@ const RoomTable = ({
         (selectedRoom.capacity.children ?? 0).toString(),
       );
 
+      formData.append("breakfastIncluded", selectedRoom.breakfastIncluded.toString());
+
       // ✅ Append only File-type cover image (usually first one)
       // Append images if it's a File or array of Files
       if (selectedRoom.images) {
@@ -213,8 +215,8 @@ const RoomTable = ({
             <TableHead className="min-w-[120px] text-center">
               Room Price
             </TableHead>
+            <TableHead className="min-w-[160px] text-center">Breakfast</TableHead>
             <TableHead className="min-w-[160px]">Room Number</TableHead>
-
             <RequireRole allowedRoles={[ROLE.SuperAdmin]}>
               <TableHead className="min-w-[100px]">Status</TableHead>
               <TableHead className="min-w-[120px] text-center">
@@ -312,6 +314,23 @@ const RoomTable = ({
                   {formatCurrency(room?.pricePerNight)} / night
                 </span>
               </TableCell>
+              <TableCell>
+                <div className="flex items-center justify-center">
+                  <span
+                    className={`relative inline-flex items-center rounded-full px-3 py-1 text-sm font-medium shadow-sm ${
+                      room?.breakfastIncluded
+                        ? "bg-blue-50 text-blue-700"
+                        : "bg-gray-100 text-gray-600"
+                    } `}
+                  >
+                    <Croissant
+                      className={`mr-2 h-4 w-4 ${room?.breakfastIncluded ? "text-blue-500" : "text-gray-400"} `}
+                    />
+                    {room?.breakfastIncluded ? "Included" : "Not Included"}
+                  </span>
+                </div>
+              </TableCell>
+
               <TableCell>
                 <div className="flex items-center">
                   <span className="relative inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-700 shadow-sm">

@@ -14,63 +14,61 @@ const createCheckoutSession = async (req, res) => {
     sessionId,
   } = req.body;
 
+  console.log("breakfastIncluded: ", breakfastIncluded);
   try {
-    // Find multiple rooms if roomId is an array of ObjectId
     const roomSelected = await Room.find({ _id: { $in: roomId } });
-
-    console.log(roomSelected);
 
     let breakfastCount = 0;
 
-    const lineItems = roomSelected
-      .map((room) => {
-        const roomPrice = room.pricePerNight;
-        const rangeBetweenCheckInDateAndCheckOutDate = differenceInCalendarDays(
-          new Date(checkOutDate),
-          new Date(checkInDate)
-      )
+    const nights = differenceInCalendarDays(
+      new Date(checkOutDate),
+      new Date(checkInDate)
+    );
 
-        const roomItem = {
-          price_data: {
-            currency: "myr",
-            product_data: {
-              name: room?.roomName,
-              description: `Booking from ${checkInDate} to ${checkOutDate}`,
-            },
-            unit_amount: (roomPrice * 100) * parseInt(rangeBetweenCheckInDateAndCheckOutDate),
+    const lineItems = [];
+
+    for (const room of roomSelected) {
+      // Create a line item for the room price × nights
+      lineItems.push({
+        price_data: {
+          currency: "myr",
+          product_data: {
+            name: room?.roomName,
+            description: `Booking from ${checkInDate} to ${checkOutDate}`,
           },
-          quantity: 1,
-        };
+          unit_amount: room.pricePerNight * 100 * nights,
+        },
+        quantity: 1,
+      });
 
-        if (breakfastIncluded) {
-          breakfastCount += 1;
-        }
+      // If user wants breakfast AND the room does not already include it
+      if (breakfastIncluded && !room.breakfastIncluded) {
+        breakfastCount += nights; // breakfast per night
+      }
+    }
 
-        return [roomItem];
-      })
-      .flat();
-
+    // Add breakfast line item if needed
     if (breakfastCount > 0) {
       const breakfastItem = {
         price_data: {
           currency: "myr",
           product_data: {
             name: "Breakfast Voucher",
-            description: `Breakfast voucher for ${breakfastCount} room(s)`,
+            description: `Breakfast for ${breakfastCount} night(s)`,
           },
-          unit_amount: 30 * 100, //RM 30 
+          unit_amount: 30 * 100, // RM30
         },
         quantity: breakfastCount,
       };
 
       lineItems.push(breakfastItem);
+
       await BookingSession.updateOne(
         { sessionId },
         { breakfastIncluded: breakfastCount }
       );
     }
 
-    // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card", "fpx", "grabpay"],
       mode: "payment",
@@ -82,8 +80,8 @@ const createCheckoutSession = async (req, res) => {
         checkInDate,
         checkOutDate,
         breakfastCount,
-        sessionId, // This is UUIDv4 session id
-        totalPrice
+        sessionId,
+        totalPrice,
       },
     });
 

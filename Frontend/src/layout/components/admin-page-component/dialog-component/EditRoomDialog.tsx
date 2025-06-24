@@ -429,6 +429,46 @@ const EditRoomDialog = ({
                         prefix={undefined}
                       />
                     </div>
+                    <label
+                      htmlFor="breakfastIncluded"
+                      className="mt-5 flex cursor-pointer items-center gap-3 select-none"
+                    >
+                      <input
+                        type="checkbox"
+                        id="breakfastIncluded"
+                        checked={selectedRoom?.breakfastIncluded}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          console.log("Checkbox value:", checked);
+                          setSelectedRoom((prev) =>
+                            prev ? { ...prev, breakfastIncluded: checked } : prev
+                          );
+                        }}
+                        className="peer sr-only"
+                      />
+
+                      <div
+                        className={`flex h-5 w-5 items-center justify-center rounded border-2 transition-colors ${selectedRoom?.breakfastIncluded ? "border-blue-600 bg-blue-600" : "border-gray-400"} peer-focus-visible:ring-2 peer-focus-visible:ring-blue-400`}
+                      >
+                        {selectedRoom?.breakfastIncluded && (
+                          <svg
+                            className="h-3 w-3 text-white"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="3"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                        )}
+                      </div>
+
+                      <span className="text-[16px] font-medium text-blue-600 hover:underline">
+                        Breakfast Included
+                      </span>
+                    </label>
                   </div>
                   {/* Image Gallery Section */}
                   <div>

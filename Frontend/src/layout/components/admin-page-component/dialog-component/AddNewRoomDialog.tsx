@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+
 import roomAmenities from "@/constant/roomAmenities";
 import { motion } from "framer-motion";
 import {
@@ -66,6 +67,7 @@ interface RoomData {
     Adults: number;
     Children: number;
   };
+  breakfastIncluded: boolean;
 }
 
 const AddNewRoomDialog = ({ open, onClose }: AddNewRoomDialogProps) => {
@@ -78,6 +80,7 @@ const AddNewRoomDialog = ({ open, onClose }: AddNewRoomDialogProps) => {
     bedCount: "",
     roomDetails: "",
     bedType: "",
+    breakfastIncluded: false,
     capacity: { Adults: 0, Children: 0 },
   });
 
@@ -264,6 +267,7 @@ const AddNewRoomDialog = ({ open, onClose }: AddNewRoomDialogProps) => {
       roomDetails: "",
       bedCount: "",
       bedType: "",
+      breakfastIncluded: false,
       capacity: { Adults: 0, Children: 0 },
     });
     setRoomImage(null);
@@ -275,12 +279,11 @@ const AddNewRoomDialog = ({ open, onClose }: AddNewRoomDialogProps) => {
   const handleApiError = (error: any) => {
     const message =
       error.response?.data?.message || error.response?.data?.error;
-    showToast(
-      "warn",
-      message.includes("Access denied")
-        ? error?.response?.data?.message
-        : message,
-    );
+      if(message.includes("Access denied")){
+        showToast("warn", error?.response?.data?.message);
+      }else{
+        showToast("error", error?.response?.data?.error);
+      }
   };
 
   // handle remove image gallery
@@ -442,6 +445,48 @@ const AddNewRoomDialog = ({ open, onClose }: AddNewRoomDialogProps) => {
                         prefix={undefined}
                       />
                     </div>
+                    <label
+                      htmlFor="breakfastIncluded"
+                      className="mt-5 flex cursor-pointer items-center gap-3 select-none"
+                    >
+                      <input
+                        type="checkbox"
+                        id="breakfastIncluded"
+                        checked={roomData.breakfastIncluded}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          console.log("Checkbox value:", checked);
+                          setRoomData((prev) => ({
+                            ...prev,
+                            breakfastIncluded: checked,
+                          }))
+                        }
+                        }
+                        className="peer sr-only"
+                      />
+
+                      <div
+                        className={`flex h-5 w-5 items-center justify-center rounded border-2 transition-colors ${roomData.breakfastIncluded ? "border-blue-600 bg-blue-600" : "border-gray-400"} peer-focus-visible:ring-2 peer-focus-visible:ring-blue-400`}
+                      >
+                        {roomData.breakfastIncluded && (
+                          <svg
+                            className="h-3 w-3 text-white"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="3"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                        )}
+                      </div>
+
+                      <span className="text-[16px] font-medium text-blue-600 hover:underline">
+                        Breakfast Included
+                      </span>
+                    </label>
                   </div>
                   {/* Image gallery */}
                   <div>
