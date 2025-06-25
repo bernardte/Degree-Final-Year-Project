@@ -24,6 +24,8 @@ import useToast from "@/hooks/useToast";
 import axiosInstance from "@/lib/axios";
 import useAuthStore from "@/stores/useAuthStore";
 import { motion } from "framer-motion";
+import RequireRole from "@/permission/RequireRole";
+import { ROLE } from "@/constant/roleList";
 
 interface FormErrors {
   username?: string;
@@ -323,6 +325,7 @@ const Profile = () => {
               }
               className={`w-full rounded-lg border border-gray-200 px-4 py-3 transition-all focus:border-transparent focus:ring-2 focus:ring-[${tierConfig.color}]`}
               placeholder="your.email@example.com"
+              // disabled={true}
             />
             {errors.email && (
               <p className="flex items-center text-sm text-red-500">
@@ -334,22 +337,24 @@ const Profile = () => {
           {/* 账户信息卡片 */}
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             {/* 账户角色显示 */}
-            <div className="space-y-2">
-              <label className="flex items-center font-medium text-gray-700">
-                <User
-                  className="mr-2 h-5 w-5"
-                  style={{ color: tierConfig.color }}
-                />
-                Account Role
-              </label>
-              <div
-                className={`rounded-lg border ${tierConfig.borderClass} bg-white px-4 py-3`}
-              >
-                <span className="font-medium text-gray-700 capitalize">
-                  {role}
-                </span>
+            <RequireRole allowedRoles={[ROLE.Admin, ROLE.SuperAdmin]}>
+              <div className="space-y-2">
+                <label className="flex items-center font-medium text-gray-700">
+                  <User
+                    className="mr-2 h-5 w-5"
+                    style={{ color: tierConfig.color }}
+                  />
+                  Account Role
+                </label>
+                <div
+                  className={`rounded-lg border ${tierConfig.borderClass} bg-white px-4 py-3`}
+                >
+                  <span className="font-medium text-gray-700 capitalize">
+                    {role}
+                  </span>
+                </div>
               </div>
-            </div>
+            </RequireRole>
 
             {/* 忠诚度等级显示 */}
             <div className="space-y-2">

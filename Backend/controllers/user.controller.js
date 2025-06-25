@@ -1,4 +1,5 @@
 import User from "../models/user.model.js";
+import Room from "../models/room.model.js";
 import bcrypt from "bcryptjs";
 import { v2 as cloudinary } from "cloudinary";
 import generateTokensAndSetCookies from "../utils/generateTokensAndSetCookies.js";
@@ -94,6 +95,24 @@ const loginUser = async (req, res) => {
   }
 };
 
+const getUserRewardPoints = async (req, res) => {
+  const userId = req.user._id;
+  try {
+    const user = await User.findById({_id: userId}).select("rewardPoints loyaltyTier");
+    if (!user) {
+      return res.status(400).json({ error: "User not found" });
+    }
+    
+    return res.status(200).json({
+      userPoints: user.rewardPoints,
+      userLoyaltyTier: user.loyaltyTier,
+    }); 
+  } catch (error) {
+    console.log("Error in getUserRewardPoints: ", error.message);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
 const logoutUser = (req, res) => {
   const token = req.cookies.accessToken || req.cookies.refreshToken;
 
@@ -158,7 +177,7 @@ const updateUserProfile = async (req, res) => {
         .json({ error: "New password must be at least 6 characters long." });
     }
 
-    if(newPassword && currentPassword){
+    if (newPassword && currentPassword) {
       const match = await bcrypt.compare(currentPassword, user.password);
 
       if (!match) {
@@ -191,7 +210,25 @@ const updateUserProfile = async (req, res) => {
 
     user = await user.save();
 
-    //TODO: after have room models with "comment" property need to add back here.
+    //* If the user update their profile this will also update with their corresponding comments username
+    //* find all rooms that this user comment and update username fields
+    //! reviews.$[review] targets each review subdocument that matches the arrayFilter.
+    //! arrayFilters: [{ "review.user": user._id }] makes sure only reviews with that user get updated.
+    await Room.updateMany(
+      { "rewiews.user": user._id },
+      {
+        $set: {
+          "reviews.$[review].username": user.username,
+        },
+      },
+      {
+        arrayFilters: [
+          {
+            "review.user": user._id,
+          },
+        ],
+      }
+    );
 
     return res.status(200).json({
       message: "Profile updated successfully",
@@ -200,7 +237,7 @@ const updateUserProfile = async (req, res) => {
       email: user.email,
       username: user.username,
       profilePic: user.profilePic,
-      role: user.role
+      role: user.role,
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -276,12 +313,15 @@ const getUserProfile = async (req, res) => {
   });
 };
 
+
+
 export default {
   getUserProfile,
+  getUserRewardPoints,
   signupUser,
   loginUser,
   logoutUser,
   updateUserProfile,
   verifyOTP,
-  getCurrentLoginUser
+  getCurrentLoginUser,
 };

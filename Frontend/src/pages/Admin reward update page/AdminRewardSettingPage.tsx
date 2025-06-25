@@ -148,13 +148,14 @@ const AdminRewardSettingPage = () => {
         handleNestedSettingChange={handleNestedSettingChange}
       />
 
-      <SummaryCards settings={settings} />
-
       <ActionButtons
         isSaving={isSaving}
         handleResetSettings={handleResetSettings}
         handleSaveSettings={handleSaveSettings}
       />
+      
+      <SummaryCards settings={settings} />
+
     </div>
   );
 };

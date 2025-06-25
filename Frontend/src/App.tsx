@@ -34,6 +34,7 @@ import AdminBookingCalendarPage from "./pages/AdminBookingCalendarPage/AdminBook
 import AdminRewardSettingPage from "./pages/Admin reward update page/AdminRewardSettingPage";
 import AdminRewardHistoryPage from "./pages/Admin reward update page/AdminRewardHistoryPage";
 import AdminRewardManagementPage from "./pages/Admin reward update page/AdminRewardManagementPage";
+import RewardRedemptionPage from "./pages/Reward redemption page/RewardRedemptionPage";
 
 const App = () => {
   const { user, showLoginPopup, showSignupPopup } = useAuthStore();
@@ -73,7 +74,9 @@ const App = () => {
             path="cancelled-booking-policy"
             element={<CancelBookingPage />}
           />
+          <Route path="profile" element={<ProfilePage />} />
           <Route path="pending-booking" element={<PendingBookingPage />} />
+          <Route path="reward-redemption" element={<RewardRedemptionPage />} />
         </Route>
 
         {/* User Login Route */}

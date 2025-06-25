@@ -1,18 +1,36 @@
 import express from "express";
-import rewardContoller from "../controllers/reward.controller.js";
+import rewardController from "../controllers/reward.controller.js";
 import verifyRoles from "../middleware/verifyRoles.js";
 import protectRoute from "../middleware/protectRoute.js";
 import accessControl from "../middleware/accessControl.js";
 
 const router = express.Router();
-router.use(protectRoute, verifyRoles);
+
 router
   .route("/rewards")
-  .post(accessControl("rewardPoints", "create"), rewardContoller.addReward)
-  .get(rewardContoller.fetchRewardList);
+  .post(
+    protectRoute,
+    verifyRoles,
+    accessControl("rewardPoints", "create"),
+    rewardController.addReward
+  )
+  .get(protectRoute, rewardController.fetchRewardList);
 router
   .route("/rewards/:rewardId")
-  .delete(accessControl("rewardPoints", "delete"), rewardContoller.deleteReward)
-  .patch(accessControl("rewardPoints", "update"), rewardContoller.editReward)
+  .delete(
+    protectRoute,
+    verifyRoles,
+    accessControl("rewardPoints", "delete"),
+    rewardController.deleteReward
+  )
+  .patch(
+    protectRoute,
+    verifyRoles,
+    accessControl("rewardPoints", "update"),
+    rewardController.editReward
+  );
+router
+  .route("/reward-claim/:rewardId")
+  .post(protectRoute, rewardController.claimReward);
 
 export default router;

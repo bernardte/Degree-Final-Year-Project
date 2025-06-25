@@ -10,11 +10,11 @@ const rewardHistorySchema = mongoose.Schema(
     bookingId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "booking",
-      required: true,
+      required: false,
     },
     bookingReference: {
       type: String,
-      required: true,
+      required: false,
     },
     points: {
       type: Number,
