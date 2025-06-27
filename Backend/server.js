@@ -18,7 +18,8 @@ import rewardRoute from "./Routes/reward.route.js";
 import systemSettingRoute from "./Routes/systemSetting.route.js";
 import bookingStatusUpdater from "./cronjob/bookingStatusUpdater.js";
 import roomStatusScheduler from "./cronjob/roomStatusScheduler.js";
-// import { initializeSocket } from "./config/socket.js";
+import { initializeSocket } from "./config/socket.js";
+import { createServer } from "http"; //http server
 
 dotenv.config();
 const app = express();
@@ -48,9 +49,8 @@ app.use(
     }
 ))
 
-// const httpServer = createServer
-
-
+const httpServer = createServer(app);
+initializeSocket(httpServer)
 
 app.use("/api/users", usersRoute);
 app.use("/api/rooms", roomRoute);
@@ -64,7 +64,7 @@ app.use("/api/event", eventRoute);
 app.use("/api/reward", rewardRoute);
 app.use("/api/systemSetting", systemSettingRoute);
 
-app.listen(PORT, async () => {
+httpServer.listen(PORT, async () => {
     console.log("Server is running on port", PORT);
     await connnectDB();
     bookingStatusUpdater.start();

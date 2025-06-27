@@ -8,34 +8,20 @@ import CancellationRequest from "../models/cancellationRequest.model.js";
 import generateAndUploadQRCode from "../utils/generateAndUploadQRCode.js";
 import { differenceInCalendarDays } from "date-fns";
 import mongoose from "mongoose";
-import SystemSetting from "../models/systemSetting.model.js";
-import RewardHistory from "../models/rewardHistory.model.js";
-import { calculateLoyaltyTier } from "../logic function/calculatedLoyaltyTier.js";
+import { handleRewardPoints } from "../logic function/handleRewardPoints.js";
+import { emitBookingTrendsUpdate } from "../utils/socketUtils.js";
 
 const createBooking = async (req, res) => {
   const { bookingSessionId, specialRequests } = req.body;
-  console.log("sessionId: ", bookingSessionId, specialRequests);
-  console.log("request body: ", req.body);
-
-  let guestUserId = null;
-
-  if (!bookingSessionId) {
+  if (!bookingSessionId)
     return res.status(400).json({ error: "bookingSessionId is required" });
-  }
 
   try {
     const session = await BookingSession.findOne({
       sessionId: bookingSessionId,
     });
-
-    if (!session) {
+    if (!session)
       return res.status(404).json({ error: "Booking session not found" });
-    }
-    console.log("Booking session data: ", session); // Ensure session data is correct
-
-    if (session.guestDetails) {
-      guestUserId = session.guestDetails._id;
-    }
 
     const {
       roomId,
@@ -60,40 +46,31 @@ const createBooking = async (req, res) => {
         .json({ error: "Check-out date must be after check-in date" });
     }
 
-    const bookingReference = uuidv4(); // Unique reference
-
-    // Find rooms using the roomId array
     const rooms = await Room.find({ _id: { $in: roomId } });
-    if (rooms.length !== roomId.length) {
+    if (rooms.length !== roomId.length)
       return res.status(404).json({ error: "One or more rooms not found" });
-    }
 
-    // Check if the rooms are available for the selected dates
-    for (let room of rooms) {
-      const checkIn = new Date(checkInDate);
-      const checkOut = new Date(checkOutDate);
-
-      const overlappingBooking = await Booking.findOne({
-        room: room._id,
-        startDate: { $lt: checkOut },
-        endDate: { $gt: checkIn },
-      });
-
-      if (overlappingBooking) {
-        return res.status(400).json({
-          error: `Room ${room.roomNumber} is already booked for the selected dates`,
-        });
-      }
-    }
-
-    // Proceed with booking for each room
     const user = userId ? await User.findById(userId) : null;
+    const guestUserId = session.guestDetails?._id;
+    const bookingReference = uuidv4();
+
+    for (let room of rooms) {
+      const overlapping = await Booking.findOne({
+        room: room._id,
+        startDate: { $lt: new Date(checkOutDate) },
+        endDate: { $gt: new Date(checkInDate) },
+      });
+      if (overlapping)
+        return res
+          .status(400)
+          .json({ error: `Room ${room.roomNumber} is already booked` });
+    }
 
     const newBooking = new Booking({
-      userEmail: contactEmail || (user ? user.email : null),
+      userEmail: contactEmail || user?.email || null,
       bookingCreatedByUser: userId || guestUserId,
       userType: userId ? "user" : "guest",
-      room: rooms.map((room) => room._id), // Store all room IDs
+      room: rooms.map((r) => r._id),
       startDate: checkInDate,
       endDate: checkOutDate,
       totalGuests: totalGuest,
@@ -104,125 +81,66 @@ const createBooking = async (req, res) => {
       paymentMethod,
       paymentStatus,
       paymentIntentId,
-      contactName: contactName || guestDetails?.contactName || null,
-      contactEmail: contactEmail || guestDetails?.contactEmail || null,
-      contactNumber: contactNumber || guestDetails?.contactNumber || null,
+      contactName: contactName || guestDetails?.contactName,
+      contactEmail: contactEmail || guestDetails?.contactEmail,
+      contactNumber: contactNumber || guestDetails?.contactNumber,
     });
-
     await newBooking.save();
-
-    // Add booking to rooms' bookings array
     for (let room of rooms) {
       room.bookings.push(newBooking._id);
       await room.save();
     }
-
-    if (userId && !user) {
-      return res.status(404).json({ error: "User not found" });
-    }
-
-    const roomDetails = rooms.map((room) => ({
-      roomType: room.roomType,
-      roomNumber: room.roomNumber,
-    })); // get each room details
-    const { adults, children } = totalGuest;
-
+    // handle QR code
+    const roomDetails = rooms.map((r) => ({
+      roomType: r.roomType,
+      roomNumber: r.roomNumber,
+    }));
     const qrCodeData = {
       bookingReference,
       checkInDate,
       checkOutDate,
-      rooms: roomDetails.map(({ roomType, roomNumber }) => ({
-        roomType,
-        roomNumber,
-      })),
+      rooms: roomDetails,
     };
-
     const qrCodePublicURLfromCloudinary = await generateAndUploadQRCode(
       qrCodeData
     );
-
-    const bookingData = {
-      username: user?.username || contactName,
-      bookingReference,
-      roomDetail: roomDetails,
-      checkInDate,
-      checkOutDate,
-      breakfastIncluded,
-      adults,
-      children,
-      totalPrice,
-      qrCodeImageURL: qrCodePublicURLfromCloudinary,
-    };
-
     newBooking.qrCodeImageURL = qrCodePublicURLfromCloudinary;
-
     await newBooking.save();
 
-    //? earn point for the login user.
-    if(user){
-      const setting = await SystemSetting.findOne({
-        key: "rewardPointsSetting",
+    // handle reward points
+    if (user)
+      await handleRewardPoints(
+        user,
+        newBooking,
+        checkInDate,
+        checkOutDate,
+        rooms
+      );
+
+    const emailTo = user?.email || contactEmail || guestDetails?.contactEmail;
+    if (emailTo && qrCodePublicURLfromCloudinary) {
+      await sendBookingConfirmationEmail(emailTo, {
+        username: user?.username || contactName,
+        bookingReference,
+        roomDetail: roomDetails,
+        checkInDate,
+        checkOutDate,
+        breakfastIncluded,
+        adults: totalGuest.adults,
+        children: totalGuest.children,
+        totalPrice,
+        qrCodeImageURL: qrCodePublicURLfromCloudinary,
       });
-      const pointsPerNight = setting?.value.bookingRewardPoints || 0; //* default 0 reward points
-      const rewardProgramActivate = setting?.value?.rewardProgramEnabled
-      if(rewardProgramActivate === true){
-
-        const nights = Math.ceil(
-          (new Date(checkOutDate) - new Date(checkInDate)) / (1000 * 60 * 60 * 24)
-        );
-        const roomsBooked = rooms.length;
-        const loyaltyTierRatio = setting?.value.tierMultipliers;
-        const userLoyaltyTier = user.loyaltyTier;
-        const tierMultipliers = loyaltyTierRatio[userLoyaltyTier.toLowerCase()];
-  
-        const basedPoints = nights * roomsBooked * pointsPerNight;
-        const rewardPoints = Math.round(basedPoints * tierMultipliers);
-        user.totalSpent += newBooking.totalPrice;
-        const newLoyalthyTier = calculateLoyaltyTier(user.totalSpent);
-        // increase user reward points
-        user.rewardPoints = (user.rewardPoints || 0) + rewardPoints;
-        if(user.loyaltyTier !== newLoyalthyTier){
-          user.loyaltyTier = newLoyalthyTier;
-          await RewardHistory.create({
-            user: user._id,
-            bookingId: newBooking._id,
-            bookingReference: newBooking.bookingReference,
-            points: 0,
-            description: `Loyalty tier upgraded to ${newLoyalthyTier}`,
-            type: "tier-upgrade",
-            source: "loyalty",
-          });
-        }
-        
-        await user.save();
-
-        // create history reward points
-        await RewardHistory.create({
-          user: user._id,
-          bookingId: newBooking._id,
-          bookingReference: newBooking.bookingReference,
-          points: rewardPoints,
-          description: `Earned for booking ${rooms.length} room(s) for ${nights} night(s)`,
-          type: "earn",
-          source: "booking",
-        });
-      }
     }
 
-    const emailToSend =
-      user?.email || contactEmail || session?.guestDetails?.contactEmail;
-
-    if (emailToSend && qrCodePublicURLfromCloudinary) {
-      await sendBookingConfirmationEmail(emailToSend, bookingData);
-    }
+    //* emit booking trends chart update on admin interface
+    await emitBookingTrendsUpdate();
 
     await BookingSession.deleteOne({ sessionId: bookingSessionId });
-    console.log(`Deleted booking session with sessionId: ${bookingSessionId}`);
-
-    res.status(201).json({ newBooking, qrCodePublicURLfromCloudinary });
+    return res.status(201).json({ newBooking, qrCodePublicURLfromCloudinary });
   } catch (error) {
-    console.error("Error in creating booking:", error.message);
-    res.status(500).json({ error: error.message });
+    console.error("Error in creating booking:", error);
+    return res.status(500).json({ error: error.message });
   }
 };
 
