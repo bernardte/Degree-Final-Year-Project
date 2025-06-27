@@ -32,5 +32,14 @@ router
 router
   .route("/reward-claim/:rewardId")
   .post(protectRoute, rewardController.claimReward);
+router
+  .route("/show-user-claimed-reward")
+  .get(protectRoute, rewardController.getUserClaimedReward);
+router
+  .route("/show-user-all-reward")
+  .get(protectRoute, rewardController.showAllRewardForUser);
 
+router.route("/update-reward-status/:rewardId").patch(protectRoute, rewardController.handleUpdateRewardStatus);
+router.route("/reward-code-used").post(protectRoute, rewardController.applyRewardCode);
+router.route("/remove-reward-code").post(protectRoute, rewardController.removeApplyRewardCode);
 export default router;

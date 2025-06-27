@@ -5,12 +5,18 @@ const ClaimedRewardSchema = mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "user",
   },
-  reward: [
-    {
+  reward: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "reward",
-    }
-  ],
+  },
+  rewardCode: {
+    type: String,
+    unique: true
+  },
+  discountPercentage: {
+    type: Number,
+    default: null,
+  },
   redeemedAt: {
     type: Date,
     default: Date.now,

@@ -63,7 +63,7 @@ const RewardManagement = () => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: name === "points" ? Number(value) : value,
+      [name]: name === "points" || name === "discountPercentage" ? Number(value) : value,
     }));
   };
 

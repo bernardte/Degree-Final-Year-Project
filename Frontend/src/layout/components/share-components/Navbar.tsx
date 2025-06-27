@@ -49,6 +49,7 @@ const Navbar = () => {
     );
   }
 
+
   return (
     <nav
       className={`fixed top-0 z-50 w-full p-4 transition-all duration-600 ${navbar ? "animate-fadeInDown bg-[#3d60ca] shadow-md" : "bg-transparent"}`}
@@ -80,7 +81,7 @@ const Navbar = () => {
         {!user ? (
           <div className="group flex items-center">
             <button
-              className={`hover:border-blue-500 cursor-pointer fixed flex items-center gap-2 rounded-xl border-3 border-white px-3 py-1 font-bold text-white transition-colors duration-300 group-hover:text-blue-500 ${navbar ? "bg-transparent" : ""}`}
+              className={`fixed flex cursor-pointer items-center gap-2 rounded-xl border-3 border-white px-3 py-1 font-bold text-white transition-colors duration-300 group-hover:text-blue-500 hover:border-blue-500 ${navbar ? "bg-transparent" : ""}`}
               onClick={() => setOpenLoginPopup(true)}
             >
               <ShieldUser />
@@ -94,7 +95,7 @@ const Navbar = () => {
                 <button className="absolute right-10 flex cursor-pointer items-center gap-3 outline-none focus-visible:ring-0">
                   <div className="relative">
                     <Avatar className="h-10 w-10 border-2 border-white">
-                      <AvatarImage src={userDetails?.state?.user?.profilePic} />
+                      <AvatarImage src={user.profilePic} />
                       <AvatarFallback className="bg-gradient-to-r from-blue-400 to-purple-400 text-white">
                         {userDetails?.state?.user?.username
                           ?.charAt(0)
@@ -111,6 +112,7 @@ const Navbar = () => {
                   </span>
                 </button>
               </DropdownMenuTrigger>
+              <div className="bottom-0 bg-gray-400 before:absolute before:content-none"></div>
 
               {/* Foam-inspired dropdown menu */}
               <DropdownMenuContent
@@ -118,6 +120,10 @@ const Navbar = () => {
                 sideOffset={8}
                 className="z-[100] min-w-[240px] overflow-hidden border-0 bg-transparent p-0 shadow-none"
               >
+                {/* Chat bubble tail */}
+                <div className="absolute -top-1 right-10 h-3 w-3 rotate-45 bg-white/90 shadow-md backdrop-blur-lg" />
+
+                {/*drop down menu main content*/}
                 <div
                   className="rounded-2xl bg-white/90 p-2 backdrop-blur-lg"
                   style={{
@@ -130,7 +136,7 @@ const Navbar = () => {
                   {/* User info section */}
                   <div className="flex items-center gap-3 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 p-4">
                     <Avatar className="h-12 w-12">
-                      <AvatarImage src={userDetails?.state?.user?.profilePic} />
+                      <AvatarImage src={user.profilePic} />
                       <AvatarFallback className="bg-gradient-to-r from-blue-400 to-purple-400 text-white">
                         {userDetails?.state?.user?.username
                           ?.charAt(0)
@@ -167,7 +173,7 @@ const Navbar = () => {
                         className="flex items-center gap-3"
                       >
                         <BookOpen className="h-5 w-5 text-indigo-500" />
-                        <span>View Bookings</span>
+                        <span>Bookings History</span>
                       </Link>
                     </DropdownMenuItem>
 

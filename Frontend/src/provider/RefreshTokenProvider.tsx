@@ -22,7 +22,7 @@ const RefreshTokenProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         console.log("response: ", response.data.token);
         console.log("Token refreshed successfully:", token);
         console.log("User data:", user);
-        login(user, token, user.role);
+        login(user, token, user.role, user.profilePic);
       } catch (error) {
         console.error("Error refreshing token:", error);
         logout();

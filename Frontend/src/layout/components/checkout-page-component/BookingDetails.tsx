@@ -3,12 +3,18 @@ import { Coffee, X, XCircle, CheckCircle } from "lucide-react";
 import { formatDateInBookingCheckOut } from "@/utils/formatDate";
 import { Room, BookingSession } from "@/types/interface.type";
 import useBookingSessionStore from "@/stores/useBookingSessionStore";
+import RewardCodeInput from "./RewardCodeInput";
 
 interface BookingDetailsProps {
   bookingSession: BookingSession;
   rooms: Room[];
   breakfastIncluded: boolean;
   onToggleBreakfast: () => void;
+  onApplyReward: (
+    code: string,
+  ) => Promise<{ success: boolean; discount?: number; message?: string }>;
+  onRemoveReward: (code: string) => Promise<void>;
+  appliedReward?: { code: string; discount: number } | null;
 }
 
 const BookingDetails = ({
@@ -16,6 +22,9 @@ const BookingDetails = ({
   rooms,
   breakfastIncluded,
   onToggleBreakfast,
+  onApplyReward,
+  onRemoveReward,
+  appliedReward,
 }: BookingDetailsProps) => {
   const breakfastPrice = 30;
   const { removeBookingSessionRoom, setAdditionalInfo, additionalInfo } =
@@ -49,6 +58,13 @@ const BookingDetails = ({
             value={formatDateInBookingCheckOut(bookingSession.checkOutDate)}
           />
         </div>
+
+        {/* Reward Inputs */}
+        <RewardCodeInput
+          onApplyReward={onApplyReward}
+          onRemoveReward={onRemoveReward}
+          appliedReward={appliedReward}
+        />
 
         {/* Room Details */}
         {bookingSession.roomId && (

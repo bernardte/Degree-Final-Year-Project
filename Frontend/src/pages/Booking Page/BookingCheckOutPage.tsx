@@ -40,6 +40,11 @@ const BookingCheckOutPage = () => {
   const { showToast } = useToast();
   const [breakfastIncluded, setBreakfastIncluded] = useState<boolean>(false);
   const [loadingTarget, setLoadingTarget] = useState<string | null>(null);
+  const [appliedReward, setAppliedReward] = useState<{
+    code: string;
+    discount: number;
+  } | null>(null);
+
   const user = localStorage.getItem("user")
   const isLoggedIn = !!user; 
 
@@ -88,6 +93,47 @@ const BookingCheckOutPage = () => {
     setTimeout(() => {
       navigate(path);
     }, 800);
+  };
+
+  const handleApplyReward = async (code: string) => {
+    try {
+      const response = await axiosInstance.post("/api/reward/reward-code-used", { code });
+      if(response.data?.success){
+        setAppliedReward({ code, discount: response?.data?.discount });
+        return {
+          success: true,
+          discount: response?.data?.discount,
+          message: response.data.message
+        }
+      }else{
+        return {
+          success: false,
+          message: response.data.error
+        }
+      }
+    } catch (error: any) {
+      return {
+        success: false,
+        message:
+          error.response?.data?.error ||
+          "Something went wrong applying reward code",
+      };
+    }
+   
+  };
+
+  const handleRemoveReward = async (code: string) => {
+    try {
+      const response = await axiosInstance.post(
+        "/api/reward/remove-reward-code", { code }
+      );
+      if(response.data?.success){
+        setAppliedReward(null);
+        showToast("info", `Reward ${code} removed!`);
+      }
+    } catch (error: any) {
+      showToast("error", error?.response?.data?.error);
+    }
   };
 
   return (
@@ -217,6 +263,9 @@ const BookingCheckOutPage = () => {
             rooms={rooms}
             breakfastIncluded={breakfastIncluded}
             onToggleBreakfast={handleToggleBreakfast}
+            onApplyReward={handleApplyReward}
+            onRemoveReward={handleRemoveReward}
+            appliedReward={appliedReward}
           />
           <PaymentSummary
             checkInDate={formatDateInBookingCheckOut(
@@ -227,6 +276,7 @@ const BookingCheckOutPage = () => {
             )}
             roomId={bookingSession.roomId}
             breakfastIncluded={breakfastIncluded}
+            appliedReward={appliedReward}
           />
         </div>
       ) : (

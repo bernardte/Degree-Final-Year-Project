@@ -26,9 +26,9 @@ const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
           { withCredentials: true },
         );
 
-        const { token, user } = response.data;
-        login(user, token, user.role);
-        updateAxiosHeader(token);
+        const { accessToken, user } = response.data;
+        login(user, accessToken, user.role, user.profilePic);
+        updateAxiosHeader(accessToken);
       } catch (error) {
         console.error("Error refreshing token:", error);
         logout();
@@ -42,13 +42,13 @@ const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     refreshAuth();
   }, [login, logout, setAuthLoading]);
 
-  // if (isChecking) {
-  //   return (
-  //     <div className="flex h-screen items-center justify-center">
-  //       <Loader size={36} className="animate-spin text-blue-600" />
-  //     </div>
-  //   );
-  // }
+  if (isChecking) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <Loader size={36} className="animate-spin text-blue-600" />
+      </div>
+    );
+  }
 
   return <>{children}</>;
 };

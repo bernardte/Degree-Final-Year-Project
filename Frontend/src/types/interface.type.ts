@@ -8,6 +8,7 @@ export interface User {
   role: string;
   profilePic: string;
   loyaltyTier: string;
+  totalSpent: number;
   token: string;
 };
 
@@ -196,4 +197,17 @@ export interface Reward {
   category: string,
   status: "active" | "inactive",
   icon: string
+}
+
+export interface ClaimedReward {
+  _id: string;
+  user: User;
+  reward: Reward;
+  redeemedAt: Date;
+  rewardCode: string;
+  category: string;
+  expiredAt: Date;
+  status: "active" | "used" | "expired";
+  code: string;
+  claimedBy: User;
 }

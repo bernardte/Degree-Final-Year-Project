@@ -26,6 +26,7 @@ type FormData = {
     category: string,
     status: string,
     icon: string,
+    discountPercentage?: number;
 }
 
 interface showRewardModalProps {
@@ -165,6 +166,28 @@ const ShowRewardModal = ({
                 </select>
               </div>
 
+              {formData.icon === "Percent" && (
+                <div className="md:col-span-1">
+                  <label
+                    htmlFor="discountPercentage"
+                    className="mb-1 block text-sm font-medium text-gray-700"
+                  >
+                    Discount Percentage (%)
+                  </label>
+                  <input
+                    type="number"
+                    id="discountPercentage"
+                    name="discountPercentage"
+                    min="1"
+                    max="100"
+                    required
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-indigo-500 focus:ring-indigo-500"
+                    value={formData.discountPercentage ?? ""}
+                    onChange={handleChange}
+                  />
+                </div>
+              )}
+
               <div className="md:col-span-2">
                 <label
                   htmlFor="description"
@@ -182,7 +205,6 @@ const ShowRewardModal = ({
                   onChange={handleChange}
                 />
               </div>
-
               <div className="md:col-span-2">
                 <label className="mb-3 block text-sm font-medium text-gray-700">
                   Select Icon

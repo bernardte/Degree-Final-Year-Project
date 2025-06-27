@@ -528,7 +528,7 @@ const Profile = () => {
               type="submit"
               disabled={isLoading}
               className="flex cursor-pointer items-center rounded-lg px-6 py-2.5 text-white transition-all disabled:opacity-70"
-              style={{ background: tierConfig.gradient }}
+              style={{ background: "#ff007f" }}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >

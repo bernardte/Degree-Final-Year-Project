@@ -13,7 +13,7 @@ import {
   ChevronUp,
   AlertCircle,
   TrendingUp,
-  Ban,
+  ChevronsUp,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -41,9 +41,9 @@ const RewardHistoryTable = ({
   const renderTypeIcon = (type: string) => {
     if (type === "earn") {
       return <Plus size={16} className="text-green-500" />;
-    }else if (type === "upgrade"){
-      return <Ban size={16} className="text-gray-500" />;
-    } 
+    } else if (type === "tier-upgrade") {
+      return <ChevronsUp size={16} className="text-blue-500" />;
+    }
     return <Minus size={16} className="text-red-500" />;
   };
 
@@ -244,7 +244,9 @@ const RewardHistoryTable = ({
                             className={`ml-2 text-sm font-medium ${
                               reward.type === "earn"
                                 ? "text-green-600"
-                                : "text-red-600"
+                                : reward.type === "redeem" 
+                                ?  "text-red-600"
+                                : "text-blue-600"
                             }`}
                           >
                             {reward.type.charAt(0).toUpperCase() +
@@ -257,10 +259,16 @@ const RewardHistoryTable = ({
                           className={`inline-flex rounded-full px-3 py-1 text-xs leading-5 font-semibold ${
                             reward.type === "earn"
                               ? "bg-green-100 text-green-800"
-                              : "bg-red-100 text-red-800"
+                              : reward.type === "redeem"
+                                ? "bg-red-100 text-red-800"
+                                : "bg-blue-100 text-blue-800"
                           }`}
                         >
-                          {reward.type === "earn" ? "+" : "-"}
+                          {reward.type === "earn"
+                            ? "+"
+                            : reward.type === "redeem"
+                              ? "-"
+                              : ""}
                           {reward.points}
                         </span>
                       </td>
@@ -272,10 +280,14 @@ const RewardHistoryTable = ({
                           </span>
                         </div>
                       </td>
-                      <td className={`px-6 py-4 text-sm text-gray-900 ${!reward.bookingReference ? "text-center" : null} `}>
-                        {reward.bookingReference || "-"}
+                      <td
+                        className={`px-6 py-4 text-sm text-gray-900 ${!reward.bookingReference ? "text-center" : null} `}
+                      >
+                        {reward.bookingReference || "N/A"}
                       </td>
-                      <td className={`px-6 py-4 text-sm ${reward.type === "earn" ?  "text-emerald-600" : reward.type === "redeem" ? "text-rose-500" : "text-blue-500" }`}>
+                      <td
+                        className={`px-6 py-4 text-sm ${reward.type === "earn" ? "text-emerald-600" : reward.type === "redeem" ? "text-rose-500" : "text-blue-500"}`}
+                      >
                         {reward.description || "-"}
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-500">

@@ -18,6 +18,7 @@ import rewardRoute from "./Routes/reward.route.js";
 import systemSettingRoute from "./Routes/systemSetting.route.js";
 import bookingStatusUpdater from "./cronjob/bookingStatusUpdater.js";
 import roomStatusScheduler from "./cronjob/roomStatusScheduler.js";
+// import { initializeSocket } from "./config/socket.js";
 
 dotenv.config();
 const app = express();
@@ -46,6 +47,10 @@ app.use(
         },
     }
 ))
+
+// const httpServer = createServer
+
+
 
 app.use("/api/users", usersRoute);
 app.use("/api/rooms", roomRoute);

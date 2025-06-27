@@ -4,12 +4,14 @@ import useRoomStore from "@/stores/useRoomStore";
 import axiosInstance from "@/lib/axios";
 import useToast from "@/hooks/useToast";
 import useBookingSessionStore from "@/stores/useBookingSessionStore";
+import { Gift } from "lucide-react";
 
 interface PaymentSummaryProps {
   checkInDate: string; // ISO date string
   checkOutDate: string; // ISO date string
   roomId: string[]; // Array of room IDs
   breakfastIncluded: boolean;
+  appliedReward?: { code: string; discount: number } | null;//apply reward
 }
 
 const PaymentSummary = ({
@@ -17,6 +19,7 @@ const PaymentSummary = ({
   checkOutDate,
   roomId,
   breakfastIncluded,
+  appliedReward,
 }: PaymentSummaryProps) => {
   const breakfastPrice = 30;
 
@@ -29,7 +32,7 @@ const PaymentSummary = ({
   // Access rooms from store
   const { rooms } = useRoomStore();
   const bookedRooms = rooms.filter((room) =>
-    (roomId as string[])?.includes(room._id)
+    (roomId as string[])?.includes(room._id),
   );
 
   // 3) compute each room’s line-item and the base total
@@ -47,13 +50,18 @@ const PaymentSummary = ({
   const breakfastTotal = breakfastIncluded
     ? roomsWithoutBreakfast.length * breakfastPrice * nights
     : 0;
+    const rewardDiscount = appliedReward?.discount ?? 0;
+    const rewardMultiplier = 1 - rewardDiscount / 100;
 
-  const totalPrice = basePrice + breakfastTotal;
+    const totalPrice = Math.round(
+      (basePrice + breakfastTotal) * rewardMultiplier,
+    );
+    
   const { showToast } = useToast();
   const { bookingSession } = useBookingSessionStore();
 
   const handleContinuePayment = async () => {
-    const sessionId = bookingSession.sessionId
+    const sessionId = bookingSession.sessionId;
     try {
       const response = await axiosInstance.post(
         "/api/checkout/payment-gateway",
@@ -62,16 +70,17 @@ const PaymentSummary = ({
           checkInDate,
           roomId,
           checkOutDate,
+          discount: appliedReward?.discount,
+          rewardCode: appliedReward?.code,
           breakfastIncluded,
           nights,
-          sessionId
+          sessionId,
         },
       );
 
       if (response.data?.sessionUrl) {
         window.location.href = response.data?.sessionUrl;
-        
-      }else{
+      } else {
         showToast("error", "Transaction Failed");
       }
     } catch (error: any) {
@@ -79,7 +88,6 @@ const PaymentSummary = ({
       showToast("error", error?.response?.error);
     }
   };
-
 
   return (
     <motion.div
@@ -111,15 +119,39 @@ const PaymentSummary = ({
               <span>RM {breakfastTotal}</span>
             </div>
           )}
+
+          {appliedReward && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              className="flex justify-between text-md text-green-300"
+            >
+              <span className="flex items-center">
+                <Gift className="mr-2" size={18} />
+                Reward Discount ({appliedReward.code})
+              </span>
+              <span>-{appliedReward.discount}%</span>
+            </motion.div>
+          )}
+
           <motion.div
             key={totalPrice}
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.8, opacity: 0 }}
-            className="flex justify-between pt-4 text-2xl font-extrabold"
+            className="flex justify-between pt-5 text-2xl font-extrabold"
           >
             <span>Total</span>
-            <span>RM {totalPrice}</span>
+            <div className="flex flex-col">
+              <span className="text-right">
+                RM {totalPrice}{" "}
+              </span>
+                {rewardDiscount > 0 && (
+                  <span className="text-sm font-normal text-green-100">
+                    (after {rewardDiscount}% discount)
+                  </span>
+                )}
+            </div>
           </motion.div>
         </div>
       </div>

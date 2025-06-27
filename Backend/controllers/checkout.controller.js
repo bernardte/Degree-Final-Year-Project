@@ -1,73 +1,39 @@
 // controllers/checkout.controller.js
 import stripe from "../config/stripe.js";
-import Room from "../models/room.model.js";
 import BookingSession from "../models/BookingSession.model.js";
 import { differenceInCalendarDays } from "date-fns";
-
+import ClaimedReward from "../models/claimedReward.model.js";
 const createCheckoutSession = async (req, res) => {
   const {
     totalPrice,
-    roomId,
     checkInDate,
     checkOutDate,
-    breakfastIncluded,
     sessionId,
+    discount: rewardDiscount,
+    rewardCode
   } = req.body;
 
-  console.log("breakfastIncluded: ", breakfastIncluded);
+  console.log("request: ", req.body);
+
   try {
-    const roomSelected = await Room.find({ _id: { $in: roomId } });
-
-    let breakfastCount = 0;
-
     const nights = differenceInCalendarDays(
       new Date(checkOutDate),
       new Date(checkInDate)
     );
 
-    const lineItems = [];
-
-    for (const room of roomSelected) {
-      // Create a line item for the room price × nights
-      lineItems.push({
+    const lineItems = [
+      {
         price_data: {
           currency: "myr",
           product_data: {
-            name: room?.roomName,
-            description: `Booking from ${checkInDate} to ${checkOutDate}`,
+            name: "Hotel Booking",
+            description: `Total for stay from ${checkInDate} to ${checkOutDate}`,
           },
-          unit_amount: room.pricePerNight * 100 * nights,
+          unit_amount: totalPrice * 100, // Convert to cents
         },
         quantity: 1,
-      });
-
-      // If user wants breakfast AND the room does not already include it
-      if (breakfastIncluded && !room.breakfastIncluded) {
-        breakfastCount += nights; // breakfast per night
-      }
-    }
-
-    // Add breakfast line item if needed
-    if (breakfastCount > 0) {
-      const breakfastItem = {
-        price_data: {
-          currency: "myr",
-          product_data: {
-            name: "Breakfast Voucher",
-            description: `Breakfast for ${breakfastCount} night(s)`,
-          },
-          unit_amount: 30 * 100, // RM30
-        },
-        quantity: breakfastCount,
-      };
-
-      lineItems.push(breakfastItem);
-
-      await BookingSession.updateOne(
-        { sessionId },
-        { breakfastIncluded: breakfastCount }
-      );
-    }
+      },
+    ];
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card", "fpx", "grabpay"],
@@ -76,12 +42,13 @@ const createCheckoutSession = async (req, res) => {
       cancel_url: `${process.env.FRONTEND_URL}/payment-cancelled?session_id={CHECKOUT_SESSION_ID}`,
       line_items: lineItems,
       metadata: {
-        roomId: roomId.join(","),
         checkInDate,
         checkOutDate,
-        breakfastCount,
+        nights,
         sessionId,
         totalPrice,
+        rewardCode: rewardCode || "",
+        rewardDiscount: rewardDiscount || 0,
       },
     });
 
@@ -89,6 +56,31 @@ const createCheckoutSession = async (req, res) => {
   } catch (err) {
     console.error("Error creating checkout session", err);
     res.status(500).json({ error: err.message });
+  }
+};
+
+const handlePaymentCancelled = async (req, res) => {
+  const { sessionId } = req.query;
+
+  try {
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+    const rewardCode = session.metadata.rewardCode;
+    console.log("your reward code", rewardCode);
+
+    if (rewardCode) {
+      await ClaimedReward.findOneAndUpdate(
+        { rewardCode, status: "used" },
+        { $set: { status: "active" } }
+      );
+      return res.status(200).json({
+        message: "Booking cancelled and your reward will restored",
+      });
+    }
+
+    return res.status(200).json({ message: "Booking cancelled" });
+  } catch (error) {
+    console.error("Error handling payment cancelled", error);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 };
 
@@ -110,7 +102,7 @@ const updatePaymentDetails = async (req, res) => {
     const userSessionId = session.metadata.sessionId;
     const breakfastCount = session.metadata.breakfastCount;
     const totalPrice = session.metadata.totalPrice;
-    
+
     console.log("Metadata sessionId:", userSessionId);
 
     const bookingSession = await BookingSession.findOne({
@@ -146,9 +138,9 @@ const updatePaymentDetails = async (req, res) => {
 
     await bookingSession.save();
 
-    res.json({
+    res.status(200).json({
       message: "Payment details updated successfully",
-      bookingSession
+      bookingSession,
     });
   } catch (error) {
     console.error("Error in updatePaymentDetails:", error.message);
@@ -159,4 +151,5 @@ const updatePaymentDetails = async (req, res) => {
 export default {
   createCheckoutSession,
   updatePaymentDetails,
+  handlePaymentCancelled
 };

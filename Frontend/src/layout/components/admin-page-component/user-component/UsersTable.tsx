@@ -91,6 +91,12 @@ const UsersTable = () => {
             <TableHead className="min-w-[10px]">Fullname</TableHead>
             <TableHead className="min-w-[10px]">Username</TableHead>
             <TableHead className="min-w-[100px] text-center">Email</TableHead>
+            <TableHead className="min-w-[100px]">
+              Loyalty Tier
+            </TableHead>
+            <TableHead className="min-w-[100px]">
+              Total Spent
+            </TableHead>
             <TableHead className="min-w-[110px] text-center">Role</TableHead>
             <RequireRole allowedRoles={[ROLE.SuperAdmin]}>
               <TableHead className="text-center">Actions</TableHead>
@@ -136,6 +142,31 @@ const UsersTable = () => {
                   {user.email}
                 </span>
               </TableCell>
+              <TableCell>
+                <span
+                  className={`inline-flex items-center capitalize gap-1 rounded-full px-3 py-1 text-xs font-semibold ${
+                    user.loyaltyTier === "bronze"
+                      ? "bg-yellow-100 text-yellow-800"
+                      : user.loyaltyTier === "silver"
+                        ? "bg-gray-200 text-gray-800"
+                        : user.loyaltyTier === "gold"
+                          ? "bg-yellow-200 text-yellow-500"
+                          : user.loyaltyTier === "platinum"
+                            ? "bg-indigo-200 text-indigo-700"
+                            : "bg-gray-100 text-gray-600"
+                  } `}
+                >
+                  {user.loyaltyTier || "N/A"}
+                </span>
+              </TableCell>
+              <TableCell>
+                <span
+                  className={`inline-flex items-center capitalize gap-1 rounded-full px-3 py-1 text-xs font-semibold ${user.totalSpent} `}
+                >
+                  RM {user.totalSpent.toFixed(2)}
+                </span>
+              </TableCell>
+
               <TableCell>
                 <div className="flex items-center justify-center">
                   <Select

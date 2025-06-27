@@ -43,7 +43,11 @@ const useRequest = () => {
         error?.response?.data?.message ||
         "Request failed";
 
-      showToast("error", errorMsg);
+        if(errorMsg.includes("Access denied")){
+          showToast("warn", errorMsg)
+        }else{
+          showToast("error", errorMsg);
+        }
     } finally {
       setIsLoading(false);
     }
