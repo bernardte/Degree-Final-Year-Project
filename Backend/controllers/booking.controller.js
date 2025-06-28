@@ -9,7 +9,10 @@ import generateAndUploadQRCode from "../utils/generateAndUploadQRCode.js";
 import { differenceInCalendarDays } from "date-fns";
 import mongoose from "mongoose";
 import { handleRewardPoints } from "../logic function/handleRewardPoints.js";
-import { emitBookingTrendsUpdate } from "../utils/socketUtils.js";
+import {
+  emitBookingTrendsUpdate,
+  emitRoomTypeUpdate,
+} from "../socket/socketUtils.js";
 
 const createBooking = async (req, res) => {
   const { bookingSessionId, specialRequests } = req.body;
@@ -135,6 +138,8 @@ const createBooking = async (req, res) => {
 
     //* emit booking trends chart update on admin interface
     await emitBookingTrendsUpdate();
+    // *emit Most booking room type chart update on admin interface
+    await emitRoomTypeUpdate();
 
     await BookingSession.deleteOne({ sessionId: bookingSessionId });
     return res.status(201).json({ newBooking, qrCodePublicURLfromCloudinary });
@@ -172,11 +177,9 @@ const cancelBooking = async (req, res) => {
     console.log("hoursLeftAfterDays: ", hoursLeftAfterDays);
 
     if (booking.status === "completed") {
-      return res
-        .status(400)
-        .json({
-          error: "Booking already completed, cancellation not possible.",
-        });
+      return res.status(400).json({
+        error: "Booking already completed, cancellation not possible.",
+      });
     }
 
     const cancellationRequest = await CancellationRequest.findOne({
@@ -185,12 +188,10 @@ const cancelBooking = async (req, res) => {
     });
 
     if (cancellationRequest) {
-      return res
-        .status(400)
-        .json({
-          error:
-            "Your request is already pending, please wait for our admin to process it.",
-        });
+      return res.status(400).json({
+        error:
+          "Your request is already pending, please wait for our admin to process it.",
+      });
     }
 
     const newCancellationRequest = new CancellationRequest({

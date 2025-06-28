@@ -21,7 +21,7 @@ const useFacilityStore = create<FacilityStore>((set) => ({
   totalPages: 1,
   currentPage: 1,
   error: null,
-  fetchPaginatedFacility: async (page: number, limit = 5) => {
+  fetchPaginatedFacility: async (page: number, limit = 10) => {
     try {
       set({ isLoading: true, error: null });
       const response = await axiosInstance.get(`/api/facilities/paginated?page=${page}&limit=${limit}`);

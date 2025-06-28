@@ -1,6 +1,7 @@
 import Room from "../models/room.model.js";
 import Booking from "../models/booking.model.js";
 import RoomAvailability from "../models/roomAvailability.model.js";
+import { emitRoomReviewUpdate } from "../socket/socketUtils.js";
 
 const paginatedAllRooms = async (req, res) => {
   const page = parseInt(req.query.page) || 1;
@@ -323,7 +324,7 @@ const roomReview = async (req, res) => {
         : 0;
 
     await room.save();
-
+    await emitRoomReviewUpdate();
     return res.status(200).json(review);
   } catch (error) {
     console.log("Error in roomReview:", error.message);

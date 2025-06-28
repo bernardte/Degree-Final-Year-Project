@@ -60,7 +60,7 @@ const loyaltyTiers = {
     name: "Gold",
     color: "#ffd700",
     gradient: "linear-gradient(135deg, #ffd700, #daa520, #ffec8b)",
-    icon: <Gem className="text-[#ffd700]" />,
+    icon: <Crown className="text-[#ffd700]" />,
     badgeClass: "bg-gradient-to-r from-yellow-500 to-yellow-300",
     borderClass: "border-yellow-400",
     glowClass: "shadow-[0_0_20px_rgba(255,215,0,0.3)]",
@@ -69,7 +69,7 @@ const loyaltyTiers = {
     name: "Platinum",
     color: "#e5e4e2",
     gradient: "linear-gradient(135deg, #f8f9fa, #e5e4e2, #d3d3d3, #f8f9fa)",
-    icon: <Crown className="text-[#e5e4e2]" />,
+    icon: <Gem className="text-[#e5e4e2]" />,
     badgeClass: "bg-gradient-to-r from-gray-200 to-gray-100",
     borderClass: "border-gray-200",
     glowClass: "shadow-[0_0_20px_rgba(229,228,226,0.4)]",
@@ -77,7 +77,7 @@ const loyaltyTiers = {
 };
 
 const Profile = () => {
-  // 状态管理
+  // status management
   const [isLoading, setIsLoading] = useState(true);
   const { currentLoginUser, fetchCurrentLoginUser } = useUserStore(
     (state) => state,

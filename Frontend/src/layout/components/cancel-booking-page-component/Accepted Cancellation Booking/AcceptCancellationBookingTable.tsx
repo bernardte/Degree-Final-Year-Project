@@ -150,17 +150,6 @@ const AcceptCancellationBookingTable = () => {
           )}
         </TableBody>
       </Table>
-      {[...Array(10)].map((_, i) => (
-        <div
-          key={i}
-          className="pointer-events-none absolute h-5 w-5 rounded-full bg-blue-400/30"
-          style={{
-            top: `${Math.random() * 100}%`,
-            left: `${Math.random() * 100}%`,
-            animation: `float ${7 + Math.random() * 3}s infinite ease-in-out`,
-          }}
-        />
-      ))}
     </div>
   );
 };

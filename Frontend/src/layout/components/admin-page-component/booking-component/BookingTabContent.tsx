@@ -27,7 +27,7 @@ const BookingTabContent = ({
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
-      className="min-h-screen space-y-6 overflow-visible px-4 sm:px-6 lg:px-8"
+      className="min-h-screen space-y-6 overflow-visible"
     >
       <Card className="relative mx-auto w-full max-w-7xl overflow-visible rounded-2xl border border-blue-200/40 bg-gradient-to-br from-white via-blue-50 to-blue-100 p-6 shadow-xl backdrop-blur-md">
         {/* Floating Decorative Blobs */}
@@ -174,18 +174,6 @@ const BookingTabContent = ({
             </div>
           </motion.div>
         )}
-        {/* Floating Particle Effects */}
-        {[...Array(10)].map((_, i) => (
-          <div
-            key={i}
-            className="pointer-events-none absolute h-5 w-5 rounded-full bg-blue-400/30"
-            style={{
-              top: `${Math.random() * 100}%`,
-              left: `${Math.random() * 100}%`,
-              animation: `float ${7 + Math.random() * 3}s infinite ease-in-out`,
-            }}
-          />
-        ))}
       </Card>
     </motion.div>
   );

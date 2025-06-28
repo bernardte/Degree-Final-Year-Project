@@ -11,6 +11,7 @@ import sendEventResponseEmail from "../utils/sendEventResponseEmail.js";
 import OTP from "../models/adminOTP.model.js";
 import stripe from "../config/stripe.js";
 import { normalizeToArray } from "../logic function/normalizeToArray.js";
+import { emitBookingStatusUpdate } from "../socket/socketUtils.js";
 
 const getUser = async (req, res) => {
   try {
@@ -582,7 +583,7 @@ const getBookingByUserId = async (req, res) => {
   }
 };
 
-//update by admin select by and drop down list
+//update by admin select by drop down list
 const updateBookingStatus = async (req, res) => {
   const { bookingId } = req.params;
   const { status } = req.body;
@@ -682,6 +683,7 @@ const updateBookingStatus = async (req, res) => {
 
       booking.status = "cancelled";
       await booking.save();
+      await emitBookingStatusUpdate();
 
       return res.status(200).json({
         message: `Booking cancelled. ${policyNote}`,
@@ -692,6 +694,7 @@ const updateBookingStatus = async (req, res) => {
       // Just update the status (e.g., to 'confirmed')
       booking.status = status;
       await booking.save();
+      await emitBookingStatusUpdate();
 
       return res
         .status(200)

@@ -144,7 +144,7 @@ const UsersTable = () => {
               </TableCell>
               <TableCell>
                 <span
-                  className={`inline-flex items-center capitalize gap-1 rounded-full px-3 py-1 text-xs font-semibold ${
+                  className={`flex items-center justify-center capitalize gap-1 rounded-full px-3 py-1 text-xs font-semibold ${
                     user.loyaltyTier === "bronze"
                       ? "bg-yellow-100 text-yellow-800"
                       : user.loyaltyTier === "silver"

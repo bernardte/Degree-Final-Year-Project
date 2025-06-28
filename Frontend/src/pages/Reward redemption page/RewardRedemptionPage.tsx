@@ -7,15 +7,16 @@ import AvailableRewardsTab from "@/layout/components/reward-redemption-page-comp
 import ClaimedRewardsTab from "@/layout/components/reward-redemption-page-component/ClaimedRewardsTabs";
 import AdditionalInfo from "@/layout/components/reward-redemption-page-component/AdditionalInfo";
 import ErrorDisplay from "@/layout/components/reward-redemption-page-component/ErrorDisplay";
-// import LoadingSpinner from "./LoadingSpinner";
 import { Reward, ClaimedReward } from "@/types/interface.type";
 import LoadingSpinner from "@/layout/components/share-components/LoadingSpinner";
+import { motion } from "framer-motion";
 
 const RewardRedemptionPage = () => {
   const [rewards, setRewards] = useState<Reward[]>([]);
   const [claimedRewards, setClaimedRewards] = useState<ClaimedReward[]>([]);
   const [redeemedRewardId, setRedeemedRewardId] = useState<string | null>(null);
   const [userPoints, setUserPoints] = useState(0);
+  const [userTotalSpentMoney, setUserTotalSpentMoney] = useState(0); 
   const [userLoyaltyTier, setUserLoyaltyTier] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -42,6 +43,7 @@ const RewardRedemptionPage = () => {
 
         setRewards(rewardsRes);
         setUserPoints(pointsRes.userPoints);
+        setUserTotalSpentMoney(pointsRes.userTotalSpentMoney || 0); 
         setUserLoyaltyTier(pointsRes.userLoyaltyTier);
         setClaimedRewards(claimedRes ?? []);
         setError(null);
@@ -83,19 +85,14 @@ const RewardRedemptionPage = () => {
       );
       setClaimedRewards(claimedRes ?? []);
     } catch (error: any) {
-        showToast("error", error?.response?.data?.error);
+      showToast("error", error?.response?.data?.error);
     } finally {
       setRedeemedRewardId(null);
     }
   };
 
   // Filter rewards by category
-  const knownCategories = [
-    "Accommodation",
-    "Dining",
-    "Service",
-    "Membership",
-  ];
+  const knownCategories = ["Accommodation", "Dining", "Service", "Membership"];
 
   const filteredRewards =
     selectedCategory === "all"
@@ -103,10 +100,9 @@ const RewardRedemptionPage = () => {
       : selectedCategory === "Other"
         ? rewards.filter((reward) => !knownCategories.includes(reward.category))
         : rewards.filter((reward) => reward.category === selectedCategory);
-    console.log(
-      selectedCategory
-    );
-  if (loading || isLoading) return <LoadingSpinner message={"loading rewards..."}/>;
+
+  if (loading || isLoading)
+    return <LoadingSpinner message={"loading rewards..."} />;
   if (error) return <ErrorDisplay error={error} />;
 
   return (
@@ -132,6 +128,9 @@ const RewardRedemptionPage = () => {
             userPoints={userPoints}
             userLoyaltyTier={userLoyaltyTier}
           />
+
+          {/* loyalty tier progress bar */}
+          <LoyaltyProgressBar userTotalSpentMoney={userTotalSpentMoney} />
         </div>
       </header>
 
@@ -158,8 +157,7 @@ const RewardRedemptionPage = () => {
             onClick={() => setActiveTab("claimed")}
           >
             My Rewards (
-            {Array.isArray(claimedRewards) ? claimedRewards.length : 0}
-            )
+            {Array.isArray(claimedRewards) ? claimedRewards.length : 0})
           </button>
         </div>
 
@@ -178,9 +176,7 @@ const RewardRedemptionPage = () => {
             <AdditionalInfo />
           </>
         ) : (
-          <ClaimedRewardsTab
-            claimedRewards={claimedRewards}
-          />
+          <ClaimedRewardsTab claimedRewards={claimedRewards} />
         )}
       </div>
     </div>
@@ -188,3 +184,98 @@ const RewardRedemptionPage = () => {
 };
 
 export default RewardRedemptionPage;
+
+// LoyaltTier calculation function
+export const calculateLoyaltyTier = (userTotalSpentMoney: number) => {
+  if (userTotalSpentMoney >= 10000) return "platinum";
+  if (userTotalSpentMoney >= 5000) return "gold";
+  if (userTotalSpentMoney >= 1000) return "silver";
+  return "bronze";
+};
+
+// loyalty Progress Bar
+const LoyaltyProgressBar = ({
+  userTotalSpentMoney,
+}: {
+  userTotalSpentMoney: number;
+}) => {
+  //  calculate loyalty Tier level
+  const loyaltyTier = calculateLoyaltyTier(userTotalSpentMoney);
+
+  //get current loyalty tier and next loyalty tier
+  const getTierInfo = () => {
+    const tiers = [
+      { name: "bronze", min: 0, max: 1000, next: "silver" },
+      { name: "silver", min: 1000, max: 5000, next: "gold" },
+      { name: "gold", min: 5000, max: 10000, next: "platinum" },
+      { name: "platinum", min: 10000, max: Infinity, next: null },
+    ];
+
+    return tiers.find((tier) => tier.name === loyaltyTier) || tiers[0];
+  };
+
+  const currentTier = getTierInfo();
+  const progressPercentage = Math.min(
+    100,
+    Math.max(
+      0,
+      ((userTotalSpentMoney - currentTier.min) /
+        (currentTier.max - currentTier.min)) *
+        100,
+    ),
+  );
+
+  //Loyalty tier Level Color Mapping
+  const tierColors: Record<string, string> = {
+    bronze: "from-amber-700 to-amber-900",
+    silver: "from-gray-300 to-gray-500",
+    gold: "from-yellow-400 to-yellow-600",
+    platinum: "from-indigo-300 to-indogo-500",
+  };
+
+  return (
+    <div className="mt-6 w-full max-w-3xl">
+      <div className="mb-2 flex justify-between">
+        <div className="flex items-center">
+          <span className="mr-2 font-medium text-white">Loyalty Level:</span>
+          <span
+            className={`rounded-md bg-gradient-to-r px-2 py-1 text-xs font-bold ${
+              tierColors[loyaltyTier]
+            } text-white uppercase`}
+          >
+            {loyaltyTier}
+          </span>
+        </div>
+
+        {currentTier.next && (
+          <div className="text-right">
+            <span className="text-sm text-white">
+              Next: {currentTier.next} at RM{currentTier.max}
+            </span>
+          </div>
+        )}
+      </div>
+
+      <div className="h-3 w-full rounded-full bg-gray-200">
+        <motion.div
+          className={`h-full rounded-full bg-gradient-to-r ${
+            tierColors[loyaltyTier]
+          }`}
+          initial={{ width: "0%" }}
+          animate={{ width: `${progressPercentage}%` }}
+          transition={{ duration: 1, ease: "easeOut" }}
+        />
+      </div>
+
+      <div className="mt-1 flex justify-between text-xs text-blue-200">
+        <span>RM{currentTier.min}</span>
+        {currentTier.next ? (
+          <span>RM{currentTier.max}</span>
+        ) : (
+          <span>Max Level</span>
+        )}
+      </div>
+    </div>
+  );
+};
+

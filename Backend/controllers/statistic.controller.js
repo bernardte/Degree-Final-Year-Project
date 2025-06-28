@@ -1,6 +1,7 @@
 import Booking from "../models/booking.model.js";
 import User from "../models/user.model.js";
 import Room from "../models/room.model.js";
+import { bookingTrends, getRoomTypeStats, ratingDistribution, bookingStatusDistribution } from "../utils/bookingStats.js";
 
 const getStatistic = async (req, res) => {
   try {
@@ -56,54 +57,14 @@ const getStatistic = async (req, res) => {
     });
   } catch (error) {
     console.error("Error in getStatistic:", error.message);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: "Internal Server Error" });
   }
 };
-export const getBookingTrends = async (req, res) => {
+
+const getBookingTrends = async (req, res) => {
   try {
     const range = req.query.range || "7d";
-
-    const days =
-      {
-        "7d": 7,
-        "30d": 30,
-        "90d": 90,
-      }[range] || 7;
-
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - days);
-
-    const bookingTrend = await Booking.aggregate([
-      {
-        $match: {
-          createdAt: { $gte: startDate },
-        },
-      },
-      {
-        $group: {
-          _id: {
-            $dateToString: {
-              format: "%d %b",//format
-              date: {
-                $dateTrunc: {
-                  date: "$createdAt",
-                  unit: "day",
-                  timezone: "+08:00",
-                },
-              },
-              timezone: "+08:00",
-            },
-          },
-          count: { $sum: 1 },
-        },
-      },
-      { $sort: { _id: 1 } },
-    ]);
-
-    const formattedTrend = bookingTrend.map((item) => ({
-      date: item._id,
-      bookings: item.count,
-    }));
+    const formattedTrend = await bookingTrends(range);
 
     res.status(200).json(formattedTrend);
   } catch (error) {
@@ -112,8 +73,40 @@ export const getBookingTrends = async (req, res) => {
   }
 };
 
+const getRoomTypeNumberofReservation = async (req, res) => {
+  try {
+    const stats = await getRoomTypeStats();
+    res.status(200).json(stats);
+  } catch (error) {
+    console.log("Error in getRoomTypeNumberofReservation: ", error.message);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+}
+
+const getRatingsDistribution = async (req, res) => {
+  try {
+    const stats = await ratingDistribution();
+    res.status(200).json(stats);
+  } catch (error) {
+    console.log("Error in getReviewsDistribution: ", error.message);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+const getBookingStatusDistribution = async (req, res) => {
+  try {
+    const stats = await bookingStatusDistribution();
+    res.status(200).json(stats);
+  }catch(error){
+    console.log("Error in getBookingStatusDistribution: ", error.message);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+}
 
 export default {
   getStatistic,
-  getBookingTrends
+  getBookingTrends,
+  getRoomTypeNumberofReservation,
+  getRatingsDistribution,
+  getBookingStatusDistribution,
 };

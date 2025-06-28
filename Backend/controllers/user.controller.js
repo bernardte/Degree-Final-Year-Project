@@ -98,7 +98,7 @@ const loginUser = async (req, res) => {
 const getUserRewardPoints = async (req, res) => {
   const userId = req.user._id;
   try {
-    const user = await User.findById({_id: userId}).select("rewardPoints loyaltyTier");
+    const user = await User.findById({_id: userId}).select("rewardPoints loyaltyTier totalSpent");
     if (!user) {
       return res.status(400).json({ error: "User not found" });
     }
@@ -106,6 +106,7 @@ const getUserRewardPoints = async (req, res) => {
     return res.status(200).json({
       userPoints: user.rewardPoints,
       userLoyaltyTier: user.loyaltyTier,
+      userTotalSpentMoney: user.totalSpent
     }); 
   } catch (error) {
     console.log("Error in getUserRewardPoints: ", error.message);

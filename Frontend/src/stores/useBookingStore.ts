@@ -120,7 +120,7 @@ const useBookingStore = create<BookingStore>((set) => ({
       .finally(() => set({ isLoading: false }));
   },
 
-  fetchAllBooking: async (page: number, limit = 5) => {
+  fetchAllBooking: async (page: number, limit = 10) => {
     set({ isLoading: true, error: null });
     axiosInstance
       .get(`/api/admin/get-all-bookings?page=${page}&limit=${limit}`)

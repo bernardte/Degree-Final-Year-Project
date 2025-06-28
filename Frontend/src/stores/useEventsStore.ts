@@ -23,7 +23,7 @@ const useEventsStore = create<eventStore>((set) => ({
       events: prevState.events.map(event => eventId === event._id ? {...event, status: newStatus} : event)
     }))
   },
-  fetchAllEvents: async (page: number, limit = 5) => {
+  fetchAllEvents: async (page: number, limit = 10) => {
     set({ isLoading: true, error: null})
     try {
         const response = await axiosInstance.get(

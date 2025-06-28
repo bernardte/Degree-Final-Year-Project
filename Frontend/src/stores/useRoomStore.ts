@@ -56,7 +56,7 @@ const useRoomStore = create<roomStore>((set) => ({
   },
   error: null,
   setSearchParams: (params) => set({ searchParams: { ...params } }),
-  fetchPaginatedRooms: async (page: number, limit = 5) => {
+  fetchPaginatedRooms: async (page: number, limit = 10) => {
     set({ isLoading: true, error: null });
     try {
       const response = await axiosInstance.get(
