@@ -145,7 +145,7 @@ const useBookingStore = create<BookingStore>((set) => ({
         set({ bookings: response.data, error: null });
       }).catch((error: any) => {
         set({error: error?.response?.data?.error || error?.response?.data?.message})
-      });
+      }).finally(() => set({ isLoading: false }))
   },
 
   removeBooking: (bookingId: string) => {

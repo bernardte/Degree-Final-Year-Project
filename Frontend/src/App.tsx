@@ -35,6 +35,8 @@ import AdminRewardSettingPage from "./pages/Admin reward update page/AdminReward
 import AdminRewardHistoryPage from "./pages/Admin reward update page/AdminRewardHistoryPage";
 import AdminRewardManagementPage from "./pages/Admin reward update page/AdminRewardManagementPage";
 import RewardRedemptionPage from "./pages/Reward redemption page/RewardRedemptionPage";
+import AdminRoomCalendarPage from "./pages/AdminRoomCalendarPage/AdminRoomCalendarPage";
+import AdminEventCalendarPage from "./pages/AdminEventCalendarPage/AdminEventCalendarPage";
 
 const App = () => {
   const { user, showLoginPopup, showSignupPopup } = useAuthStore();
@@ -95,6 +97,8 @@ const App = () => {
             <Route path="/admin-profile" element={<ProfilePage />} />
             <Route path="/admin-facility" element={<AdminFacilityPage />} />
             <Route path="/admin-booking-calendar" element={<AdminBookingCalendarPage />} />
+            <Route path="/admin-deactivation-room-calendar" element={<AdminRoomCalendarPage />} />
+            <Route path="/admin-event-request-calendar" element={<AdminEventCalendarPage />} />
             <Route path="/admin-room" element={<AdminRoomPage />} />
             <Route path="/admin-event" element={<AdminEventsPage />} />
             <Route path="/admin-reward-setting" element={<AdminRewardSettingPage />} />

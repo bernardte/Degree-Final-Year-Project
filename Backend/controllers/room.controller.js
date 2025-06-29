@@ -332,12 +332,33 @@ const roomReview = async (req, res) => {
   }
 };
 
+const getRoomViewCalendars = async (req, res) => {
+  try {
+    const roomData = await Room.find(
+      { scheduledDeactivationDate: { $ne: null } }, // Only rooms with a scheduled deactivation
+      {
+        roomNumber: 1,
+        roomName: 1,
+        roomType: 1,
+        isActivate: 1,
+        scheduledDeactivationDate: 1,
+      }
+    );
+
+    res.status(200).json(roomData);
+  } catch (error) {
+    console.error("Failed to fetch room deactivation calendar", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
 export default {
   paginatedAllRooms,
   getAllRooms,
   getRoomById,
   getMostBookingRoom,
   getOneRoomPerType,
+  getRoomViewCalendars,
   filterRooms,
   searchAvailableRooms,
   roomReview,

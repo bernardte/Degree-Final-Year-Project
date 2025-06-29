@@ -38,6 +38,7 @@ interface roomStore {
   //! the type of the keys and T represents the type of the values.
   fetchRoomsInFilter: (filter: Record<string, any>) => Promise<void>;
   fetchRoomRanking: () => Promise<void>;
+  fetchRoomCalendarView: () => Promise<void>;
 }
 
 const useRoomStore = create<roomStore>((set) => ({
@@ -62,7 +63,7 @@ const useRoomStore = create<roomStore>((set) => ({
       const response = await axiosInstance.get(
         `/api/rooms/?page=${page}&limit=${limit}`,
       );
-      const { rooms, totalPages, currentPage } = response?.data
+      const { rooms, totalPages, currentPage } = response?.data;
       set({ rooms, totalPages, currentPage });
     } catch (error: any) {
       set({ isLoading: false, error: error.message, rooms: [] });
@@ -152,13 +153,17 @@ const useRoomStore = create<roomStore>((set) => ({
 
   removeRoomImage: (roomId: string, imageIndex: number) => {
     set((prevState) => {
-      const updateRooms = prevState.rooms.map((room) => room._id === roomId ? {
-        ...room,
-        images: room.images.filter((_, index) => index !== imageIndex)
-      }: room);
+      const updateRooms = prevState.rooms.map((room) =>
+        room._id === roomId
+          ? {
+              ...room,
+              images: room.images.filter((_, index) => index !== imageIndex),
+            }
+          : room,
+      );
 
-      return { rooms: updateRooms }
-    })
+      return { rooms: updateRooms };
+    });
   },
 
   updateRoomById: (roomId: string, updatedRoomData?: Partial<Room>) => {
@@ -190,6 +195,19 @@ const useRoomStore = create<roomStore>((set) => ({
     } finally {
       set({ isLoading: false });
     }
+  },
+
+  fetchRoomCalendarView: async () => {
+    set({ isLoading: true, error: null });
+    axiosInstance
+      .get("/api/rooms/get-room-view-calendar")
+      .then((response) => {
+        if (response.data) {
+          set({ rooms: response?.data });
+        }
+      })
+      .catch((error) => set({ error: error?.response?.data?.error }))
+      .finally(() => set({ isLoading: false}));
   },
 }));
 

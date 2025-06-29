@@ -10,7 +10,6 @@ import CancelBookingRequest from "@/layout/components/admin-page-component/cance
 import {
   Users,
   Calendar,
-  Loader,
   BarChart4,
   LayoutDashboard,
   ShieldAlert,
@@ -58,9 +57,11 @@ const UserManagePage = () => {
   // Loading state display with spinner icon
   if (isLoading) {
     return (
-      <div className="flex h-screen flex-col items-center justify-center text-blue-700 overflow-hidden">
-        <Loader className="mr-2 h-12 w-12 animate-spin" />
-        <p className="mt-4 text-xl font-medium">Loading Admin Dashboard...</p>
+      <div className="flex h-screen flex-col items-center justify-center overflow-hidden">
+        <div className="h-12 w-12 animate-spin rounded-full border-t-2 border-b-2 border-blue-500" />
+        <p className="mt-4 text-md text-gray-600">
+          Loading Admin Dashboard...
+        </p>
       </div>
     );
   }

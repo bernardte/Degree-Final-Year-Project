@@ -28,7 +28,7 @@ const Sidebar = () => {
   return (
     <motion.nav
       layout
-      className="sticky top-0 h-screen shrink-0 border-r border-slate-300 bg-white p-2"
+      className="flex h-screen shrink-0 flex-col border-r border-slate-300 bg-white p-2"
       style={{
         width: open ? "225px" : "fit-content",
       }}
@@ -77,15 +77,28 @@ const Sidebar = () => {
           link={() => navigate("/admin-event")}
           open={open}
         />
-        <Option
-          Icon={CalendarRange}
-          title="Reservation Calendar"
-          titleColor="text-blue-700"
-          IconColor="text-blue-700"
+        {/* Calendar Dropdown */}
+        <SidebarDropdown
+          open={open}
+          icon={CalendarRange}
+          label="Calendar"
+          labelColor="text-blue-700"
           selected={selected}
           setSelected={setSelected}
-          link={() => navigate("/admin-booking-calendar")}
-          open={open}
+          items={[
+            {
+              label: "Reservation Calendar",
+              path: "/admin-booking-calendar",
+            },
+            {
+              label: "Room Deactivation Calendar",
+              path: "/admin-deactivation-room-calendar",
+            },
+            {
+              label: "Event Request Calendar",
+              path: "/admin-event-request-calendar",
+            },
+          ]}
         />
         {/* Reward Program DropDown */}
         <SidebarDropdown
@@ -107,7 +120,7 @@ const Sidebar = () => {
             {
               label: "Reward History",
               path: "/admin-reward-history",
-            }, 
+            },
           ]}
         />
 
@@ -392,7 +405,7 @@ const ToggleClose = ({
           return next;
         });
       }}
-      className="absolute right-0 bottom-0 left-0 cursor-pointer border-t border-slate-300 transition-colors hover:bg-slate-100"
+      className="mt-auto cursor-pointer border-t border-slate-300 transition-colors hover:bg-slate-100"
     >
       <div className="flex items-center p-2">
         <motion.div

@@ -32,6 +32,7 @@ export interface Room {
   rating: number;
   reviews: Reviews[];
   isActivate: boolean;
+  scheduledDeactivationDate: Date;
   createdAt: string;
   updatedAt: string;
 }
@@ -159,6 +160,8 @@ export interface Event {
   eventDate: string,
   totalGuests: number,
   additionalInfo?: string,
+  createdAt: Date,
+  updatedAt: Date,
   status: string,
 }
 

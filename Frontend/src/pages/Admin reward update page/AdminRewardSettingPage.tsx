@@ -1,4 +1,3 @@
-// src/app/admin/rewards/settings/page.jsx
 import { useState, useEffect, useRef } from "react";
 import SettingsHeader from "@/layout/components/admin-page-component/reward-setting-component/SettingsHeader";
 import SettingsTabs from "@/layout/components/admin-page-component/reward-setting-component/SettingsTabs";
@@ -96,7 +95,7 @@ const AdminRewardSettingPage = () => {
   // Loading state
   if (isLoading) {
     return (
-      <div className="flex h-64 items-center justify-center">
+      <div className="flex h-64 items-center justify-center min-h-screen flex-col space-y-5">
         <div className="h-12 w-12 animate-spin rounded-full border-t-2 border-b-2 border-blue-500"></div>
         <span className="ml-2 text-gray-600">Loading reward settings...</span>
       </div>

@@ -194,9 +194,9 @@ const RewardManagement = () => {
 
   if (isLoading) {
     return (
-      <div className="flex h-64 items-center justify-center">
+      <div className="flex h-64 items-center justify-center min-h-screen flex-col space-y-5">
         <div className="h-12 w-12 animate-spin rounded-full border-t-2 border-b-2 border-blue-500"></div>
-        <span className="ml-2 text-gray-600">Loading...</span>
+        <span className="ml-2 text-gray-600">Loading Reward Management...</span>
       </div>
     );
   }

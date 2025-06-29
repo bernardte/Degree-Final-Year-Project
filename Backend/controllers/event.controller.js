@@ -28,6 +28,17 @@ const enquireEvents = async (req, res) => {
     }
 }
 
-export default {
-    enquireEvents
+const getAllEventRequestForCalendarView = async (req, res) => {
+  try {
+    const eventsData = await Event.find().sort({ createdAt: -1 });
+    res.status(200).json(eventsData);
+  } catch (error) {
+    console.log("Error in getAllEventRequestForCalendarView: ", error.message);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
 }
+
+export default {
+  enquireEvents,
+  getAllEventRequestForCalendarView,
+};
