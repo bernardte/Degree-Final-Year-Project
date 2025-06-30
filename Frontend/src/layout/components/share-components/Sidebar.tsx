@@ -95,7 +95,7 @@ const Sidebar = () => {
               path: "/admin-deactivation-room-calendar",
             },
             {
-              label: "Event Request Calendar",
+              label: "Event Booking Calendar",
               path: "/admin-event-request-calendar",
             },
           ]}

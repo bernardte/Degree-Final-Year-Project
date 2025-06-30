@@ -73,7 +73,7 @@ const EventCalendarView: React.FC<EventCalendarViewProps> = ({
       <div className="mx-auto max-w-7xl">
         <div className="mb-8 flex flex-col items-start justify-between md:flex-row md:items-center">
           <div>
-            <h1 className="text-2xl font-bold text-slate-800 md:text-3xl">
+            <h1 className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-3xl font-bold text-transparent">
               Event Booking Calendar
             </h1>
           </div>
