@@ -52,14 +52,14 @@ const Navbar = () => {
 
   return (
     <nav
-      className={`fixed top-0 z-50 w-full p-4 transition-all duration-600 ${navbar ? "animate-fadeInDown bg-[#3d60ca] shadow-md" : "bg-transparent"}`}
+      className={`fixed top-0 z-50 w-full p-6 transition-all duration-600 ${navbar ? "animate-fadeInDown bg-[#3d60ca] shadow-md" : "bg-transparent"}`}
     >
       <div className="mx-auto flex max-w-7xl items-center justify-between">
         <Link to={"/"}>
           <img
-            src="/Logo 2.png"
+            src="/Logo 3.png"
             alt="Logo"
-            className="fixed top-0 left-0 h-[60px] w-[100px] object-contain transition-all duration-500 ease-in-out hover:scale-110"
+            className="fixed top-0 left-0 h-[100px] w-[100px] object-contain transition-all duration-500 ease-in-out hover:scale-110"
           />
         </Link>
 
@@ -69,7 +69,7 @@ const Navbar = () => {
               <NavLink
                 to={link.to}
                 className={({ isActive }) => {
-                  return `relative text-[1rem] font-semibold after:absolute after:-bottom-1 after:left-0 after:h-[3px] after:w-0 after:bg-blue-400 after:transition-all after:duration-500 after:content-[''] ${navbar ? "text-white" : "text-gray-900"} ${isActive ? "after:w-full" : "after:left-1/2"} group:hover:transition-all group-hover:text-blue-400 group-hover:duration-400 group-hover:after:left-0 group-hover:after:w-full group-hover:after:origin-center group-hover:after:scale-x-100`;
+                  return `relative text-[1.3rem] font-semibold after:absolute after:-bottom-1 after:left-0 after:h-[3px] after:w-0 after:bg-blue-400 after:transition-all after:duration-500 after:content-[''] ${navbar ? "text-white" : "text-gray-900"} ${isActive ? "after:w-full" : "after:left-1/2"} group:hover:transition-all group-hover:text-blue-400 group-hover:duration-400 group-hover:after:left-0 group-hover:after:w-full group-hover:after:origin-center group-hover:after:scale-x-100`;
                 }}
               >
                 {link.label}

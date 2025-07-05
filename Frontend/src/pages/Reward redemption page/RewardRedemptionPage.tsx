@@ -8,7 +8,6 @@ import ClaimedRewardsTab from "@/layout/components/reward-redemption-page-compon
 import AdditionalInfo from "@/layout/components/reward-redemption-page-component/AdditionalInfo";
 import ErrorDisplay from "@/layout/components/reward-redemption-page-component/ErrorDisplay";
 import { Reward, ClaimedReward } from "@/types/interface.type";
-import LoadingSpinner from "@/layout/components/share-components/LoadingSpinner";
 import { motion } from "framer-motion";
 
 const RewardRedemptionPage = () => {
@@ -101,8 +100,6 @@ const RewardRedemptionPage = () => {
         ? rewards.filter((reward) => !knownCategories.includes(reward.category))
         : rewards.filter((reward) => reward.category === selectedCategory);
 
-  if (loading || isLoading)
-    return <LoadingSpinner message={"loading rewards..."} />;
   if (error) return <ErrorDisplay error={error} />;
 
   return (
@@ -172,8 +169,14 @@ const RewardRedemptionPage = () => {
               rewards={filteredRewards}
               onRedeem={handleRedeem}
               redeemedRewardId={redeemedRewardId}
+              isLoading={isLoading}
+              loading={loading}
             />
-            <AdditionalInfo />
+            {
+              (!isLoading || !loading) && (
+                <AdditionalInfo />
+              )
+            }
           </>
         ) : (
           <ClaimedRewardsTab claimedRewards={claimedRewards} />
