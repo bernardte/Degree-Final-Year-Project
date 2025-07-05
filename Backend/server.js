@@ -16,6 +16,7 @@ import checkoutRoute from "./Routes/checkout.route.js";
 import eventRoute from "./Routes/event.route.js";
 import rewardRoute from "./Routes/reward.route.js";
 import systemSettingRoute from "./Routes/systemSetting.route.js";
+import notificationRoute from "./Routes/notification.route.js";
 import bookingStatusUpdater from "./cronjob/bookingStatusUpdater.js";
 import roomStatusScheduler from "./cronjob/roomStatusScheduler.js";
 import { initializeSocket } from "./config/socket.js";
@@ -30,7 +31,6 @@ app.use(
   })
 );
 app.use(cookieParser());
-
 app.use(express.json());
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
@@ -63,6 +63,7 @@ app.use("/api/checkout", checkoutRoute);
 app.use("/api/event", eventRoute);
 app.use("/api/reward", rewardRoute);
 app.use("/api/systemSetting", systemSettingRoute);
+app.use("/api/notification", notificationRoute);
 
 httpServer.listen(PORT, async () => {
     console.log("Server is running on port", PORT);

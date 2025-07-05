@@ -1,6 +1,8 @@
 import cloudinary from "../config/cloudinary.js";
 import Facility from "../models/facilities.model.js";
 import { uploadToCloudinary } from "../utils/uploadToCloudinary.js";
+import User from "../models/user.model.js";
+import notifyUsers from "../utils/notificationSender.js";
 
 const getFacility = async (req, res) => {
   try {
@@ -8,7 +10,7 @@ const getFacility = async (req, res) => {
     if(!facilities){
       return res.status(404).json({ message: "No facilities found" });
     }
-    console.log(facilities);
+
     res.status(200).json(facilities);
   }catch(error){
     console.log("Error in getFacility: ", error.message);
@@ -45,6 +47,7 @@ const getAdminPageFacility = async (req, res) => {
 
 const deleteFacility = async (req, res) => {
     const { facilityId } = req.params;
+    const user = req.user;
 
     try {
         const facility = await Facility.findByIdAndDelete(facilityId);
@@ -57,6 +60,18 @@ const deleteFacility = async (req, res) => {
             const imageId = facility.image.split("/").pop().split(".")[0];
             await cloudinary.uploader.destroy(imageId);
         }
+
+        const allAdmins = await User.find({
+          role: { $in: ["admin", "superAdmin"] },
+        });
+        const adminIds = allAdmins.map((admin) => admin._id);
+    
+        //* notify all admins
+        await notifyUsers(
+          adminIds,
+          `Facility "${facilitiesName}" has been deleted by ${user.name}`,
+          "facility"
+        );
 
         res
           .status(200)
@@ -73,6 +88,8 @@ const updateFacility = async (req, res) => {
   const { facilityId } = req.params;
   const { facilitiesName, description, openTime, closeTime } = req.body;
   const image = req.files?.image;
+  const user = req.user;
+
   try {
     const facility = await Facility.findById(facilityId);
     if (!facility) {
@@ -98,6 +115,18 @@ const updateFacility = async (req, res) => {
 
     await facility.save();
 
+    const allAdmins = await User.find({
+      role: { $in: ["admin", "superAdmin"] },
+    });
+    const adminIds = allAdmins.map((admin) => admin._id);
+
+    //* notify all admins
+    await notifyUsers(
+      adminIds,
+      `facility ${facilitiesName} have been updated by ${user.name}`,
+      "facility"
+    );
+
     res.status(200).json({
       message: `Facility "${facility.facilitiesName}" updated successfully`,
       facility,
@@ -118,6 +147,19 @@ const updateFacilityStatus = async (req, res) => {
     }
     facility.isActivate = isActivate;
     await facility.save();
+
+    const allAdmins = await User.find({
+      role: { $in: ["admin", "superAdmin"] },
+    });
+    const adminIds = allAdmins.map((admin) => admin._id);
+
+    //* notify all admins
+    await notifyUsers(
+      adminIds,
+      `facility ${facility.facilitiesName} have been status have been update to ${isActivate}`,
+      "facility"
+    );
+
     res.status(200).json({
       message: `Facility status updated successfully`,
       facility,
@@ -131,8 +173,7 @@ const updateFacilityStatus = async (req, res) => {
 const createFacility = async (req, res) => {
   const { facilitiesName, description, openTime, closeTime } = req.body;
   const image = req.files?.image;
-  console.log("image: ", image);
-  console.log(req.body);
+  const user = req.user;
 
   try {
     if (!facilitiesName || !description || !openTime || !closeTime) {
@@ -155,6 +196,18 @@ const createFacility = async (req, res) => {
     });
 
     await newFacility.save();
+
+    const allAdmins = await User.find({
+      role: { $in: ["admin", "superAdmin"] },
+    });
+    const adminIds = allAdmins.map((admin) => admin._id);
+
+    //* notify all admins
+    await notifyUsers(
+      adminIds,
+      `New facility ${facilitiesName} have been created by ${user.name}`,
+      "facility"
+    );
 
     res.status(201).json({
       message: `Facility "${newFacility.facilitiesName}" created successfully`,

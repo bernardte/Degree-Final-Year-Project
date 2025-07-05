@@ -1,5 +1,6 @@
 import RewardHistory from "../models/rewardHistory.model.js";
 import SystemSetting from "../models/systemSetting.model.js";
+import Notification from "../models/notification.model.js";
 
 const updateRewardPointSetting = async (req, res) => {
     const { settings } = req.body;
@@ -10,6 +11,16 @@ const updateRewardPointSetting = async (req, res) => {
           { value: settings, updatedAt: Date.now() },
           { upsert: true, new: true }
         );
+
+        const notification = new Notification({
+          userId: user._id,
+          message: `Reward Setting updated`,
+          type: "system",
+          isRead: false,
+        });
+        await notification.save();
+        getIO().emit("new-notification", notification);
+
         res.json({ success: true, newData: Setting });
     } catch (error) {
         console.log("Error in updateRewardPointSetting: ", error.message);

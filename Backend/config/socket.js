@@ -1,12 +1,12 @@
 import { Server } from "socket.io";
 import {
   emitBookingTrendsUpdate,
-  emitRoomTypeUpdate,
   emitRoomReviewUpdate,
   emitBookingStatusUpdate
 } from "../socket/socketUtils.js";
 
 let io;
+const userSocketMapped = new Map();//* userId -> socket.id
 
 export const initializeSocket = (server) => {
   io = new Server(server, {
@@ -22,12 +22,18 @@ export const initializeSocket = (server) => {
     socket.on("user-connected", ({ userId, guestId, username, isGuest }) => {
       console.log("user connected: ", userId, guestId, username, isGuest);
 
-      socket.userData = {
-        userId,
-        guestId,
+      socket.data.user = {
+        userId, //! Login user
+        guestId,//! Non-login user
         username,
         isGuest,
       };
+
+      const idKey = userId ? `user:${userId}` : `guest:${guestId}`;
+
+      // Store mapping using .set() if userId exists
+      userSocketMapped.set(idKey, socket.id);
+      
     });
 
     socket.on("subscribe-booking-trend", async ({ range }) => {
@@ -54,9 +60,19 @@ export const initializeSocket = (server) => {
     await emitBookingStatusUpdate();
     socket.on("disconnect", () => {
       console.log("Socket disconnected: ", socket.id);
+
+      // Remove user from Map if socket ID matches
+      for (const [idKey, socketId] of userSocketMapped.entries()) {
+        if (socketId === socket.id) {
+          userSocketMapped.delete(idKey);
+          break;
+        }
+      }
     });
   });
 };
+
+export const getUserMap = () => userSocketMapped;
 
 export const getIO = () => {
   if (!io) {

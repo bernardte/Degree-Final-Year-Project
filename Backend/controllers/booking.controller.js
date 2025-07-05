@@ -13,6 +13,7 @@ import {
   emitBookingTrendsUpdate,
   emitRoomTypeUpdate,
 } from "../socket/socketUtils.js";
+import notifyUsers from "../utils/notificationSender.js";
 
 const createBooking = async (req, res) => {
   const { bookingSessionId, specialRequests } = req.body;
@@ -136,6 +137,18 @@ const createBooking = async (req, res) => {
       });
     }
 
+    const allAdmins = await User.find({
+      role: { $in: ["admin", "superAdmin"] },
+    });
+    const adminIds = allAdmins.map((admin) => admin._id);
+
+    //* notify all admins
+    await notifyUsers(
+      adminIds,
+      `New booking# ${bookingReference} from ${contactEmail || user?.email}`,
+      "booking"
+    );
+
     //* emit booking trends chart update on admin interface
     await emitBookingTrendsUpdate();
     // *emit Most booking room type chart update on admin interface
@@ -194,14 +207,26 @@ const cancelBooking = async (req, res) => {
       });
     }
 
+    
     const newCancellationRequest = new CancellationRequest({
       bookingId: booking._id,
       bookingReference,
       email,
       checkInDate: booking.startDate,
-    });
-
+    });    
     await newCancellationRequest.save();
+
+    const allAdmins = await User.find({
+      role: { $in: ["admin", "superAdmin"] },
+    });
+    const adminIds = allAdmins.map((admin) => admin._id);
+
+    //* notify all admins
+    await notifyUsers(
+      adminIds,
+      `Booking #${bookingReference} with ${email} request for booking cancelled`,
+      "booking"
+    );
 
     res
       .status(200)
@@ -214,7 +239,6 @@ const cancelBooking = async (req, res) => {
 
 const getBookingByUser = async (req, res) => {
   const userId = req.user._id;
-  console.log("userId: ", userId);
 
   try {
     // Fetch all bookings created by the user with userType 'user'
@@ -223,7 +247,6 @@ const getBookingByUser = async (req, res) => {
       bookingCreatedByUser: new mongoose.Types.ObjectId(userId),
     }).sort({ createdAt: -1 });
 
-    console.log(userBookingInformation);
 
     if (!userBookingInformation || userBookingInformation.length === 0) {
       return res.status(400).json({ error: "Booking Not Found!" });
@@ -231,7 +254,6 @@ const getBookingByUser = async (req, res) => {
 
     // Extract all roomIds from the bookings
     const roomIds = userBookingInformation.flatMap((booking) => booking.room);
-    console.log(roomIds);
 
     // Fetch room details for all roomIds concurrently
     const rooms = await Room.find({ _id: { $in: roomIds } });
@@ -254,7 +276,6 @@ const getBookingByUser = async (req, res) => {
       };
     });
 
-    console.log(bookingDetails);
     res.status(200).json(bookingDetails);
   } catch (error) {
     console.log("Error in getBookingByUser: ", error.message);
@@ -286,8 +307,6 @@ const createBookingSession = async (req, res) => {
     totalGuest,
     totalPrice,
   });
-
-  console.log(userEmail);
 
   // 2) Core validation
   if (
@@ -362,7 +381,6 @@ const getBookingSession = async (req, res) => {
 
   try {
     const getSession = await BookingSession.findOne({ sessionId });
-    console.log(getSession);
 
     if (!getSession) {
       return res.status(404).json({ error: "Session not found or expired" });
@@ -426,21 +444,17 @@ const getBookingSessionByUser = async (req, res) => {
       };
     });
 
-    console.log("Booking Sessions: ", bookingSessionsWithUserName);
-
     return res.status(200).json(bookingSessionsWithUserName);
   } catch (error) {
     console.log("Error in getBookingByUser: ", error.message);
-    res.status(500).json({ error: error.messgae });
+    res.status(500).json({ error: "Internal Server Error" });
   }
 };
 
 const deleteBookingSession = async (req, res) => {
   const { sessionId } = req.params;
-  console.log(sessionId);
   try {
     const result = await BookingSession.findOneAndDelete({ sessionId });
-    console.log("your result: ", result);
 
     if (!result) {
       return res.status(404).json({ error: "Session not found or expired" });

@@ -1,4 +1,7 @@
 import Event from "../models/event.model.js";
+import User from "../models/user.model.js";
+import notifyUsers from "../utils/notificationSender.js";
+
 
 const enquireEvents = async (req, res) => {
     const { name, email, phone, guests, eventType, date: eventDate, message } = req.body;
@@ -20,6 +23,17 @@ const enquireEvents = async (req, res) => {
       additionalInfo: message,
     });
     await newEvents.save();
+
+    //* notify all admin
+    const allAdmins = await User.find({
+      role: { $in: ["admin", "superAdmin"] },
+    });
+    const adminIds = allAdmins.map((admin) => admin._id);
+    await notifyUsers(
+      adminIds,
+      `New Event Enquire Request from ${fullname} and ${email}`,
+      "event"
+    );
 
     res.status(201).json({ event: newEvents });
     } catch (error) {

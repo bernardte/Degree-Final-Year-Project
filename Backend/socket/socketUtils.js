@@ -1,5 +1,5 @@
 import Booking from "../models/booking.model.js";
-import { getIO } from "../config/socket.js";
+import { getIO, getUserMap } from "../config/socket.js";
 import { bookingTrends, getRoomTypeStats, ratingDistribution, bookingStatusDistribution } from "../utils/bookingStats.js";
 
 //! get the booking tends daily in real-time
@@ -41,4 +41,14 @@ export const emitBookingStatusUpdate = async () => {
     console.log("Error in emitBookingStatusUpdate: ", error.message);
   }
 }
+
+export const emitToSpecificUser = (userId, eventName, data = {}) => {
+  if (!userId) return;
+  const socketUserMap = getUserMap();
+  const userSocket = socketUserMap[userId];
+  if (userSocket) {
+    getIO().to(userSocket).emit(eventName, data);
+  }
+};
+
 

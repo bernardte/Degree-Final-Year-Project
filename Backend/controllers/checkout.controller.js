@@ -1,4 +1,3 @@
-// controllers/checkout.controller.js
 import stripe from "../config/stripe.js";
 import BookingSession from "../models/BookingSession.model.js";
 import { differenceInCalendarDays } from "date-fns";

@@ -11,7 +11,9 @@ import sendEventResponseEmail from "../utils/sendEventResponseEmail.js";
 import OTP from "../models/adminOTP.model.js";
 import stripe from "../config/stripe.js";
 import { normalizeToArray } from "../logic function/normalizeToArray.js";
-import { emitBookingStatusUpdate } from "../socket/socketUtils.js";
+import { emitBookingStatusUpdate, emitToSpecificUser } from "../socket/socketUtils.js";
+import Notification from "../models/notification.model.js";;
+import notifyUsers from "../utils/notificationSender.js";
 
 const getUser = async (req, res) => {
   try {
@@ -71,9 +73,19 @@ const updateUserRole = async (req, res) => {
           "Access denied: You do not have sufficient permission to assign the 'Super Admin' role.",
       });
     }
-
     user.role = newRole;
     await user.save();
+
+    //* notify update role users
+    const notification = new Notification({
+      userId: userId,
+      message: `Your role has been updated to ${newRole} by ${req.user.name}`,
+      type: "user",
+      isRead: false,
+    })
+    await notification.save();
+    emitToSpecificUser(userId, "new-notification", notification);
+
     return res.status(200).json({ message: `User role updated to ${newRole}` });
   } catch (error) {
     console.log("Error in updateUserRole: ", error.message);
@@ -91,11 +103,24 @@ const changeOTPVerificationCode = async (req, res) => {
   }
 
   try {
-    const OTP = await OTP.findOneAndUpdate(
+    const updatedOTP = await OTP.findOneAndUpdate(
       { superAdminId }, //filter
       { otpCode: newOTP }, //update otp
       { new: true, upsert: true } //if not found then create
     );
+
+    //* Notify all admins
+    const allAdmins = await User.find({
+      role: { $in: ["admin", "superAdmin"] },
+    });
+    const adminIds = allAdmins.map((admin) => admin._id);
+
+    await notifyUsers(
+      adminIds,
+      `Admin portal access OTP has been updated to ${newOTP} by ${req.user.name}`,
+      "system"
+    );
+
     res.status(200).json({
       message: "OTP updated successfully",
       updatedOTP,
@@ -123,6 +148,7 @@ const addRoom = async (req, res) => {
 
   const imageFile = req.files.images;
   const galleryImageFile = normalizeToArray(req.files?.galleryImage);
+  const user= req.user;
 
 
   const { Adults, Children } = JSON.parse(capacity);
@@ -192,6 +218,15 @@ const addRoom = async (req, res) => {
     });
 
     await newRoom.save();
+
+    //* notify all admin
+    const allAdmins = await User.find({ role: {$in: ["admin", "superAdmin"] } });
+    const adminIds = allAdmins.map(admin => admin._id);
+    await notifyUsers(
+      adminIds,
+      `New room ${roomNumber} have been created by ${user.name}`,
+      "room"
+    );
     res.status(201).json(newRoom);
   } catch (error) {
     console.log("Error in addRoom: ", error.message);
@@ -222,6 +257,7 @@ const updateRoom = async (req, res) => {
   const galleryInput = normalizeToArray(files?.galleryImages); // Gallery
   const coverImages = normalizeToArray(imageInput);
   const galleryImages = normalizeToArray(galleryInput);
+  const user = req.user;
 
   try {
     if (!roomId)
@@ -283,10 +319,18 @@ const updateRoom = async (req, res) => {
     room.images = newImages;
 
     room.images.forEach((url) => console.log("URL: ", url));
-
-
     await room.save();
-    res.status(200).json(room);
+    
+    //* notify all admins 
+    const allAdmins = await User.find({ role: { $in: ["admin", "superAdmin"] } });
+    const adminIds = allAdmins.map(admin => admin._id);
+    await notifyUsers(
+      adminIds,
+      `Room ${roomNumber} have been updated by ${user.name}`,
+      "room"
+    );
+
+    return res.status(200).json(room);
   } catch (error) {
     console.error("Error in updateRoom:", error.message);
     res.status(500).json({ error: error.message });
@@ -297,7 +341,6 @@ const updateRoom = async (req, res) => {
 const updateRoomStatus = async (req, res) => {
   const { roomId } = req.params;
   const { isActivate } = req.body;
-  console.log(isActivate);
   try {
     const room = await Room.findById({_id: roomId}).select("isActivate roomName");
     if (!room) {
@@ -330,6 +373,18 @@ const updateRoomStatus = async (req, res) => {
 
     room.isActivate = isActivate;
     await room.save();
+
+    //* notify all admins 
+    const allAdmins = await User.find({
+      role: { $in: ["admin", "superAdmin"] },
+    });
+    const adminIds = allAdmins.map((admin) => admin._id);
+    await notifyUsers(
+      adminIds,
+      `Room ${room.roomNumber} status update to ${isActivate}`,
+      "room"
+    );
+
     res.status(200).json(room);     
   } catch (error) {
     console.log('Error in updateRoomStatus: ', error.message);
@@ -374,7 +429,7 @@ const updateImageGallery = async(req, res) => {
 const updateScheduleRoomStatus = async (req, res) => {
   const { roomId } = req.params;
   const {date, cancel} = req.body;
-  console.log(date, cancel);
+  const user = req.user;
   try {
       const room = await Room.findById({_id: roomId});
       if (!room) {
@@ -385,6 +440,21 @@ const updateScheduleRoomStatus = async (req, res) => {
         ? (room.scheduledDeactivationDate = null)
         : (room.scheduledDeactivationDate = date);
       await room.save();
+
+      if(cancel !== true){
+        const allAdmins = await User.find({
+          role: { $in: ["admin", "superAdmin"] },
+        });
+
+        //* notify all admin
+        const adminIds = allAdmins.map((admin) => admin._id);
+        await notifyUsers(
+          adminIds,
+          `Room ${room.roonNumber} status on scheduling now in ${date}`,
+          "room"
+        );
+      }
+
       res.status(200).json(room);
   } catch (error) {
     console.log("Error in updateScheduleRoomStatus: ", error.message);
@@ -414,10 +484,8 @@ const deleteRoomImageGallery = async (req, res) => {
 
     // Delete from Cloudinary
     await cloudinary.uploader.destroy(publicId);
-    const remove = room.images.splice(imageIndex, 1);
+    room.images.splice(imageIndex, 1);
     await room.save();
-
-    console.log("deleteRoomImageGallery: ", room.images);
     return res.status(200).json(room.images);
   } catch (error) {
     console.log("Error in deleteRoomImageGallery: ", error.message);
@@ -427,6 +495,7 @@ const deleteRoomImageGallery = async (req, res) => {
 
 const deleteRoom = async (req, res) => {
   const { roomId } = req.params;
+  const user = req.user;
 
   if (!roomId) {
     return res.status(400).json({ error: "Please provide a room ID" });
@@ -458,6 +527,16 @@ const deleteRoom = async (req, res) => {
     // Delete the room from DB
     await Room.findByIdAndDelete(roomId);
 
+    //* notify all admins 
+    const allAdmins = await User.find({
+      role: { $in: ["admin", "superAdmin"] },
+    });
+    const adminIds = allAdmins.map((admin) => admin._id);
+    await notifyUsers(
+      adminIds,
+      `Room ${room.roomNumber} have been deleted by ${user.name}`,
+      "room"
+    );
     res.status(200).json({ message: "Room deleted successfully" });
   } catch (error) {
     console.error("Error in deleteRoom: ", error.message);
@@ -857,6 +936,7 @@ const deleteCancellationRequest = async (req, res) => {
 //cancel booking by admin or user
 const deleteBooking = async (req, res) => {
   const { bookingId } = req.params;
+  const user = req.user;
   if (!bookingId.trim() === "" || !bookingId) {
     return res.status(400).json({ error: "Please provide a booking ID" });
   }
@@ -883,6 +963,18 @@ const deleteBooking = async (req, res) => {
       await room.save();
     }
     await CancellationRequest.deleteOne({ bookingId: booking._id });
+
+    //* notify all admins 
+    const allAdmins = await User.find({
+      role: { $in: ["admin", "superAdmin"] },
+    });
+    const adminIds = allAdmins.map((admin) => admin._id);
+    await notifyUsers(
+      adminIds,
+      `booking ${booking.bookingReference} have been deleted by ${user.name}`,
+      "booking"
+    );
+
     res.status(200).json({ message: "Booking deleted successfully" });
   } catch (error) {
     console.error("Error deleting booking: ", error.message);
