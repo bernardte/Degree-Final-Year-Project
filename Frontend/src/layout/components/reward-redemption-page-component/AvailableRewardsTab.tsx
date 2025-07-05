@@ -1,14 +1,11 @@
 import RewardCard from "./RewardCard";
 import { Hotel } from "lucide-react";
 import { Reward } from "@/types/interface.type";
-import LoadingSpinner from "../share-components/LoadingSpinner";
 
 
 interface AvailableRewardsTabProps {
   rewards: Reward[];
   onRedeem: (rewardId: string, requiredPoints: number) => void;
-  loading: boolean;
-  isLoading: boolean;
   redeemedRewardId: string | null;
 }
 
@@ -16,13 +13,7 @@ const AvailableRewardsTab = ({
   rewards,
   onRedeem,
   redeemedRewardId,
-  loading, 
-  isLoading,
 }: AvailableRewardsTabProps) => {
-
-  if (loading || isLoading)
-    return <LoadingSpinner message={"loading rewards..."} />;
-
   return (
     <>
       {rewards.length === 0 ? (
