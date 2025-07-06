@@ -14,6 +14,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import useHandleLogout from "@/hooks/useHandleLogout";
 import { Link, useNavigate } from "react-router-dom";
 import useAuthStore from "@/stores/useAuthStore";
+import useNotificationStore from "@/stores/useNotificationStore";
 
 const Sidebar = () => {
   const [open, setOpen] = useState<boolean>(() => {
@@ -24,6 +25,7 @@ const Sidebar = () => {
   });
   const { handleLogout } = useHandleLogout();
   const navigate = useNavigate();
+  const unreadNotification = useNotificationStore(state => state.unreadNotification);
 
   return (
     <motion.nav
@@ -133,7 +135,7 @@ const Sidebar = () => {
           setSelected={setSelected}
           link={() => navigate("/admin-notification")}
           open={open}
-          notify={3}
+          notify={unreadNotification}
         />
 
         <Option
@@ -232,7 +234,7 @@ const Option = ({
   title: string;
   selected: string;
   open: boolean;
-  notify?: number;
+  notify?: number | null;
   setSelected: (title: string) => void;
   link?: () => void;
 }) => {
@@ -265,17 +267,22 @@ const Option = ({
           {title}
         </motion.span>
       )}
-      {open && notify && (
-        <motion.span
-          initial={{ scale: 0, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ delay: 0.5 }}
-          style={{ transform: "translateY(-50%)" }}
-          className="absolute right-4 size-5 rounded bg-rose-400 text-center text-sm text-white"
-        >
-          {notify}
-        </motion.span>
-      )}
+
+      <AnimatePresence>
+        {open && (notify ?? 0) > 0 && (
+          <motion.span
+            key="notify-badge"
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0, opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            style={{ transform: "translateY(-50%)" }}
+            className="absolute right-4 size-5 rounded bg-rose-400 text-center text-sm text-white"
+          >
+            {notify}
+          </motion.span>
+        )}
+      </AnimatePresence>
     </motion.button>
   );
 };

@@ -1,27 +1,32 @@
 import RewardHistory from "../models/rewardHistory.model.js";
 import SystemSetting from "../models/systemSetting.model.js";
-import Notification from "../models/notification.model.js";
+import notifyUsers from "../utils/notificationSender.js";
+import User from "../models/user.model.js";
 
 const updateRewardPointSetting = async (req, res) => {
     const { settings } = req.body;
-    console.log("data", settings);
-    try {   
-        const Setting = await SystemSetting.findOneAndUpdate(
-          { key: "rewardPointsSetting" },
-          { value: settings, updatedAt: Date.now() },
-          { upsert: true, new: true }
-        );
+    console.log(settings);
+    const user = req.user;
+    try {
+      const Setting = await SystemSetting.findOneAndUpdate(
+        { key: "rewardPointsSetting" },
+        { value: settings, updatedAt: Date.now() },
+        { upsert: true, new: true }
+      );
 
-        const notification = new Notification({
-          userId: user._id,
-          message: `Reward Setting updated`,
-          type: "system",
-          isRead: false,
-        });
-        await notification.save();
-        getIO().emit("new-notification", notification);
+      //* notify all admin
+      const allAdmins = await User.find({
+        role: { $in: ["admin", "superAdmin"] },
+      });
+      const adminIds = allAdmins.map((admin) => admin._id);
+      console.log("Your Admin: ", adminIds);
+      await notifyUsers(
+        adminIds,
+        `Reward setting have been updated by ${user.name}`,
+        "system"
+      );
 
-        res.json({ success: true, newData: Setting });
+      res.json({ success: true, newData: Setting });
     } catch (error) {
         console.log("Error in updateRewardPointSetting: ", error.message);
         res.status(500).json({ error: "Internal Server Error" });

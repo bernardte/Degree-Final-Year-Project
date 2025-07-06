@@ -45,9 +45,11 @@ export const emitBookingStatusUpdate = async () => {
 export const emitToSpecificUser = (userId, eventName, data = {}) => {
   if (!userId) return;
   const socketUserMap = getUserMap();
-  const userSocket = socketUserMap[userId];
+  const userSocket = socketUserMap.get(`user:${userId}`); 
   if (userSocket) {
     getIO().to(userSocket).emit(eventName, data);
+  } else {
+    console.log(`⚠️ No socket found for user ${userId}`);
   }
 };
 

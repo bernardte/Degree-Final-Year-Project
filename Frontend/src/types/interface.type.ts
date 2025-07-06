@@ -188,7 +188,7 @@ export interface RewardHistories{
   points: number,
   description: string,
   type: "redeem" | "earn"
-  source: "booking" | "redeemption" | "others"
+  source: "booking" | "redemption" | "others"
   createdAt: Date
 }
 
@@ -213,4 +213,13 @@ export interface ClaimedReward {
   status: "active" | "used" | "expired";
   code: string;
   claimedBy: User;
+}
+export interface notification {
+  _id: string,
+  userId: User["_id"],
+  message: string,
+  type: "reward" | "booking" | "user" | "room" | "facility" | "event" | "system",
+  isRead: boolean;
+  createdAt: Date
+  updatedAt: Date
 }

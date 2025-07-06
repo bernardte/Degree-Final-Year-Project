@@ -58,8 +58,15 @@ const AdminRewardHistoryPage = () => {
 
     // Apply source filter
     if (sourceFilter !== "all") {
-      result = result.filter((item) => item.source === sourceFilter);
+      if (sourceFilter === "other") {
+        result = result.filter(
+          (item) => item.source !== "booking" && item.source !== "redemption",
+        );
+      } else {
+        result = result.filter((item) => item.source === sourceFilter);
+      }
     }
+    
 
     setFilteredData(result);
   }, [rewardPointsHistory, searchTerm, typeFilter, sourceFilter]);
@@ -100,8 +107,7 @@ const AdminRewardHistoryPage = () => {
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Error Loading Data</AlertTitle>
           <AlertDescription>
-            {error ||
-              "Failed to load reward history data. Please try again."}
+            {error || "Failed to load reward history data. Please try again."}
             <Button
               variant="outline"
               size="sm"
@@ -160,7 +166,7 @@ const AdminRewardHistoryPage = () => {
             <SelectContent>
               <SelectItem value="all">All Sources</SelectItem>
               <SelectItem value="booking">Booking</SelectItem>
-              <SelectItem value="Redemption">Redemption</SelectItem>
+              <SelectItem value="redemption">Redemption</SelectItem>
               <SelectItem value="other">Other</SelectItem>
             </SelectContent>
           </Select>

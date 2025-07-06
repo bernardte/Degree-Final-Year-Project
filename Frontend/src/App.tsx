@@ -37,6 +37,8 @@ import AdminRewardManagementPage from "./pages/Admin reward update page/AdminRew
 import RewardRedemptionPage from "./pages/Reward redemption page/RewardRedemptionPage";
 import AdminRoomCalendarPage from "./pages/AdminRoomCalendarPage/AdminRoomCalendarPage";
 import AdminEventCalendarPage from "./pages/AdminEventCalendarPage/AdminEventCalendarPage";
+import AdminNotificationPage from "./pages/Admin notification page/AdminNotificationPage";
+import NotificationProvider from "./provider/NotificationProvider";
 
 const App = () => {
   const { user, showLoginPopup, showSignupPopup } = useAuthStore();
@@ -89,21 +91,51 @@ const App = () => {
 
         {/* Admin and SuperAdmin Routes */}
         <Route
-          element={<RoleBasedProvider allowedRoles={[ROLE.Admin, ROLE.SuperAdmin]} />}
+          element={
+            <RoleBasedProvider allowedRoles={[ROLE.Admin, ROLE.SuperAdmin]} />
+          }
         >
-          <Route element={<AdminPageMainLayout />}>
+          <Route
+            element={
+              <NotificationProvider>
+                <AdminPageMainLayout />{" "}
+              </NotificationProvider>
+            }
+          >
             <Route path="/verify-admin-otp" element={<VerifyAdminOtpPage />} />
             <Route path="/admin-portal" element={<AdminMainPage />} />
             <Route path="/admin-profile" element={<ProfilePage />} />
             <Route path="/admin-facility" element={<AdminFacilityPage />} />
-            <Route path="/admin-booking-calendar" element={<AdminBookingCalendarPage />} />
-            <Route path="/admin-deactivation-room-calendar" element={<AdminRoomCalendarPage />} />
-            <Route path="/admin-event-request-calendar" element={<AdminEventCalendarPage />} />
+            <Route
+              path="/admin-booking-calendar"
+              element={<AdminBookingCalendarPage />}
+            />
+            <Route
+              path="/admin-deactivation-room-calendar"
+              element={<AdminRoomCalendarPage />}
+            />
+            <Route
+              path="/admin-event-request-calendar"
+              element={<AdminEventCalendarPage />}
+            />
             <Route path="/admin-room" element={<AdminRoomPage />} />
             <Route path="/admin-event" element={<AdminEventsPage />} />
-            <Route path="/admin-reward-setting" element={<AdminRewardSettingPage />} />
-            <Route path="/admin-reward-redemption" element={<AdminRewardManagementPage />} />
-            <Route path="/admin-reward-history" element={<AdminRewardHistoryPage />} />
+            <Route
+              path="/admin-reward-setting"
+              element={<AdminRewardSettingPage />}
+            />
+            <Route
+              path="/admin-reward-redemption"
+              element={<AdminRewardManagementPage />}
+            />
+            <Route
+              path="/admin-reward-history"
+              element={<AdminRewardHistoryPage />}
+            />
+            <Route
+              path="/admin-notification"
+              element={<AdminNotificationPage />}
+            />
           </Route>
         </Route>
 

@@ -6,12 +6,12 @@ const AdminPageMainLayout = () => {
   const isVerifyOTPPage = location.pathname === "/verify-admin-otp";
 
   return (
-    <div className="flex h-screen">
-      {!isVerifyOTPPage && <Sidebar />}
-      <div className="flex-1 overflow-y-auto">
-        <Outlet />
+      <div className="flex h-screen">
+        {!isVerifyOTPPage && <Sidebar />}
+        <div className="flex-1 overflow-y-auto">
+          <Outlet />
+        </div>
       </div>
-    </div>
   );
 };
 

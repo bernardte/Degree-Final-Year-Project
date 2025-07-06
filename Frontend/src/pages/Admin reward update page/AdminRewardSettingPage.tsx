@@ -67,17 +67,26 @@ const AdminRewardSettingPage = () => {
           },
         );
         if (response?.data) {
-          showToast("success", "update successfully");
-          const latestData = response.data.newData[0].value;
-          const clonedLatest = JSON.parse(JSON.stringify(latestData));
-          setSettings(clonedLatest);
-          originalSettingRef.current = clonedLatest;
-          return;
+          if (response?.data?.newData?.value !== undefined) {
+            const latestData = response.data.newData.value;
+            const clonedLatest = JSON.parse(JSON.stringify(latestData));
+            setSettings(clonedLatest);
+            originalSettingRef.current = clonedLatest;
+            showToast("success", "updated successfully");
+            return;
+          } else {
+            showToast("error", "Invalid response from server.");
+            console.error("Unexpected response:", response.data);
+          }
+          
         }
       } catch (error: any) {
         const messages =
           error?.response?.data?.error || error?.response?.data?.message;
-        if (messages.includes("Access denied")) {
+        if (
+          typeof messages === "string" &&
+          messages.includes("Access denied")
+        ) {
           showToast("warn", error?.response?.data?.message);
           return;
         }
