@@ -8,6 +8,7 @@ import {
   Calendar1,
   LayoutGrid,
   CalendarRange,
+  MessageCircleMore,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -124,6 +125,17 @@ const Sidebar = () => {
               path: "/admin-reward-history",
             },
           ]}
+        />
+
+        <Option
+          Icon={MessageCircleMore}
+          title="Chat"
+          selected={selected}
+          titleColor="text-emerald-400"
+          IconColor="text-emerald-400"
+          setSelected={setSelected}
+          link={() => navigate("/admin-notification")}
+          open={open}
         />
 
         <Option

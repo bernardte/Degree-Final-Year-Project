@@ -342,7 +342,7 @@ const updateRoomStatus = async (req, res) => {
   const { roomId } = req.params;
   const { isActivate } = req.body;
   try {
-    const room = await Room.findById({_id: roomId}).select("isActivate roomName");
+    const room = await Room.findById({_id: roomId}).select("isActivate roomNumber");
     if (!room) {
       return res.status(404).json({ error: "Room not found" });
     }
@@ -373,7 +373,6 @@ const updateRoomStatus = async (req, res) => {
 
     room.isActivate = isActivate;
     await room.save();
-
     //* notify all admins 
     const allAdmins = await User.find({
       role: { $in: ["admin", "superAdmin"] },
@@ -381,9 +380,10 @@ const updateRoomStatus = async (req, res) => {
     const adminIds = allAdmins.map((admin) => admin._id);
     await notifyUsers(
       adminIds,
-      `Room ${room.roomNumber} status update to ${isActivate}`,
+      `Room ${room.roomNumber} status update to ${isActivate === true ? "activate" : "deactivate"}`,
       "room"
     );
+
 
     res.status(200).json(room);     
   } catch (error) {
@@ -450,7 +450,7 @@ const updateScheduleRoomStatus = async (req, res) => {
         const adminIds = allAdmins.map((admin) => admin._id);
         await notifyUsers(
           adminIds,
-          `Room ${room.roonNumber} status on scheduling now in ${date}`,
+          `Room ${room.roomNumber} deactivate on scheduling now in ${date}, processed by ${user.name}`,
           "room"
         );
       }
