@@ -51,6 +51,7 @@ const deleteFacility = async (req, res) => {
 
     try {
         const facility = await Facility.findByIdAndDelete(facilityId);
+        console.log(user);
 
         if (!facility) {
             return res.status(404).json({ error: "Facility not found" });
@@ -69,15 +70,13 @@ const deleteFacility = async (req, res) => {
         //* notify all admins
         await notifyUsers(
           adminIds,
-          `Facility "${facilitiesName}" has been deleted by ${user.name}`,
+          `Facility ${facility.facilitiesName.toLowerCase()} has been deleted by ${user.name}`,
           "facility"
         );
 
-        res
-          .status(200)
-          .json({
-            message: `Facility ${facility.facilitiesName} deleted successfully`,
-          });
+        res.status(200).json({
+          message: `Facility ${facility.facilitiesName} deleted successfully`,
+        });
     } catch (error) {
         console.log("Error in deleteFacility: ", error.message);
         res.status(500).json({ error: error.message });
@@ -123,7 +122,7 @@ const updateFacility = async (req, res) => {
     //* notify all admins
     await notifyUsers(
       adminIds,
-      `facility ${facilitiesName} have been updated by ${user.name}`,
+      `facility ${facilitiesName} has been updated by ${user.name}`,
       "facility"
     );
 
@@ -156,7 +155,7 @@ const updateFacilityStatus = async (req, res) => {
     //* notify all admins
     await notifyUsers(
       adminIds,
-      `facility ${facility.facilitiesName} have been status have been update to ${isActivate}`,
+      `facility ${facility.facilitiesName} has been update to ${isActivate === true ? "activate" : "deactivate"}`,
       "facility"
     );
 
@@ -205,7 +204,7 @@ const createFacility = async (req, res) => {
     //* notify all admins
     await notifyUsers(
       adminIds,
-      `New facility ${facilitiesName} have been created by ${user.name}`,
+      `New facility ${facilitiesName} has been created by ${user.name}`,
       "facility"
     );
 

@@ -326,7 +326,7 @@ const updateRoom = async (req, res) => {
     const adminIds = allAdmins.map(admin => admin._id);
     await notifyUsers(
       adminIds,
-      `Room ${roomNumber} have been updated by ${user.name}`,
+      `Room ${roomNumber} has been updated by ${user.name}`,
       "room"
     );
 

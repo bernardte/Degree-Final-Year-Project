@@ -1,6 +1,6 @@
 import { useSocket } from "@/context/SocketContext";
 import useNotificationStore from "@/stores/useNotificationStore";
-import { notification } from "@/types/interface.type";
+import { Notification } from "@/types/interface.type";
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 
@@ -21,7 +21,7 @@ const NotificationProvider = ({ children } : { children: React.ReactNode}) => {
   useEffect(() => {
     if (!socket) return;
     
-    const handleNewNotification = (notification: notification) => {
+    const handleNewNotification = (notification: Notification) => {
         console.log("Received notification:", notification); 
         addNotification(notification); // update store directly
         setUnreadNotificationsCount(); // update count reactively

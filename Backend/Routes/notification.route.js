@@ -11,6 +11,7 @@ router.use(protectRoute, verifyRole);
 router
   .route("/")
   .get(notificationController.getAllNotification)
+  .delete(notificationController.deleteAllNotification)
 
 router
   .route("/mark-as-read/:notificationId")

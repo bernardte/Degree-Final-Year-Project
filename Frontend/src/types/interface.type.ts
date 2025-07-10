@@ -214,7 +214,7 @@ export interface ClaimedReward {
   code: string;
   claimedBy: User;
 }
-export interface notification {
+export interface Notification {
   _id: string,
   userId: User["_id"],
   message: string,
@@ -222,4 +222,31 @@ export interface notification {
   isRead: boolean;
   createdAt: Date
   updatedAt: Date
+}
+
+export interface Conversation {
+  _id: string,
+  userId: string,
+  userCode: string,
+  mode: "chatbot"| "human",
+  status: "open" | "closed",
+  bookingId: Bookings["_id"],
+  roomType: string,
+  unreadCount: number,
+  lastMessage: string,
+  lastMessageAt: Date,
+  isLock: boolean,//? only one admin can take current conversation
+  lockedBy: User,
+  visibleToAdmin: User["_id"],//? visible for admin which have the authorization to view
+}
+
+export interface Message {
+  _id: string,
+  conversationId: Conversation["_id"],
+  senderType: "user" | "guest"| "admin" | "superAdmin" | "bot",
+  senderId: string,
+  content: string,
+  isRead: boolean,
+  image: string,
+  createdAt: Date,
 }

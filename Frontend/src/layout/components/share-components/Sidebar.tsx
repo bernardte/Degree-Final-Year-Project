@@ -31,7 +31,7 @@ const Sidebar = () => {
   return (
     <motion.nav
       layout
-      className="flex h-screen shrink-0 flex-col border-r border-slate-300 bg-white p-2"
+      className="flex h-screen shrink-0 flex-col border-r border-slate-300 bg-white p-2 overflow-y-auto z-100"
       style={{
         width: open ? "225px" : "fit-content",
       }}
@@ -134,7 +134,7 @@ const Sidebar = () => {
           titleColor="text-emerald-400"
           IconColor="text-emerald-400"
           setSelected={setSelected}
-          link={() => navigate("/admin-notification")}
+          link={() => navigate("/admin-chat")}
           open={open}
         />
 

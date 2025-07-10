@@ -119,4 +119,6 @@ const seedDatabase = async () => {
   }
 };
 
+//! to run seed, use this line of code node seeds/conversations.js
+
 seedDatabase();

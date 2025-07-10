@@ -349,6 +349,7 @@ const applyRewardCode = async (req, res) => {
     res.status(200).json({
       success: true,
       discount: claimedReward.discountPercentage,
+      status: claimedReward.status,
       message: `Reward ${claimedReward.rewardCode} applied successfully`,
     });
   } catch (error) {

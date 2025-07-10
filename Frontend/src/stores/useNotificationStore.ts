@@ -1,17 +1,18 @@
 import axiosInstance from "@/lib/axios";
-import { notification } from "@/types/interface.type";
+import { Notification } from "@/types/interface.type";
 import { create } from "zustand";
 
 interface notificationStore {
-  notifications: notification[];
+  notifications: Notification[];
   unreadNotification: number;
   error: null | string;
   isLoading: boolean;
-  addNotification: (notification: notification) => void;
+  addNotification: (notification: Notification) => void;
   setUnreadNotificationsCount: () => void;
   markAsRead: (notificationId: string) => Promise<void>;
   markAllAsRead: () => Promise<void>;
   fetchSpecificUserNotifications: () => Promise<void>;
+  handleDeleteAllNotification: () => Promise<void>;
 }
 
 const useNotificationStore = create<notificationStore>()((set, get) => ({
@@ -19,10 +20,10 @@ const useNotificationStore = create<notificationStore>()((set, get) => ({
   error: null,
   isLoading: false,
   unreadNotification: 0,
-  addNotification: (notification: notification) => {
+  addNotification: (notification: Notification) => {
     set((prevState) => ({
       notifications: [notification, ...prevState.notifications],
-    }))
+    }));
   },
   fetchSpecificUserNotifications: async () => {
     set({ isLoading: true, error: null });
@@ -41,25 +42,25 @@ const useNotificationStore = create<notificationStore>()((set, get) => ({
   //mark specific notification as read
   markAsRead: async (notificationId: string) => {
     set({ error: null });
-   try {
-     await axiosInstance.patch(
-       "/api/notification/mark-as-read/" + notificationId,
-     );
-     set((prevState) => ({
-       notifications: prevState.notifications.map((notification) =>
-         notification._id === notificationId
-           ? { ...notification, isRead: true }
-           : notification,
-       ),
-     }));
+    try {
+      await axiosInstance.patch(
+        "/api/notification/mark-as-read/" + notificationId,
+      );
+      set((prevState) => ({
+        notifications: prevState.notifications.map((notification) =>
+          notification._id === notificationId
+            ? { ...notification, isRead: true }
+            : notification,
+        ),
+      }));
 
-     // update unread count
-     get().setUnreadNotificationsCount();
-   } catch (error: any) {
-      set({ error: error?.response?.data?.error })
-   }
+      // update unread count
+      get().setUnreadNotificationsCount();
+    } catch (error: any) {
+      set({ error: error?.response?.data?.error });
+    }
   },
-//mark all notifications as Read
+  //mark all notifications as Read
   markAllAsRead: async () => {
     try {
       //? prevent if all notification is read, not allowed to proceed
@@ -80,15 +81,26 @@ const useNotificationStore = create<notificationStore>()((set, get) => ({
     }
   },
 
-//calculate unread notifications count
-setUnreadNotificationsCount: () => {
+  //calculate unread notifications count
+  setUnreadNotificationsCount: () => {
     set((prevState) => {
-        const unreadCount = prevState.notifications.filter(notification => !notification.isRead).length
-        return {
-            unreadNotification: unreadCount
-        }
-    })
-}
+      const unreadCount = prevState.notifications.filter(
+        (notification) => !notification.isRead,
+      ).length;
+      return {
+        unreadNotification: unreadCount,
+      };
+    });
+  },
+
+  handleDeleteAllNotification: async () => {
+    try {
+      await axiosInstance.delete("/api/notification");
+      set({ notifications: [] });
+    } catch (error: any) {
+      set({ error: error?.response?.data?.error});
+    }
+  },
 }));
 
 export default useNotificationStore;

@@ -16,6 +16,8 @@ import checkoutRoute from "./Routes/checkout.route.js";
 import eventRoute from "./Routes/event.route.js";
 import rewardRoute from "./Routes/reward.route.js";
 import systemSettingRoute from "./Routes/systemSetting.route.js";
+import messageRoute from "./Routes/messages.route.js";
+import conversationRoute from "./Routes/conversations.route.js";
 import notificationRoute from "./Routes/notification.route.js";
 import bookingStatusUpdater from "./cronjob/bookingStatusUpdater.js";
 import roomStatusScheduler from "./cronjob/roomStatusScheduler.js";
@@ -63,6 +65,8 @@ app.use("/api/checkout", checkoutRoute);
 app.use("/api/event", eventRoute);
 app.use("/api/reward", rewardRoute);
 app.use("/api/systemSetting", systemSettingRoute);
+app.use("/api/messages", messageRoute);
+app.use("/api/conversations", conversationRoute);
 app.use("/api/notification", notificationRoute);
 
 httpServer.listen(PORT, async () => {

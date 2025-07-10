@@ -1,6 +1,6 @@
 import { Bookmark, BookmarkCheck } from 'lucide-react'
 import { formatTime } from "@/utils/formatTime";
-import { notification } from '@/types/interface.type';
+import { Notification } from '@/types/interface.type';
 import useNotificationStore from "@/stores/useNotificationStore";
 import useNotificationObserver from "@/hooks/useNotificationObserver";
 import { LucideIcon } from "lucide-react";
@@ -10,7 +10,7 @@ const NotificationItems = ({
   Icon,
   typeConfig,
 }: {
-  notification: notification;
+  notification: Notification;
   Icon: LucideIcon;
   typeConfig: {
     icon: LucideIcon;

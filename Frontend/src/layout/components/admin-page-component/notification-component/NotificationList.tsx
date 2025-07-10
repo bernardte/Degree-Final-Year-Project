@@ -1,12 +1,12 @@
 import { Bookmark } from "lucide-react";
-import { notification } from "@/types/interface.type"; 
+import { Notification } from "@/types/interface.type"; 
 import { notificationTypes } from "@/constant/notificationType";
 import NotificationItem from "./NotificationItem";
 
 const NotificationList = ({
   filteredNotifications,
 }: {
-  filteredNotifications: notification[];
+  filteredNotifications: Notification[];
 }) => {
     return (
       <ul className="divide-y divide-gray-100">

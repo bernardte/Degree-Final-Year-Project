@@ -49,7 +49,7 @@ const useUserStore = create<userStore>((set) => ({
       const user = response?.data;
       set({ currentLoginUser: user });
     } catch (error: any) {
-      console.log("Error in fetchUser: ", error?.response?.data?.error);
+      console.log("Error in fetchCurrentLoginUser: ", error?.response?.data?.error);
       set({ error: error?.response?.data?.error, currentLoginUser: null });
     } finally {
       set({ isLoading: false });

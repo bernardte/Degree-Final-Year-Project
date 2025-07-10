@@ -14,6 +14,8 @@ interface authStore {
   user: User | null;
   token: string | null;
   roles: string | null;
+  adminReceipentId: string | null;
+  setCurrentAdminReceipentId: (adminId: string | null) => void;
   setCurrentLoginUser: (user: User) => void;
   setIsAuthenticated: (authentication: boolean) => void;
   setAuthLoading: (loading: boolean) => void;
@@ -39,7 +41,10 @@ const useAuthStore = create<authStore>()(
         token: null,
         roles: null,
         profilePic: null,
-
+        adminReceipentId: null,
+        setCurrentAdminReceipentId: (adminId: string | null) => {
+          set({ adminReceipentId: adminId });
+        },
         setIsAuthenticated: (authentication) =>
           set({ isAuthenticated: authentication }),
 
@@ -87,7 +92,8 @@ const useAuthStore = create<authStore>()(
           );
           // Clear bookings state
           useBookingStore.getState().clearBookingInformation();
-          localStorage.clear();
+          localStorage.removeItem("admin-verified");
+          localStorage.removeItem("user");
           // This is more robust to clear the persist local storage state
           //! Remove specific persisted user state (extra safe)
           createJSONStorage(() => localStorage)?.removeItem("user") ??

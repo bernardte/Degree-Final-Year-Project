@@ -13,6 +13,17 @@ const getAllNotification = async (req, res) => {
   }
 };
 
+const deleteAllNotification = async (req, res) => {
+  const userId = req.user._id;
+  try {
+    await Notification.deleteMany({ userId: userId});
+    res.status(200).json({ message: "Notifications deleted successfully" });
+  } catch (error) {
+    console.error("Error in delete all notification:", error.message);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
 const updateNotificationReadStatus = async (req, res) => {
   const { notificationId } = req.params;
   const userId = req.user._id;
@@ -59,6 +70,7 @@ const updateNotificationStatusAllAsRead = async (req, res) => {
 
 export default {
   getAllNotification,
+  deleteAllNotification,
   updateNotificationReadStatus,
   updateNotificationStatusAllAsRead,
 };

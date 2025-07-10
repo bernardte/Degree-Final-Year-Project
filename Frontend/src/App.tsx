@@ -39,10 +39,10 @@ import AdminRoomCalendarPage from "./pages/AdminRoomCalendarPage/AdminRoomCalend
 import AdminEventCalendarPage from "./pages/AdminEventCalendarPage/AdminEventCalendarPage";
 import AdminNotificationPage from "./pages/Admin notification page/AdminNotificationPage";
 import NotificationProvider from "./provider/NotificationProvider";
+import AdminChatPage from "./pages/Admin chat page/AdminChatPage";
 
 const App = () => {
   const { user, showLoginPopup, showSignupPopup } = useAuthStore();
-
 
   return (
     <>
@@ -131,6 +131,10 @@ const App = () => {
             <Route
               path="/admin-reward-history"
               element={<AdminRewardHistoryPage />}
+            />
+            <Route 
+              path="/admin-chat"
+              element={<AdminChatPage />} 
             />
             <Route
               path="/admin-notification"

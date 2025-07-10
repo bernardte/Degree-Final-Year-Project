@@ -1,55 +1,120 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useState, useRef } from "react";
 import useAuthStore from "@/stores/useAuthStore";
-
-
-// socket.io
 import io, { Socket } from "socket.io-client";
+
 const SocketContext = createContext<Socket | null>(null);
 
-// hooks
-export const useSocket = () => {
-    return useContext(SocketContext);
-}
+// Custom hook to use socket anywhere
+export const useSocket = () => useContext(SocketContext);
 
-export const SocketContextProvider = ({ children }: { children: React.ReactNode }) => {
-    const { user: currentLoginUser } = useAuthStore();
-    const [socket, setSocket] = useState<Socket | null>(null);
+export const SocketContextProvider = ({
+  children,
+}: {
+  children: React.ReactNode;
+}) => {
+  const { user: currentLoginUser } = useAuthStore();
+  const [socket, setSocket] = useState<Socket | null>(null);
+  const { adminReceipentId, setCurrentAdminReceipentId } = useAuthStore();
+  const adminReceipentRef = useRef(adminReceipentId);
+  useEffect(() => {
+    // Guest ID fallback
+    let guestId = localStorage.getItem("guestId");
+    console.log(guestId);
+    if (!guestId) {
+      guestId = `guest_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+      localStorage.setItem("guestId", guestId);
+    }
 
-    useEffect(() => {
-        // Guest ID fallback
-        let guestId = localStorage.getItem("guestId");
-        if(!guestId){
-            guestId = `guest_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
-            localStorage.setItem("guestId", guestId);
-        }
+    // 1. Connect to socket only once
+    const newSocket = io("http://localhost:5000", {
+      withCredentials: true,
+    });
 
-        // connect to socket
-        const newSocket = io("http://localhost:5000", {
-            withCredentials: true,
-        });
+    // 2. Set socket on connect
+    newSocket.on("connect", () => {
+      console.log("✅ Socket connected: ", newSocket.id);
+    });
 
-        newSocket.on("connect", () => {
-            console.log("Socket Connected from backend: ", newSocket.id);
+    setSocket(newSocket);
 
-            // Emit user info to backend
-            newSocket.emit("user-connected", {
-                userId: currentLoginUser?._id || null,
-                username: currentLoginUser?.username || "Guest",
-                guestId: currentLoginUser?._id ? null : guestId,
-                isGuest: !currentLoginUser?._id
-            });
-        });
+    // 3. Cleanup
+    return () => {
+      newSocket.disconnect();
+    };
+  }, []);
 
-        setSocket(newSocket);
-        return () => {
-            newSocket.disconnect();
-        };
+  // 4. Emit user info only when both socket is ready and user is loaded
+  useEffect(() => {
+    if (!socket) return;
 
-    }, [currentLoginUser?._id])
+    // Either a logged-in user or a guest
+    const guestId = localStorage.getItem("guestId");
+    const isGuest = !currentLoginUser?._id;
 
-    return (
-        <SocketContext.Provider value={socket}>
-            {children}
-        </SocketContext.Provider>
-    );
-}
+    socket.emit("user-connected", {
+      userId: currentLoginUser?._id || null,
+      username: currentLoginUser?.username || "Guest",
+      guestId: isGuest ? guestId : null,
+      isGuest,
+      role: currentLoginUser?.role || "guest",
+    });
+
+    // setInterval(() => {
+    //   socket?.emit("heartbeat");//make sure no activity still able to be online
+    // },3000)
+  }, [socket, currentLoginUser]);
+
+  // check online admin
+  useEffect(() => {
+    if (!socket) {
+      return;
+    }
+
+    const checkAdmin = () => {
+      socket.emit(
+        "get-available-admin",
+        (admin: { receipentId: string; socketId: string } | null) => {
+          if (admin) {
+            setCurrentAdminReceipentId(admin.receipentId);
+            console.log("testing: ", adminReceipentId);
+            console.log("In socket context");
+          } else {
+            setCurrentAdminReceipentId(null);
+          }
+        },
+      );
+    };
+
+    checkAdmin();
+
+    const interval = setInterval(checkAdmin, 30000); // Check every 30s
+    return () => clearInterval(interval);
+  }, [socket, adminReceipentId]);
+
+  useEffect(() => {
+    adminReceipentRef.current = adminReceipentId;
+  }, [adminReceipentId]);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleOfflineUser = (receipentId: string) => {
+      console.log("📴 Received user_disconnected:", receipentId);
+
+      if (receipentId === adminReceipentRef.current) {
+        console.log("❌ Admin is offline (matched):", receipentId);
+        setCurrentAdminReceipentId(null);
+      }
+    };
+
+    socket.on("user_disconnected", handleOfflineUser);
+    return () => {
+      socket.off("user_disconnected", handleOfflineUser);
+    };
+  }, [socket]);
+  
+
+  return (
+    <SocketContext.Provider value={socket}>{children}</SocketContext.Provider>
+  );
+};

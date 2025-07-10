@@ -1,5 +1,5 @@
 import useNotificationStore from "@/stores/useNotificationStore";
-import { Bell, Check, Filter } from "lucide-react";
+import { Beer, Bell, Check, Filter } from "lucide-react";
 import React, { SetStateAction } from "react";
 
 const NotificationHeader = ({
@@ -9,7 +9,7 @@ const NotificationHeader = ({
   setShowFilters: React.Dispatch<SetStateAction<boolean>>;
   showFilters: boolean;
 }) => {
-  const { markAllAsRead, unreadNotification } = useNotificationStore(
+  const { markAllAsRead, unreadNotification, handleDeleteAllNotification, notifications } = useNotificationStore(
     (state) => state,
   );
   return (
@@ -35,6 +35,14 @@ const NotificationHeader = ({
         >
           <Check className="mr-2 h-4 w-4" />
           Mark all as read
+        </button>
+        <button
+          onClick={handleDeleteAllNotification}
+          disabled={notifications.length === 0}
+          className={`hidden items-center rounded-lg ${notifications.length > 0 ? " bg-rose-600 hover:bg-rose-700" : "bg-gray-500"} px-4 py-2 text-white transition-colors sm:flex`}
+        >
+          <Beer className="mr-2 h-4 w-4" />
+          Delete all notifications
         </button>
         <button
           className="flex items-center rounded-lg bg-indigo-600 px-3 py-2 text-white sm:hidden"

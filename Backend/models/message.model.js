@@ -2,22 +2,31 @@ import mongoose from "mongoose";
 
 const messageSchema = new mongoose.Schema(
   {
-    senderId: {
-      type: String,
+    conversationId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Conversation",
       required: true,
     },
-    receiverId: {
+    senderType: {
+      type: String,
+      enum: ["user", "guest", "admin", "superAdmin", "bot"],
+      default: "guest",
+      required: true,
+    },
+    senderId: {
       type: String,
       required: true,
     },
     content: {
       type: String,
-      required: true,
     },
     image: {
-      type: String,
-      default: "",
-    }
+      type: String, //Upload image URL
+    },
+    isRead: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );

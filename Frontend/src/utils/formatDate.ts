@@ -1,3 +1,10 @@
+import {
+  isToday,
+  isYesterday,
+  differenceInCalendarDays,
+  format,
+} from "date-fns";
+
 export const formatDate = (date: Date) => {
    return date.toLocaleDateString("sv-SE");
 };
@@ -19,4 +26,24 @@ export function formatDateInBookingCheckOut(
     day: "numeric",
   });
 }
+
+export const getChatFormattedDate = (dateString: string | Date) => {
+  const date = new Date(dateString);
+
+  if (isToday(date)) {
+    return "Today";
+  }
+
+  if (isYesterday(date)) {
+    return "Yesterday";
+  }
+
+  const daysAgo = differenceInCalendarDays(new Date(), date);
+
+  if (daysAgo <= 6) {
+    return format(date, "EEEE"); // EEEE = full weekday name (e.g., "Monday")
+  }
+
+  return format(date, "MMMM d, yyyy"); // e.g., July 1, 2025
+};
 
