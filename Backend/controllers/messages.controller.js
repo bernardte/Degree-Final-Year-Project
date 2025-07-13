@@ -4,6 +4,7 @@ import Message from "../models/message.model.js";
 import { getIO } from "../config/socket.js";
 import { uploadToCloudinary } from "../utils/uploadToCloudinary.js";
 import { checkIsRead } from "../utils/checkMessageIsRead.js";
+import axiosInstance from "../config/axios.js";
 
 //TODO: maybe need to adjust of this, when superadmin require to view the message
 const getAllMessages = async (req, res) => {
@@ -59,6 +60,38 @@ const sendMessage = async (req, res) => {
     console.log("boolean: ", isUser);
 
     const isBot = senderType === "bot" && conversation.handledByBot;
+
+    if ((isGuest || isUser) && conversation.handleByChatbot) {
+      try {
+        const { data: aiResponse } = await axiosInstance.post("/rag-reply", {
+          question: data.message,
+          conversationId: conversationId,
+        });
+
+        const aiMessage = await Message.create({
+          conversationId,
+          content: aiResponse.reply,
+          senderType: "bot",
+          isRead: false,
+        });
+
+        getIO().to(conversationId).emit("new-message", aiMessage);
+        if (aiResponse.suggestions?.length > 0) {
+          getIO().to(conversationId).emit("bot-suggestions", {
+            suggestions: aiResponse.suggestions,
+          });
+        }
+
+        if (aiResponse.handover) {
+          getIO().emit("handover-needed", {
+            conversationId,
+            reason: "AI recognition failed, please intervene manually",
+          });
+        }
+      } catch (error) {
+        console.log("AI customer service error:", error.message);
+      }
+    }
 
     // If admin, only allow if it's the one who locked it
     let isAllowedAdmin = false;
@@ -154,8 +187,35 @@ const markMessageAsRead = async (req, res) => {
   }
 };
 
+const getMostAskQuestion = async (req, res) => {
+  const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+  try {
+    const pipeline = [
+      {
+        $match: {
+          senderType: { $in: ["user", "guest"] },
+          createdAt: { $gte: since },
+        },
+      },
+      // Filter out very short chat content (<5 characters)
+      { $match: { $expr: { $gt: [{ $strLenCP: "$content" }, 4] } } },
+      { $group: { _id: "$content", count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+      { $limit: 50 },
+    ];
+
+    const topQs = await Message.aggregate(pipeline);
+    res.status(200).json(topQs);
+  } catch (error) {
+    console.log("getMostAskQuestion: ", error.message);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
 export default {
   getAllMessages,
   sendMessage,
   markMessageAsRead,
+  getMostAskQuestion,
 };

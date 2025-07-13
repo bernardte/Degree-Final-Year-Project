@@ -14,4 +14,6 @@ router
   .route("/mark-as-read/:conversationId")
   .patch(messagesController.markMessageAsRead);
 
+router.route("/").get(protectRoute, verifyRoles, messagesController.getMostAskQuestion);
+
 export default router;

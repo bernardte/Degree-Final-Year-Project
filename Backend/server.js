@@ -19,6 +19,7 @@ import systemSettingRoute from "./Routes/systemSetting.route.js";
 import messageRoute from "./Routes/messages.route.js";
 import conversationRoute from "./Routes/conversations.route.js";
 import notificationRoute from "./Routes/notification.route.js";
+import faqRouter from "./Routes/faq.route.js";
 import bookingStatusUpdater from "./cronjob/bookingStatusUpdater.js";
 import roomStatusScheduler from "./cronjob/roomStatusScheduler.js";
 import { initializeSocket } from "./config/socket.js";
@@ -68,6 +69,7 @@ app.use("/api/systemSetting", systemSettingRoute);
 app.use("/api/messages", messageRoute);
 app.use("/api/conversations", conversationRoute);
 app.use("/api/notification", notificationRoute);
+app.use("/api/faq", faqRouter);
 
 httpServer.listen(PORT, async () => {
     console.log("Server is running on port", PORT);
