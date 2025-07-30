@@ -1,4 +1,3 @@
-import Booking from "../models/booking.model.js";
 import { getIO, getUserMap } from "../config/socket.js";
 import { bookingTrends, getRoomTypeStats, ratingDistribution, bookingStatusDistribution } from "../utils/bookingStats.js";
 
@@ -52,5 +51,4 @@ export const emitToSpecificUser = (userId, eventName, data = {}) => {
     console.log(`⚠️ No socket found for user ${userId}`);
   }
 };
-
 

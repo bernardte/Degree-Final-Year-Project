@@ -575,6 +575,15 @@ const getAllBookings = async (req, res) => {
     //* If page = 3 and limit = 10, then skip = 20, skip the first 20 records, start from the 21st.
     const skip = (page - 1) * limit; //* skip = (2 - 1) * 5 = 5
 
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Set time to midnight for accurate date comparison
+
+    // if the checkout date is today then update the status to completed
+    await Booking.updateMany(
+        { endDate: { $lte: today}, status: { $nin: ["completed", "cancelled"] } },
+        { $set: { status: "completed" }}
+      )
+
     const [bookings, totalCount] = await Promise.all([
       Booking.find()
         .skip(skip) // skip first 5 bookings
@@ -715,6 +724,7 @@ const updateBookingStatus = async (req, res) => {
       } else {
         refundAmount = 0;
         policyNote = "No refund (after check-in started)";
+        return res.status(400).json({ error: "Cannot cancel booking after check-in started" });
       }
 
       if (
@@ -730,6 +740,7 @@ const updateBookingStatus = async (req, res) => {
 
         booking.paymentStatus = "refund";
         booking.refundAmount = refundAmount;
+        await booking.save()
 
         const existingCancellationRequest = await CancellationRequest.findOne({
           bookingId: booking._id,

@@ -1,4 +1,4 @@
-import { Pencil, Save, Trash2, CheckCircle, XCircle } from "lucide-react";
+import { Pencil, Save, Trash2, CheckCircle, XCircle, Eye } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogTrigger,
@@ -16,6 +16,7 @@ import { ROLE, RoleValue } from "@/constant/roleList";
 
 interface ActionButtonProps {
   onEdit?: () => void;
+  onView?: () => void;
   onDelete?: () => void;
   editLabel?: string;
   deleteLabel?: string;
@@ -28,6 +29,7 @@ export const ActionButton = ({
   loading,
   onEdit,
   onDelete,
+  onView,
   editLabel = "Edit",
   deleteLabel = "Delete",
   allowedDeleteRoles = [ROLE.Admin, ROLE.SuperAdmin],
@@ -35,6 +37,19 @@ export const ActionButton = ({
 }: ActionButtonProps) => {
   return (
     <div className="inline-flex items-center justify-end gap-2">
+      {/* View Button */}
+      {onView && (
+        <button
+          disabled={loading}
+          onClick={onView}
+          className="inline-flex cursor-pointer items-center gap-1 rounded px-3 py-1 text-sm font-medium bg-blue-100 text-blue-800 hover:bg-blue-200 transition"
+          title="View Details"
+        >
+          <Eye className="h-4 w-4" />
+          View
+        </button>
+      )}
+
       {/* Edit Button */}
       {onEdit && (
         <RequireRole allowedRoles={allowedEditRoles}>

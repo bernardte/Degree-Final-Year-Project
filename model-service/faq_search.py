@@ -6,6 +6,7 @@ from langchain.schema import Document
 
 # Global FAISS index
 faiss_index = None
+faiss_path = "./faiss_store"
 
 # Use HuggingFaceEmbeddings for LangChain FAISS
 embedding_model = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
@@ -36,12 +37,18 @@ def load_faqs_from_mongodb(db_instance):
             return
 
         faiss_index = FAISS.from_documents(documents, embedding_model)
+        # let vector data to store in disk instead of memory, for better persistence, when the system close still available
+        faiss_index.save_local(faiss_path)
         print(f"[FAISS] Loaded {len(documents)} documents into FAISS.")
 
     except Exception as e:
         print(f"[FAISS] Error loading data: {e}")
         faiss_index = None
 
+
+"""
+    vector search
+"""
 # Use vector search to find the best matching questions.
 def find_best_faq(query):
     """

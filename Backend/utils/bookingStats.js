@@ -104,6 +104,5 @@ export const bookingStatusDistribution = async () => {
         },
         { $sort: { count: -1 } },
     ]);
-
-    return stats
+    return  stats;
 }

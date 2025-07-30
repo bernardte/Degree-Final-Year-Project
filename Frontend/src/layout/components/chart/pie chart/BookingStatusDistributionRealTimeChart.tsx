@@ -43,8 +43,13 @@ const BookingStatusDistributionRealTimeChart = ({
   const [stats, setStats] = useState<{ _id: BookingStatus; count: number }[]>(
     [],
   );
-  const [total, setTotal] = useState(0);
+  
+  const totalBookings = stats.reduce(
+    (acc, item) => acc + item.count,
+    0,
+  )
   const socket = useSocket();
+  
 
   // Fetch booking status data from API
   const fetchData = async () => {
@@ -54,13 +59,8 @@ const BookingStatusDistributionRealTimeChart = ({
         "/api/statistic/booking-status-chart",
       );
       const rawStats = response.data;
-      const totalCount = rawStats.reduce(
-        (acc: number, item: { count: number }) => acc + item.count,
-        0,
-      );
 
       setStats(rawStats);
-      setTotal(totalCount);
     } catch (err) {
       console.error("Failed to load booking status data:", err);
     } finally {
@@ -139,7 +139,7 @@ const BookingStatusDistributionRealTimeChart = ({
           <div className="flex items-center gap-2 rounded-lg border border-indigo-100 bg-white px-3 py-2 shadow-sm">
             <BarChart4 className="h-5 w-5 text-indigo-600" />
             <span className="font-medium text-indigo-700">
-              Total: <span className="font-bold">{total}</span> bookings
+              Total: <span className="font-bold">{totalBookings}</span> bookings
             </span>
           </div>
 
@@ -223,7 +223,7 @@ const BookingStatusDistributionRealTimeChart = ({
                           label: (context) => {
                             const value = context.parsed;
                             const percentage = Math.round(
-                              (value / total) * 100,
+                              (value / totalBookings) * 100,
                             );
                             return `${context.label}: ${value} (${percentage}%)`;
                           },
@@ -241,7 +241,7 @@ const BookingStatusDistributionRealTimeChart = ({
                 {/* Center summary */}
                 <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
                   <div className="text-3xl font-bold text-gray-800">
-                    {total}
+                    {totalBookings}
                   </div>
                   <p className="mt-1 text-sm text-gray-500">Total Bookings</p>
                 </div>
@@ -269,7 +269,9 @@ const BookingStatusDistributionRealTimeChart = ({
             {/* Status breakdown section */}
             <div className="space-y-6">
               {stats.map((stat, index) => {
-                const percentage = Math.round((stat.count / total) * 100);
+                const percentage = Math.round(
+                  (stat.count / totalBookings) * 100,
+                );
                 return (
                   <div key={index} className="space-y-3">
                     <div className="flex items-center justify-between">
@@ -283,7 +285,7 @@ const BookingStatusDistributionRealTimeChart = ({
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-gray-800">
-                          {stat.count}
+                          {totalBookings > 0 ? stat.count : 0}
                         </span>
                         <span className="rounded bg-gray-100 px-2 py-1 text-sm font-medium text-gray-600">
                           {percentage}%
@@ -309,7 +311,6 @@ const BookingStatusDistributionRealTimeChart = ({
                   </div>
                 );
               })}
-
             </div>
           </div>
         )}

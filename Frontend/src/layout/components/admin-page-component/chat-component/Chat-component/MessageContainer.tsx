@@ -39,7 +39,13 @@ const MessageContainer = ({
         </div>
 
         {/* Render Each Message */}
-        {messages.map((msg) => RenderMessageItem(msg, adminId))}
+        {messages.map((msg) => (
+          <RenderMessageItem
+            key={msg._id}
+            msg={msg}
+            adminId={adminId}
+          />
+        ))}
         <div ref={messagesEndRef} />
       </div>
     </div>

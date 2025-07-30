@@ -10,6 +10,7 @@ import { differenceInCalendarDays } from "date-fns";
 import mongoose from "mongoose";
 import { handleRewardPoints } from "../logic function/handleRewardPoints.js";
 import {
+  emitBookingStatusUpdate,
   emitBookingTrendsUpdate,
   emitRoomTypeUpdate,
 } from "../socket/socketUtils.js";
@@ -150,9 +151,13 @@ const createBooking = async (req, res) => {
     );
 
     //* emit booking trends chart update on admin interface
-    await emitBookingTrendsUpdate();
     // *emit Most booking room type chart update on admin interface
-    await emitRoomTypeUpdate();
+    //* await update Booking status for default
+    Promise.all([
+      emitBookingTrendsUpdate(),
+      emitRoomTypeUpdate(),
+      emitBookingStatusUpdate(),
+    ]).then(result => console.log("Socket updates emitted successfully: ", result));
 
     await BookingSession.deleteOne({ sessionId: bookingSessionId });
     return res.status(201).json({ newBooking, qrCodePublicURLfromCloudinary });
@@ -207,13 +212,12 @@ const cancelBooking = async (req, res) => {
       });
     }
 
-    
     const newCancellationRequest = new CancellationRequest({
       bookingId: booking._id,
       bookingReference,
       email,
       checkInDate: booking.startDate,
-    });    
+    });
     await newCancellationRequest.save();
 
     const allAdmins = await User.find({
@@ -246,7 +250,6 @@ const getBookingByUser = async (req, res) => {
       userType: "user",
       bookingCreatedByUser: new mongoose.Types.ObjectId(userId),
     }).sort({ createdAt: -1 });
-
 
     if (!userBookingInformation || userBookingInformation.length === 0) {
       return res.status(400).json({ error: "Booking Not Found!" });

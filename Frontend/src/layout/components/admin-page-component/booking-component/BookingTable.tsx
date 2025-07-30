@@ -31,6 +31,9 @@ import axiosInstance from "@/lib/axios";
 import { Room } from "@/types/interface.type";
 import { ROLE } from "@/constant/roleList";
 import useStatisticStore from "@/stores/useStatisticStore";
+import useAuthStore from "@/stores/useAuthStore";
+import { Bookings } from "@/types/interface.type";
+import ViewBookingDialog from "../dialog-component/ViewBookingDialog";
 
 const BookingTable = () => {
   const {
@@ -41,15 +44,20 @@ const BookingTable = () => {
     removeBooking,
     updateCancelBookingRequest,
   } = useBookingStore((state) => state);
-  const { updateRefundBooking } = useStatisticStore(state => state);
+  const { updateRefundBooking } = useStatisticStore((state) => state);
   const [status, setStatus] = useState<{ [key: string]: string }>({});
   const [loading, setLoading] = useState<boolean>(false);
+  const [booking, setBooking] = useState<Bookings | null>(null);
+  const [showModal, setShowModal] = useState<boolean>(false);
   const { showToast } = useToast();
+  const user = useAuthStore((state) => state.user);
   const handleStatusChange = (bookingId: string, newStatus: string) => {
     setStatus((prev) => ({ ...prev, [bookingId]: newStatus }));
   };
 
   const handleEdit = async (bookingId: string) => {
+    if(!bookingId) return;
+
     const updateStatus = status[bookingId];
     setLoading(true);
     try {
@@ -80,6 +88,16 @@ const BookingTable = () => {
       showToast("error", error?.response?.data?.error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleView = (bookingId: string) => {
+    const selectedBooking = bookings.find(
+      (booking) => booking._id === bookingId,
+    );
+    if (selectedBooking) {
+      setShowModal(true);
+      setBooking(selectedBooking);
     }
   };
 
@@ -239,61 +257,92 @@ const BookingTable = () => {
                     {booking?.paymentStatus}
                   </span>
                 </TableCell>
-                <TableCell>
-                  {booking.status === "completed" ||
-                  booking.status === "cancelled" ? (
+                {user?.role === ROLE.Admin ? (
+                  <TableCell>
                     <span
                       className={`flex items-center justify-center font-medium capitalize ${
                         booking.status === "completed"
                           ? "text-emerald-500"
-                          : "text-rose-500"
+                          : booking.status === "cancelled"
+                            ? "text-rose-500"
+                            : booking.status === "pending"
+                              ? "text-amber-300"
+                              : "text-blue-500"
                       }`}
                     >
                       {booking.status}
                     </span>
-                  ) : (
-                    <Select
-                      value={status[booking._id] || booking?.status}
-                      onValueChange={(value) =>
-                        handleStatusChange(booking._id, value)
-                      }
-                    >
-                      <SelectTrigger className="w-[140px]">
-                        <SelectValue placeholder="Select status" />
-                      </SelectTrigger>
-                      <SelectContent>
+                  </TableCell>
+                ) : (
+                  <TableCell>
+                    {booking.status === "completed" ||
+                    booking.status === "cancelled" ? (
+                      <span
+                        className={`flex items-center justify-center font-medium capitalize ${
+                          booking.status === "completed"
+                            ? "text-emerald-500"
+                            : "text-rose-500"
+                        }`}
+                      >
+                        {booking.status}
+                      </span>
+                    ) : (
+                      <Select
+                        value={status[booking._id] || booking?.status}
+                        onValueChange={(value) =>
+                          handleStatusChange(booking._id, value)
+                        }
+                      >
+                        <SelectTrigger className="w-[140px]">
+                          <SelectValue placeholder="Select status" />
+                        </SelectTrigger>
                         <SelectContent>
-                          {booking.status === "pending" && (
-                            <SelectItem value="pending" className="capitalize">
-                              <span className="text-amber-300 capitalize">
-                                pending
+                          <SelectContent>
+                            {booking.status === "pending" && (
+                              <SelectItem
+                                value="pending"
+                                className="capitalize"
+                              >
+                                <span className="text-amber-300 capitalize">
+                                  pending
+                                </span>
+                              </SelectItem>
+                            )}
+                            <SelectItem
+                              value="confirmed"
+                              className="capitalize"
+                            >
+                              <span className="text-blue-500 capitalize">
+                                confirmed
                               </span>
                             </SelectItem>
-                          )}
-                          <SelectItem value="confirmed" className="capitalize">
-                            <span className="text-blue-500 capitalize">
-                              confirmed
-                            </span>
-                          </SelectItem>
-                          <SelectItem value="cancelled" className="capitalize">
-                            <span className="text-rose-500 capitalize">
-                              cancelled
-                            </span>
-                          </SelectItem>
-                          <SelectItem value="completed" className="capitalize">
-                            <span className="text-emerald-500 capitalize">
-                              completed
-                            </span>
-                          </SelectItem>
+                            <SelectItem
+                              value="cancelled"
+                              className="capitalize"
+                            >
+                              <span className="text-rose-500 capitalize">
+                                cancelled
+                              </span>
+                            </SelectItem>
+                            <SelectItem
+                              value="completed"
+                              className="capitalize"
+                            >
+                              <span className="text-emerald-500 capitalize">
+                                completed
+                              </span>
+                            </SelectItem>
+                          </SelectContent>
                         </SelectContent>
-                      </SelectContent>
-                    </Select>
-                  )}
-                </TableCell>
+                      </Select>
+                    )}
+                  </TableCell>
+                )}
 
                 <TableCell className="text-right text-blue-500">
                   <ActionButton
                     loading={loading}
+                    onView={() => handleView(booking._id)}
                     onEdit={() => handleEdit(booking._id)}
                     editLabel={
                       status[booking._id] &&
@@ -309,6 +358,13 @@ const BookingTable = () => {
             ))}
         </TableBody>
       </Table>
+      {showModal && booking && (
+        <ViewBookingDialog
+          booking={booking}
+          setShowModal={setShowModal}
+          showModal={showModal}
+        />
+      )}
     </div>
   );
 };

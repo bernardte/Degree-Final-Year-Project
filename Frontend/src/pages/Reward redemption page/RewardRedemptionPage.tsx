@@ -230,7 +230,7 @@ const LoyaltyProgressBar = ({
     bronze: "from-amber-700 to-amber-900",
     silver: "from-gray-300 to-gray-500",
     gold: "from-yellow-400 to-yellow-600",
-    platinum: "from-indigo-300 to-indogo-500",
+    platinum: "bg-indigo-500 to-indigo-700",
   };
 
   return (
