@@ -15,6 +15,7 @@ const MessageContainer = ({
   const { user } = useAuthStore((state) => state);
   const adminId =
     user?.role === "admin" || user?.role === "superAdmin" ? user?._id : null;
+  const messageSendDate = messages[messages.length - 1]?.createdAt;
   return (
     <div className="flex-grow overflow-y-auto bg-gradient-to-b from-gray-50 to-gray-100 p-4">
       <div className="mx-auto max-w-3xl">
@@ -32,19 +33,17 @@ const MessageContainer = ({
           </div>
         </div>
 
-        <div className="mb-4 text-center">
-          <span className="inline-block rounded-full bg-gray-200 px-3 py-1 text-sm">
-            {getChatFormattedDate(new Date())}
-          </span>
-        </div>
+        {messageSendDate && (
+          <div className="mb-4 text-center">
+            <span className="inline-block rounded-full bg-gray-200 px-3 py-1 text-sm">
+              {getChatFormattedDate(messageSendDate)}
+            </span>
+          </div>
+        )}
 
         {/* Render Each Message */}
         {messages.map((msg) => (
-          <RenderMessageItem
-            key={msg._id}
-            msg={msg}
-            adminId={adminId}
-          />
+          <RenderMessageItem key={msg._id} msg={msg} adminId={adminId} />
         ))}
         <div ref={messagesEndRef} />
       </div>

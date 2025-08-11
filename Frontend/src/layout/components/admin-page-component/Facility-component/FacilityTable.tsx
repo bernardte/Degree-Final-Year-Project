@@ -102,6 +102,9 @@ const FacilityTable = ({ facilities, isLoading: isFacilityTable, error } : Facil
         formData.append("openTime", updatedFacility.openTime);
         formData.append("closeTime", updatedFacility.closeTime);
         formData.append("image", updatedFacility.image);
+        formData.append("icon", updatedFacility.icon);
+        formData.append("iconColor", updatedFacility.iconColor);
+        formData.append("category", updatedFacility.category);
         console.log("formData", updatedFacility.image);
         const response = await axiosInstance.put(
           `/api/facilities/update-facility/${selectedFacility._id}`,

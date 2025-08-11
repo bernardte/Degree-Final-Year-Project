@@ -378,7 +378,7 @@ const AddNewRoomDialog = ({ open, onClose }: AddNewRoomDialogProps) => {
                             />
                             <Select
                               value={roomData.bedType}
-                              onValueChange={(value) =>
+                              onValueChange={(value: string) =>
                                 setRoomData((prev) => ({
                                   ...prev,
                                   bedType: value,

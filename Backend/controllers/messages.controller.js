@@ -5,6 +5,7 @@ import { getIO } from "../config/socket.js";
 import { uploadToCloudinary } from "../utils/uploadToCloudinary.js";
 import { checkIsRead } from "../utils/checkMessageIsRead.js";
 import axiosInstance from "../config/axios.js";
+import { sendToAI } from "../websocket/websocket.js";
 
 //TODO: maybe need to adjust of this, when superadmin require to view the message
 const getAllMessages = async (req, res) => {
@@ -59,35 +60,39 @@ const sendMessage = async (req, res) => {
       senderType === "user" && conversation.userCode === loginUserName;
     console.log("boolean: ", isUser);
 
-    const isBot = senderType === "bot" && conversation.handledByBot;
-
+    const isBot = senderType === "bot" && conversation.handleByChatbot;
+    console.log(`isGuest: ${isGuest}, isUser: ${isUser}`);
     if ((isGuest || isUser) && conversation.handleByChatbot) {
       try {
-        const { data: aiResponse } = await axiosInstance.post("/rag-reply", {
-          question: data.message,
-          conversationId: conversationId,
-        });
+        const currentUserMessage = await Message.find({ conversationId })
+          .select("senderType content -_id") 
+          .lean();
+        console.log("hello world: ", newMessage);
 
-        const aiMessage = await Message.create({
+        // Tell frontend customer have send a new message
+        getIO().to(conversationId).emit("new-message", {
+          senderType: senderType,
+          content: newMessage
+        })
+
+        console.log(typeof conversationId, newMessage);
+
+        sendToAI(conversationId, newMessage, currentUserMessage.map(m => ({
+          role: m.senderType,
+          content: m.content
+        })));
+
+
+        // getIO().to(conversationId).emit("bot-suggestions", {
+        //   suggestions: aiResponse.suggestions,
+        // });
+      
+        getIO().emit("handover-needed", { 
           conversationId,
-          content: aiResponse.reply,
-          senderType: "bot",
-          isRead: false,
+          reason: "AI recognition failed, please intervene manually",
         });
+        
 
-        getIO().to(conversationId).emit("new-message", aiMessage);
-        if (aiResponse.suggestions?.length > 0) {
-          getIO().to(conversationId).emit("bot-suggestions", {
-            suggestions: aiResponse.suggestions,
-          });
-        }
-
-        if (aiResponse.handover) {
-          getIO().emit("handover-needed", {
-            conversationId,
-            reason: "AI recognition failed, please intervene manually",
-          });
-        }
       } catch (error) {
         console.log("AI customer service error:", error.message);
       }

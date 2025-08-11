@@ -6,7 +6,6 @@ import {
   Tv,
   Snowflake,
   ArrowRight,
-  Heart,
   Star,
   X,
   Refrigerator,
@@ -53,13 +52,6 @@ const RoomInformationPage = () => {
     if (id) fetchRoomById(id);
   }, [id, fetchRoomById]);
 
-  const toggleFavorite = () => {
-    setIsFavorite(!isFavorite);
-    showToast(
-      isFavorite ? "info" : "success",
-      isFavorite ? "Removed from favorites" : "Added to favorites",
-    );
-  };
 
   if (isLoading) {
     return <RoomInformationSkeleton />;
@@ -180,27 +172,6 @@ const RoomInformationPage = () => {
                   alt={room.roomName}
                   className="h-full w-full object-cover transition-all duration-500 hover:scale-105"
                 />
-
-                {/* Favorite button */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleFavorite();
-                  }}
-                  className={`absolute top-4 right-4 rounded-full p-2 shadow-lg transition-all ${
-                    isFavorite
-                      ? "bg-rose-500 text-white"
-                      : "bg-white text-gray-600 hover:bg-rose-100"
-                  }`}
-                  aria-label={
-                    isFavorite ? "Remove from favorites" : "Add to favorites"
-                  }
-                >
-                  <Heart
-                    size={24}
-                    fill={isFavorite ? "currentColor" : "none"}
-                  />
-                </button>
 
                 {/* Navigation arrows */}
                 {room.images && room.images.length > 1 && (

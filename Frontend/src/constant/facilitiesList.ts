@@ -4,9 +4,16 @@ import {
   RollerCoaster,
   Utensils,
   CircleDot,
+  Bath,
+  Bike,
+  Wine,
+  Wifi,
+  BedDouble,
+  ChefHat,
+  Hotel,
 } from "lucide-react";
 
-const facilitiesList = [
+export const facilitiesList = [
   {
     id: 1,
     name: "Swimming Pool",
@@ -63,5 +70,36 @@ const facilitiesList = [
     image: "/facilities5.png",
   },
 ];
+
+export const iconMap = {
+  Dumbbell: Dumbbell,
+  Bath: Bath,
+  Bike: Bike,
+  SwimmingPool: WavesLadder,
+  Wine: Wine,
+  Wifi: Wifi,
+  Bed: BedDouble,
+  Chef: ChefHat,
+  Hotel: Hotel,
+  RollerCoaster: RollerCoaster,
+  CircleDot: CircleDot,
+  Utensils: Utensils
+};
+
+
+export const iconOptions = Object.entries(iconMap).map(([key, Icon]) => ({
+  value: key,
+  label: key.charAt(0).toUpperCase() + key.slice(1),
+  icon: Icon,
+}));
+
+export const facilityCategories = [
+  "Wellness",
+  "Fitness",
+  "Dining",
+  "Recreation",
+  "Services",
+  "Entertainment"
+]
 
 export default facilitiesList;

@@ -36,7 +36,10 @@ const useMessageStore = create<messageStore>((set) => ({
   pushMessage: (cid, msg) =>
     set((s) => {
       const list = s.messagesMap[cid] ?? [];
-      if (list.some((m) => m._id === msg._id)) return s; // 去重
+
+      // If there is _id, check for duplicates, otherwise add it directly
+      if (msg._id && list.some((m) => m._id === msg._id)) return s;
+
       return {
         messagesMap: { ...s.messagesMap, [cid]: [...list, msg] },
       };

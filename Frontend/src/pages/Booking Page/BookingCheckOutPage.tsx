@@ -1,4 +1,4 @@
-import { FileSearch2, Loader2 } from "lucide-react";
+import { FileSearch2, Home, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import useBookingSessionStore from "@/stores/useBookingSessionStore";
@@ -40,6 +40,9 @@ const BookingCheckOutPage = () => {
   const { showToast } = useToast();
   const [breakfastIncluded, setBreakfastIncluded] = useState<boolean>(false);
   const [loadingTarget, setLoadingTarget] = useState<string | null>(null);
+  const localStorageSearchParams =
+    localStorage.getItem("searchParams") || "{}";
+  const parse = JSON.parse(localStorageSearchParams) || {};
   const [appliedReward, setAppliedReward] = useState<{
     code: string;
     discount: number;
@@ -47,6 +50,7 @@ const BookingCheckOutPage = () => {
 
   const user = localStorage.getItem("user")
   const isLoggedIn = !!user; 
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (sessionId) fetchBookingSession(sessionId);
@@ -136,6 +140,15 @@ const BookingCheckOutPage = () => {
     }
   };
 
+  const handleHomeClick = () => {
+    setLoading(true);
+    setTimeout(() => {
+      navigate("/");
+      setLoading(false);
+      localStorage.removeItem("searchParams");
+    }, 1000);
+  };
+
   return (
     <div className="flex min-h-screen w-full flex-col bg-gradient-to-tr from-blue-100 via-white to-blue-50">
       {/* Breadcrumb */}
@@ -192,18 +205,12 @@ const BookingCheckOutPage = () => {
             ) : (
               <BreadcrumbLink
                 href="#"
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleBreadcrumbClick("/");
-                }}
-                className={
-                  loadingTarget === "/"
-                    ? "font-bold text-gray-700"
-                    : "text-blue-600 hover:underline"
-                }
+                onClick={handleHomeClick}
+                className="flex items-center text-blue-600 transition-colors hover:text-blue-800"
               >
-                {loadingTarget === "/" ? (
-                  <span className="animate-caret-blink">Loading...</span>
+                <Home className="mr-2 h-4 w-4" />
+                {loading ? (
+                  <span className="animate-pulse">Loading...</span>
                 ) : (
                   "Home"
                 )}
@@ -216,22 +223,10 @@ const BookingCheckOutPage = () => {
           {/* Filter Room */}
           <BreadcrumbItem>
             <BreadcrumbLink
-              href="#"
-              onClick={(e) => {
-                e.preventDefault();
-                handleBreadcrumbClick("/filter-room");
-              }}
-              className={
-                loadingTarget === "/filter-room"
-                  ? "font-bold text-gray-700"
-                  : "text-blue-600 hover:underline"
-              }
+              href={`/filter-room?${new URLSearchParams(parse as any).toString()}`}
+              className="flex items-center text-blue-600 transition-colors hover:text-blue-800"
             >
-              {loadingTarget === "/filter-room" ? (
-                <span className="animate-caret-blink">Loading...</span>
-              ) : (
-                "Filter Room"
-              )}
+              Room Selection
             </BreadcrumbLink>
           </BreadcrumbItem>
 
@@ -239,7 +234,7 @@ const BookingCheckOutPage = () => {
 
           {/* Checkout (current) */}
           <BreadcrumbItem>
-            <BreadcrumbLink href="#" className="font-bold text-gray-700">
+            <BreadcrumbLink href="#" className="font-medium text-blue-800">
               Checkout
             </BreadcrumbLink>
           </BreadcrumbItem>

@@ -41,7 +41,7 @@ const bookingSchema = mongoose.Schema(
       type: Number,
       required: true,
     },
-    BookingDate: {
+    bookingDate: {
       type: Date,
       default: Date.now,
     },
@@ -113,6 +113,10 @@ const bookingSchema = mongoose.Schema(
       type: Number,
       default: 0,
     },
+    rewardDiscount: {
+      type: Number,
+      default: 0,
+    }
   },
   { timestamps: true }
 );

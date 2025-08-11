@@ -17,7 +17,7 @@ const notifyUsers = async (userIds, message, type = "system") => {
     type,
     isRead: false,
   }));
-
+  
   // 2. Insert all at once
   const savedNotifications = await Notification.insertMany(notifications);
 

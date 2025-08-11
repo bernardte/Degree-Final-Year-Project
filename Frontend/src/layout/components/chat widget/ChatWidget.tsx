@@ -28,20 +28,32 @@ const ChatWidget = () => {
   const socket = useSocket();
 
   const { messagesMap, fetchMessage, pushMessage } = useMessageStore();
+  const [streamingBotMsg, setStreamingBotMsg] = useState("");
 
   const senderId = user?._id || localStorage.getItem("guestId");
-  const senderType = user ? user.role : "guest";
-  const mode = "human"; // run for human only
+  const senderType = user ? "user" : "guest";
+  const [mode, setMode] = useState<"bot" | "human">("bot");
+  const streamBuffer = useRef<Record<string, string>>({});
 
-  // 当前会话的消息列表；conversationId 为空时给 []
+  type TempMessage = Partial<Message> & {
+    conversationId: string;
+    isFinal: boolean;
+    token: string;
+  };
+
+  console.log(senderType);
+  // The message list of the current conversation; if conversationId is empty, give []
   const messages = messagesMap[conversationId ?? ""] ?? [];
 
   //? get available admin
   useEffect(() => {
     if (!adminReceipentId && socket?.connected) {
-      socket.emit("get-available-admin", (admin: { receipentId: string, socketId: string}) => {
-        admin && setCurrentAdminReceipentId(admin.receipentId);
-      });
+      socket.emit(
+        "get-available-admin",
+        (admin: { receipentId: string; socketId: string }) => {
+          admin && setCurrentAdminReceipentId(admin.receipentId);
+        },
+      );
     }
   }, [adminReceipentId, socket, setCurrentAdminReceipentId]);
 
@@ -53,14 +65,42 @@ const ChatWidget = () => {
       pushMessage(msg.conversationId, msg);
     };
 
+    const listenBotMsg = (msg: Message | TempMessage) => {
+      if (!msg?.conversationId) return;
+
+      const { conversationId, isFinal, content } = msg as TempMessage;
+      console.log("Message: ", content);
+
+      if (!streamBuffer.current[conversationId]) {
+        streamBuffer.current[conversationId] = "";
+      }
+
+      if (isFinal) {
+        const finalMessage: Message = {
+          ...(msg as Message),
+          content: streamBuffer.current[conversationId], // 用缓存的完整内容
+        };
+        pushMessage(conversationId, finalMessage);
+
+        // 清空缓存
+        delete streamBuffer.current[conversationId];
+        setStreamingBotMsg("");
+      } else {
+        // 累加 token 到缓存
+        streamBuffer.current[conversationId] += content;
+        setStreamingBotMsg(streamBuffer.current[conversationId]);
+      }
+    };
+
     socket.emit("join-room", conversationId);
     socket.on("new-message", onMsg);
+    socket.on("ai-stream", listenBotMsg);
 
     return () => {
-      socket.off("new-message", onMsg); 
+      socket.off("new-message", onMsg);
+      socket.off("ai-stream", listenBotMsg);
     };
   }, [socket, conversationId, pushMessage]);
-  
 
   //? Pull history for the first time/switching session
   useEffect(() => {
@@ -75,7 +115,6 @@ const ChatWidget = () => {
   //send message
   const handleSendMessage = async () => {
     if (!newMessage.trim() && !uploadImage) return;
-    if (!adminReceipentId) return showToast("info", "No admin available.");
 
     setLoading(true);
     try {
@@ -109,7 +148,7 @@ const ChatWidget = () => {
         },
       );
 
-      if(!cid) return;
+      if (!cid) return;
       //Put it directly into the map; no need to fetch message again
       pushMessage(cid, msg);
       setShowMessageDate(true);
@@ -142,7 +181,7 @@ const ChatWidget = () => {
 
     markAsRead();
   }, [conversationId, isOpen, messages, senderId, senderType]);
-  
+
   return (
     <div className="fixed right-25 bottom-6 z-50">
       {!isOpen ? (

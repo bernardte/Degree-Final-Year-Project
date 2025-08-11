@@ -3,33 +3,43 @@ import AddNewFacilityDialog from "@/layout/components/admin-page-component/dialo
 import FacilityTable from "@/layout/components/admin-page-component/Facility-component/FacilityTable";
 import Pagination from "@/layout/components/share-components/Pagination";
 import useFacilityStore from "@/stores/useFacilityStore";
-import { motion } from "framer-motion";
+import { motion, Variants } from "framer-motion";
 import { DoorClosed, PlusCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 
-// Animation constants
-const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: { opacity: 1, transition: { duration: 0.5 } },
-  };
-  
-  const headerVariants = {
-    hidden: { y: -20, opacity: 0 },
-    visible: { y: 0, opacity: 1, transition: { duration: 0.4 } },
-  };
-  
-  const cardVariants = {
-    hidden: { scale: 0.95, opacity: 0 },
-    visible: {
-      scale: 1,
-      opacity: 1,
-      transition: {
-        type: "spring",
-        stiffness: 100,
-        delay: 0.2,
-      },
+// Container
+const containerVariants: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { duration: 0.5 },
+  },
+};
+
+// Header
+const headerVariants: Variants = {
+  hidden: { y: -20, opacity: 0 },
+  visible: {
+    y: 0,
+    opacity: 1,
+    transition: { duration: 0.4 },
+  },
+};
+
+// Card (Spring animation)
+const cardVariants: Variants = {
+  hidden: { scale: 0.95, opacity: 0 },
+  visible: {
+    scale: 1,
+    opacity: 1,
+    transition: {
+      type: "spring", // this is correct
+      stiffness: 100,
+      delay: 0.2,
     },
-  };
+  },
+};
+
 
 const AdminFacilityPage = () => {
     const { fetchPaginatedFacility, facilities, error, isLoading, totalPages, currentPage } = useFacilityStore();

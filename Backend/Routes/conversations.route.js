@@ -17,4 +17,11 @@ router
 router
   .route("/claim-conversation/:conversationId")
   .patch(protectRoute, verifyRoles, conversationsController.claimConversation);
+router
+  .route("/update-conversation-status/:conversationId")
+  .patch(
+    protectRoute,
+    verifyRoles,
+    conversationsController.updateConversationStatus
+  );
 export default router;

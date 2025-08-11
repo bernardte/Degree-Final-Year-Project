@@ -11,6 +11,6 @@ export const uploadToCloudinary = async (file) => {
         return result.secure_url;
     } catch (error) {
         console.log("Error in uploadCloudinary: ", error.message);
-        throw new Error('Error in uploadToCloudinary');
+        throw new Error(`Error with ${error.message}`);
     }
 }

@@ -32,7 +32,7 @@ type FormErrors = {
   [K in keyof FormData]?: string;
 };
 
-const EventInquireForm = ({ title }: { title: string }) => {
+const EventInquireForm = ({title} : { title: string }) => {
   const [formData, setFormData] = useState<FormData>({
     name: "",
     email: "",
@@ -103,18 +103,15 @@ const EventInquireForm = ({ title }: { title: string }) => {
   };
 
   return (
-    <section className="flex py-12">
-      <div className="mx-auto w-full max-w-3xl px-4">
-        <span className="flex justify-center bg-gradient-to-r from-blue-500 to-sky-600 bg-clip-text pb-10 text-center text-3xl font-semibold text-transparent">
-          {title}
-        </span>
+    <section className="flex">
         <motion.form
           onSubmit={handleSubmit}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="space-y-6 rounded-[2.5rem] border-4 border-white/80 bg-gradient-to-br from-white to-blue-50/50 p-8 shadow-2xl shadow-blue-200/30 backdrop-blur-sm transition-all duration-300 hover:shadow-blue-300/40"
+          className="space-y-4 rounded-[2.5rem] backdrop-blur-sm transition-all duration-300"
         >
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          <span className="text-center text-2xl text-blue-400 font-bold mb-7">{title}</span>
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             {/* Name Input */}
             <div className="relative">
               <UserRound className="absolute top-1/2 left-4 h-5 w-5 -translate-y-1/2 text-blue-600/80" />
@@ -306,7 +303,7 @@ const EventInquireForm = ({ title }: { title: string }) => {
             disabled={isSubmitting}
             whileHover={{ scale: isSubmitting ? 1 : 1.02 }}
             whileTap={{ scale: isSubmitting ? 1 : 0.98 }}
-            className="w-full rounded-2xl bg-gradient-to-br from-blue-600/95 to-blue-500 py-4.5 text-lg font-bold text-white shadow-lg shadow-blue-300/40 transition-all duration-300 hover:shadow-blue-400/50 disabled:opacity-70 cursor-pointer"
+            className="w-full cursor-pointer rounded-2xl bg-gradient-to-br from-blue-600/95 to-blue-500 py-4.5 text-lg font-bold text-white shadow-lg shadow-blue-300/40 transition-all duration-300 hover:shadow-blue-400/50 disabled:opacity-70"
           >
             {isSubmitting ? (
               <div className="flex items-center justify-center gap-2">
@@ -318,7 +315,7 @@ const EventInquireForm = ({ title }: { title: string }) => {
             )}
           </motion.button>
         </motion.form>
-      </div>
+
     </section>
   );
 };

@@ -5,6 +5,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select,
@@ -16,13 +17,15 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { UploadCloud, Loader2, Building2, } from "lucide-react";
+import { UploadCloud, Loader2, Building2 } from "lucide-react";
 import { motion } from "framer-motion";
+import namer from "color-namer";
 import { useEffect, useState } from "react";
 import getImageSrc from "@/utils/getImageSrc";
 import axiosInstance from "@/lib/axios";
 import useToast from "@/hooks/useToast";
 import useFacilityStore from "@/stores/useFacilityStore";
+import { facilityCategories, iconOptions } from "@/constant/facilitiesList";
 
 const AddNewFacilityDialog = ({
   open,
@@ -35,8 +38,11 @@ const AddNewFacilityDialog = ({
     image: null as File | null,
     facilitiesName: "",
     description: "",
+    category: "",
     openTime: "",
     closeTime: "",
+    icon: "",
+    iconColor: "",
   });
 
   const [isLoading, setIsLoading] = useState(false);
@@ -48,8 +54,11 @@ const AddNewFacilityDialog = ({
         image: null,
         facilitiesName: "",
         description: "",
+        category: "",
         openTime: "",
         closeTime: "",
+        icon: "",
+        iconColor: "",
       });
     }
   }, [open]);
@@ -60,9 +69,11 @@ const AddNewFacilityDialog = ({
       !selectedFacility.description ||
       !selectedFacility.openTime ||
       !selectedFacility.closeTime ||
-      !selectedFacility.image
+      !selectedFacility.image ||
+      !selectedFacility.icon ||
+      !selectedFacility.category
     ) {
-     showToast("error", "Please fill in all fields.");
+      showToast("error", "Please fill in all fields.");
       return;
     }
 
@@ -76,26 +87,60 @@ const AddNewFacilityDialog = ({
       formData.append("description", selectedFacility.description);
       formData.append("openTime", selectedFacility.openTime);
       formData.append("closeTime", selectedFacility.closeTime);
+      formData.append("icon", selectedFacility.icon);
+      formData.append("iconColor", selectedFacility.iconColor);
+      formData.append("category", selectedFacility.category);
 
-      const response = await axiosInstance.post("/api/facilities/create-facility", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data"
-        }
-      });
+      const response = await axiosInstance.post(
+        "/api/facilities/create-facility",
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        },
+      );
 
-      if(response?.data){
+      if (response?.data) {
         showToast("success", response?.data?.message);
         useFacilityStore.getState().createFacility(response?.data?.facility);
       }
       onClose();
     } catch (error: any) {
-      const message = error?.response?.data?.message || error?.response?.data?.error;
-      if(message.includes("access denied")){
+      const message =
+        error?.response?.data?.message || error?.response?.data?.error;
+      if (message.includes("access denied")) {
         showToast("error", error?.response?.data?.message);
       }
       showToast("error", error?.response?.data?.error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const getContrastTextColor = (hexColor: string): string => {
+    // Convert hex color to RGB values
+    const r = parseInt(hexColor.slice(1, 3), 16);
+    const g = parseInt(hexColor.slice(3, 5), 16);
+    const b = parseInt(hexColor.slice(5, 7), 16);
+
+    // Calculate luminance
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+
+    // Return black or white based on luminance
+    return luminance > 0.5 ? "#000000" : "#FFFFFF";
+  };
+
+  const getColorNameFromHex = (hex: string): string | undefined => {
+    if (!hex || !/^#([0-9A-F]{3}){1,2}$/i.test(hex)) {
+      return "No color selected";
+    }
+
+    try {
+      const result = namer(hex);
+      return result.basic[0]?.name || "";
+    } catch (error) {
+      console.error("Error converting color:", error);
     }
   };
 
@@ -202,7 +247,7 @@ const AddNewFacilityDialog = ({
                       />
                       <Select
                         value={selectedFacility.openTime.split(" ")[1] || ""}
-                        onValueChange={(value) =>
+                        onValueChange={(value: string) =>
                           setSelectedFacility((prev) => ({
                             ...prev,
                             openTime: `${prev.openTime.split(" ")[0] || ""} ${value}`,
@@ -241,7 +286,7 @@ const AddNewFacilityDialog = ({
                       />
                       <Select
                         value={selectedFacility.closeTime.split(" ")[1] || ""}
-                        onValueChange={(value) =>
+                        onValueChange={(value: string) =>
                           setSelectedFacility((prev) => ({
                             ...prev,
                             closeTime: `${prev.closeTime.split(" ")[0] || ""} ${value}`,
@@ -258,6 +303,106 @@ const AddNewFacilityDialog = ({
                       </Select>
                     </div>
                   </div>
+
+                  <div className="space-y-2">
+                    <Label className="block text-sm font-medium text-gray-700">
+                      Facility Icon Color
+                    </Label>
+
+                    <div className="flex items-center gap-4">
+                      {/* Color Picker */}
+                      <input
+                        type="color"
+                        className="h-10 w-10 cursor-pointer rounded-full border border-gray-300 shadow-md transition-transform duration-200 hover:scale-110 focus:outline-none"
+                        value={selectedFacility.iconColor}
+                        onChange={(e) =>
+                          setSelectedFacility((prev) => ({
+                            ...prev,
+                            iconColor: e.target.value,
+                          }))
+                        }
+                      />
+
+                      {/* Color Preview Box */}
+                      <div
+                        className="flex items-center gap-2 rounded-lg px-3 py-1 shadow-sm transition-colors duration-200"
+                        style={{
+                          backgroundColor: selectedFacility.iconColor,
+                          color: getContrastTextColor(
+                            selectedFacility.iconColor,
+                          ),
+                        }}
+                      >
+                        <span
+                          className={`text-sm font-medium ${!selectedFacility.iconColor && "text-black/40"}`}
+                        >
+                          {getColorNameFromHex(selectedFacility.iconColor)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Category */}
+                  <div className="space-y-2">
+                    <Label htmlFor="category">Category</Label>
+                    <div className="flex gap-2">
+                      <Select
+                        value={selectedFacility?.category || ""}
+                        onValueChange={(value: string) =>
+                          setSelectedFacility((prev) =>
+                            prev
+                              ? {
+                                  ...prev,
+                                  category: value,
+                                }
+                              : prev,
+                          )
+                        }
+                      >
+                        <SelectTrigger className="w-[160px]">
+                          <SelectValue placeholder="Category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {facilityCategories.map((category) => (
+                            <SelectItem value={category}>{category}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Facility Icon */}
+                <div>
+                  <Label className="pb-3 font-medium">Facility Icon</Label>
+                  <ToggleGroup
+                    type="single"
+                    value={selectedFacility.icon}
+                    onValueChange={(value: string) =>
+                      setSelectedFacility((prev) => ({ ...prev, icon: value }))
+                    }
+                    className="flex flex-wrap gap-3"
+                  >
+                    {iconOptions.map((icon) => {
+                      const Icon = icon.icon;
+                      return (
+                        <div className="flex-wrap-word flex">
+                          <ToggleGroupItem
+                            key={icon.value}
+                            value={icon.value}
+                            className={`flex items-center gap-2 rounded-full border px-4 py-2 text-sm transition ${
+                              selectedFacility.icon === icon.value
+                                ? "border-blue-500 bg-blue-100 text-blue-700"
+                                : "border-gray-300"
+                            }`}
+                          >
+                            {Icon && <Icon className="h-4 w-4" />}
+                            {icon.label}
+                          </ToggleGroupItem>
+                        </div>
+                      );
+                    })}
+                  </ToggleGroup>
                 </div>
 
                 {/* Footer Buttons */}

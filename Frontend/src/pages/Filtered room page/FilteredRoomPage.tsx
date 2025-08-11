@@ -20,26 +20,32 @@ const FilteredRoomsPage = () => {
   const [filters, setFilters] = useState({});
 
   // Access required methods and states from Zustand store
-  const { fetchRoomsInFilter, error, filterRoom, searchParams, isLoading, fetchRooms } =
-    useRoomStore();
+  const {
+    fetchRoomsInFilter,
+    error,
+    filterRoom,
+    searchParams,
+    isLoading,
+    fetchRooms,
+    mostPopularBookedRoom,
+  } = useRoomStore();
   const { showToast } = useToast();
   const [selectedRoom, setSelectedRoom] = useState<Room[]>([]);
   console.log(searchParams);
 
   const debouncedFetchRooms = debounce((filters) => {
-    fetchRoomsInFilter(filters);
-    fetchRooms();
+    Promise.all([fetchRoomsInFilter(filters), fetchRooms()])
   }, 500);
 
   // Effect to fetch filtered rooms when filters change
   useEffect(() => {
     if (Object.keys(filters).length > 0) {
       debouncedFetchRooms(filters);
-
-      return () => {
-        debouncedFetchRooms.cancel();
-      };
     }
+    
+    return () => {
+      debouncedFetchRooms.cancel();
+    };
   }, [filters]); // Trigger on filters change
 
   if (error) {
@@ -76,6 +82,7 @@ const FilteredRoomsPage = () => {
             isLoading={isLoading}
             selectedRoom={selectedRoom}
             setSelectedRoom={setSelectedRoom}
+            mostPopularBookedRoom={mostPopularBookedRoom}
           />
         </ResizablePanel>
       </ResizablePanelGroup>

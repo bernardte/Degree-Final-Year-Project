@@ -5,8 +5,10 @@ import {
   format,
 } from "date-fns";
 
-export const formatDate = (date: Date) => {
-   return date.toLocaleDateString("sv-SE");
+export const formatDate = (date?: string | Date) => {
+  if (!date) return "";
+  const d = date instanceof Date ? date : new Date(date);
+  return d.toLocaleDateString("sv-SE");
 };
 
 export function formatDateInBookingCheckOut(

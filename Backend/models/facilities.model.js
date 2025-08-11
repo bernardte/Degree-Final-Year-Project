@@ -13,6 +13,10 @@ const facilitiesSchema = mongoose.Schema({
     maxlength: 500,
     default: "",
   },
+  category: {
+    type: String,
+    required: true
+  },
   icon: {
     type: String,
     required: false,

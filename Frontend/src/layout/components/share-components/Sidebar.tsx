@@ -281,7 +281,7 @@ const Option = ({
       )}
 
       <AnimatePresence>
-        {open && (notify ?? 0) > 0 && (
+        {open && (notify ?? 0) > 0 ? (
           <motion.span
             key="notify-badge"
             initial={{ scale: 0, opacity: 0 }}
@@ -293,7 +293,19 @@ const Option = ({
           >
             {notify}
           </motion.span>
-        )}
+        ): (notify ?? 0) > 0 && (
+          <motion.span
+            key="notify-badge"
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0, opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            style={{ transform: "translateY(-50%)" }}
+            className="absolute right-6 top-1 size-5 rounded-full bg-rose-400 text-center text-sm text-white"
+            >
+              {notify}
+            </motion.span>
+        ) }
       </AnimatePresence>
     </motion.button>
   );

@@ -58,6 +58,10 @@ const bookingSessionSchema = new mongoose.Schema(
       default: Date.now,
       expires: 1800, // session auto-expires
     },
+    rewardDiscount: {
+      type: Number,
+      default: 0,
+    },
   },
   { timestamps: true }
 );

@@ -85,7 +85,7 @@ const deleteFacility = async (req, res) => {
 
 const updateFacility = async (req, res) => {
   const { facilityId } = req.params;
-  const { facilitiesName, description, openTime, closeTime } = req.body;
+  const { facilitiesName, description, openTime, closeTime, icon, iconColor, category } = req.body;
   const image = req.files?.image;
   const user = req.user;
 
@@ -106,11 +106,16 @@ const updateFacility = async (req, res) => {
       const imageUrl = await uploadToCloudinary(image); // path or buffer depending on your cloudinary helper
       facility.image = imageUrl; // imageUrl should include { url, public_id }
     }
+    console.log("old icon", facility.icon)
+    console.log("old icon color", facility.iconColor)
 
     facility.facilitiesName = facilitiesName;
     facility.description = description;
     facility.openTime = openTime;
     facility.closeTime = closeTime;
+    facility.icon = icon;
+    facility.iconColor = iconColor;
+    facility.category = category
 
     await facility.save();
 
@@ -118,6 +123,9 @@ const updateFacility = async (req, res) => {
       role: { $in: ["admin", "superAdmin"] },
     });
     const adminIds = allAdmins.map((admin) => admin._id);
+
+    console.log("new icon", icon)
+    console.log("new icon color", iconColor)
 
     //* notify all admins
     await notifyUsers(
@@ -170,12 +178,12 @@ const updateFacilityStatus = async (req, res) => {
 }
 
 const createFacility = async (req, res) => {
-  const { facilitiesName, description, openTime, closeTime } = req.body;
+  const { facilitiesName, description, openTime, closeTime, icon, iconColor, category } = req.body;
   const image = req.files?.image;
   const user = req.user;
 
   try {
-    if (!facilitiesName || !description || !openTime || !closeTime) {
+    if (!facilitiesName || !description || !openTime || !closeTime || !icon || !iconColor || !category) {
       return res.status(400).json({ error: "All fields are required" });
     }
 
@@ -192,6 +200,9 @@ const createFacility = async (req, res) => {
       openTime,
       closeTime,
       image: imageUrl,
+      icon,
+      iconColor,
+      category
     });
 
     await newFacility.save();

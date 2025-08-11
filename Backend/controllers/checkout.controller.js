@@ -101,6 +101,7 @@ const updatePaymentDetails = async (req, res) => {
     const userSessionId = session.metadata.sessionId;
     const breakfastCount = session.metadata.breakfastCount;
     const totalPrice = session.metadata.totalPrice;
+    const rewardDiscount = session.metadata.rewardDiscount;
 
     console.log("Metadata sessionId:", userSessionId);
 
@@ -134,7 +135,7 @@ const updatePaymentDetails = async (req, res) => {
     bookingSession.paymentIntentId = paymentIntentId;
     bookingSession.breakfastIncluded = breakfastCount;
     bookingSession.totalPrice = totalPrice;
-
+    bookingSession.rewardDiscount = rewardDiscount;
     await bookingSession.save();
 
     res.status(200).json({

@@ -2,7 +2,6 @@ import Conversation from "../models/conversation.model.js";
 import User from "../models/user.model.js";
 import { assignConversationToAdmin } from "../utils/assignmentAdmin.js";
 
-
 const getAllConversation = async (req, res) => {
   const userId = req.user._id;
 
@@ -14,9 +13,7 @@ const getAllConversation = async (req, res) => {
     const isSuperAdmin = currentUser?.role === "superAdmin";
 
     // Query logic: super admin sees all, others see their locked or visible conversations
-    const query = isSuperAdmin
-      ? {}
-      : { visibleToAdmins: userId };
+    const query = isSuperAdmin ? {} : { visibleToAdmins: userId };
 
     // Fetch conversations
     const conversations = await Conversation.find(query)
@@ -25,7 +22,7 @@ const getAllConversation = async (req, res) => {
         path: "lockedBy",
         select: "_id name role",
       });
-  
+
     // Return merged result
     res.status(200).json({
       conversations: conversations,
@@ -77,12 +74,14 @@ const createConversations = async (req, res) => {
       lastMessage,
       lastMessageAt,
     };
-    const handleByBot = false; //TODO: after have chatbot make prioritize bot here
+    const handleByBot = mode === "bot"; //TODO: after have chatbot make prioritize bot here
+    console.log("bot: ", handleByBot)
+
     if (handleByBot) {
       conversationData.lockedBy = null; // AI does not need to claim manually
-      conversationData.handledByBot = true;
+      conversationData.handleByChatbot = true;
       conversationData.isLock = false;
-    }else{
+    } else {
       // Otherwise, admin will be automatically assigned
       const assignedAdminId = await assignConversationToAdmin();
       console.log("Your assign adminId: ", assignConversationToAdmin);
@@ -133,9 +132,33 @@ const claimConversation = async (req, res) => {
   }
 };
 
+const updateConversationStatus = async (req, res) => {
+  const { conversationId } = req.params;
+  const updateStatus = req.body.status;
+  try {
+    const conversations = await Conversation.findOneAndUpdate({
+      _id: conversationId
+    }, {
+      $set: {
+        status: updateStatus
+      }
+    });
+
+    if(!conversationId){
+      return res.status(401).json({error: "No conversation found!"})
+    }
+
+    return res.status(201).json(conversations);
+  } catch (error) {
+    console.log("Error in updateConversationStatus: ", error.message);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
 export default {
   getAllConversation,
   updateConversationMessage,
   createConversations,
   claimConversation,
+  updateConversationStatus,
 };

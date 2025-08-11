@@ -1,3 +1,4 @@
+
 import "react-day-picker/dist/style.css";
 import { useEffect, useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -42,6 +43,7 @@ import { DayPicker } from "react-day-picker";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { CalendarIcon } from "lucide-react";
+import { BookingWithInvoice } from "@/types/interface.type";
 
 // Filter and sorting constants
 const STATUS_OPTIONS = [
@@ -88,7 +90,6 @@ const BookingDisplayPage = () => {
   const [dateRange, setDateRange] = useState({ start: "", end: "" });
   const [sortBy, setSortBy] = useState("date-desc");
   const [searchQuery, setSearchQuery] = useState("");
-
   // Fetch bookings on mount
   useEffect(() => {
     fetchBooking();
@@ -230,7 +231,11 @@ const BookingDisplayPage = () => {
                 </SelectTrigger>
                 <SelectContent>
                   {STATUS_OPTIONS.map((status) => (
-                    <SelectItem key={status} value={status}>
+                    <SelectItem
+                      key={status}
+                      value={status}
+                      className={`font-semibold ${status === "completed" ? "text-emerald-500" : status === "confirmed" ? "text-blue-500" : status === "cancelled" ? "text-rose-500" : status === "pending" ? "text-amber-300" : "text-stone-500"}`}
+                    >
                       {capitalize(status)}
                     </SelectItem>
                   ))}
@@ -520,38 +525,44 @@ const BookingDisplayPage = () => {
                         <Button
                           variant="outline"
                           className="border-blue-200 text-blue-600 hover:bg-blue-50"
+                          onClick={() =>
+                            navigate(
+                              `/invoice/${(booking as BookingWithInvoice)?.invoiceId}`,
+                            )
+                          }
                         >
                           View Invoice
                         </Button>
 
-                        {(new Date(booking.endDate) < new Date() && booking.status !== "cancelled" ) && (
-                          <Button
-                            onClick={() =>
-                              setSelectedBooking({
-                                id: booking._id,
-                                roomTypes: Array.isArray(booking.roomType)
-                                  ? booking.roomType
-                                  : [booking.roomType],
-                                roomIds: Array.isArray(booking.room)
-                                  ? booking.room.map((room: any) =>
-                                      typeof room === "string"
-                                        ? room
-                                        : room._id,
-                                    )
-                                  : [
-                                      typeof booking.room === "string"
-                                        ? booking.room
-                                        : booking.room._id,
-                                    ],
-                                bookingReference: booking.bookingReference,
-                              })
-                            }
-                            className="bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:opacity-90"
-                          >
-                            <Star size={18} className="mr-2" />
-                            Leave Review
-                          </Button>
-                        )}
+                        {new Date(booking.endDate) < new Date() &&
+                          booking.status !== "cancelled" && (
+                            <Button
+                              onClick={() =>
+                                setSelectedBooking({
+                                  id: booking._id,
+                                  roomTypes: Array.isArray(booking.roomType)
+                                    ? booking.roomType
+                                    : [booking.roomType],
+                                  roomIds: Array.isArray(booking.room)
+                                    ? booking.room.map((room: any) =>
+                                        typeof room === "string"
+                                          ? room
+                                          : room._id,
+                                      )
+                                    : [
+                                        typeof booking.room === "string"
+                                          ? booking.room
+                                          : booking.room._id,
+                                      ],
+                                  bookingReference: booking.bookingReference,
+                                })
+                              }
+                              className="bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:opacity-90"
+                            >
+                              <Star size={18} className="mr-2" />
+                              Leave Review
+                            </Button>
+                          )}
                       </div>
                     </div>
                   </div>

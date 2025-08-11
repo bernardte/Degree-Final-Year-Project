@@ -134,7 +134,7 @@ const handleSearch = async () => {
 
 
   return (
-    <div className="mx-auto max-w-6xl rounded-2xl bg-white p-8 shadow-lg">
+    <div className="mx-auto max-w-6xl rounded-2xl bg-white p-8 shadow-lg relative right-0 left-0 -bottom-10">
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-5 md:items-end">
         {/* Date Picker */}
         <div className="relative col-span-2" ref={calendarRef}>
@@ -165,7 +165,7 @@ const handleSearch = async () => {
                 }
                 defaultMonth={date.from || new Date()}
                 classNames={{
-                  months: "sm:flex gap-6 ",
+                  months: "sm:flex gap-6",
                   month: "w-full",
                   caption: "text-center font-semibold mb-2",
                   table: "w-full border-collapse",

@@ -121,7 +121,7 @@ const ConversationSidebar = ({
                           Processed by:
                         </span>
                         <span className="font-medium text-gray-700">
-                          {conv?.lockedBy?.name || "Unassigned"}
+                          {conv?.lockedBy?.name || "Bot"}
                         </span>
                       </div>
                       <span className="rounded-full bg-gray-100 text-xs px-2 py-0.5 font-medium text-gray-600 capitalize">

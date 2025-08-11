@@ -1,6 +1,7 @@
 import Room from "../models/room.model.js";
 import Booking from "../models/booking.model.js";
 import RoomAvailability from "../models/roomAvailability.model.js";
+import User from "../models/user.model.js"
 import { emitRoomReviewUpdate } from "../socket/socketUtils.js";
 
 const paginatedAllRooms = async (req, res) => {
@@ -190,24 +191,43 @@ const filterRooms = async (req, res) => {
         startDate: { $lte: checkOut }, // booking starts before requested checkout
         endDate: { $gte: checkIn }, // booking ends after requested checkin
       }).select("room");
-
-      console.log("Overlapping Bookings:", overlappingBookings);
-
+      
+      
       const bookedRoomIds = new Set(
         overlappingBookings.flatMap((b) => b.room.map((id) => id.toString())) //ensure to get each individual room ID
       );
-
+      
       // Filter out rooms that are booked or don't meet guest capacity
       rooms = rooms.filter((room) => {
         const isAvailable = !bookedRoomIds.has(room._id.toString());
         const meetsCapacity =
-          room.capacity.adults >= Number(adults) &&
-          room.capacity.children >= Number(children);
+        room.capacity.adults >= Number(adults) &&
+        room.capacity.children >= Number(children);
         return isAvailable && meetsCapacity;
       });
     }
+    const topBookedRooms = await Booking.aggregate([
+      { $unwind: "$room" }, // expand room array
+      {
+        $group: {
+          _id: "$room", // according to room_id to Group
+          bookingCount: { $sum: 1 }, // Count Booking time
+        },
+      },
+      { $sort: { bookingCount: -1 } }, // according booking and sort it 
+      { $limit: 3 }, // take 3 most booked room
+      {
+        $project: {
+          _id: 1, // keep room_id
+          bookingCount: 1, // count how many booking of this
+        },
+      },
+    ]);
 
-    res.status(200).json(rooms);
+     res.status(200).json({
+       filteredRooms: rooms,
+       topBookedRooms: topBookedRooms,
+     });
   } catch (error) {
     console.error("Error in filterRooms:", error.message);
     res.status(500).json({ error: "Failed to filter rooms." });
@@ -347,7 +367,7 @@ const getRoomViewCalendars = async (req, res) => {
 
     res.status(200).json(roomData);
   } catch (error) {
-    console.error("Failed to fetch room deactivation calendar", error);
+    console.error("Failed to fetch room deactivation calendar", error.message);
     res.status(500).json({ error: "Internal server error" });
   }
 };

@@ -15,6 +15,8 @@ import {
   emitRoomTypeUpdate,
 } from "../socket/socketUtils.js";
 import notifyUsers from "../utils/notificationSender.js";
+import Invoice from "../models/invoice.model.js";
+import { generateInvoiceNumber } from "../utils/invoiceNumberGenerator.js";
 
 const createBooking = async (req, res) => {
   const { bookingSessionId, specialRequests } = req.body;
@@ -43,6 +45,7 @@ const createBooking = async (req, res) => {
       contactEmail,
       contactNumber,
       guestDetails,
+      rewardDiscount,
     } = session;
 
     if (new Date(checkOutDate) <= new Date(checkInDate)) {
@@ -89,6 +92,7 @@ const createBooking = async (req, res) => {
       contactName: contactName || guestDetails?.contactName,
       contactEmail: contactEmail || guestDetails?.contactEmail,
       contactNumber: contactNumber || guestDetails?.contactNumber,
+      rewardDiscount,
     });
     await newBooking.save();
     for (let room of rooms) {
@@ -160,6 +164,29 @@ const createBooking = async (req, res) => {
     ]).then(result => console.log("Socket updates emitted successfully: ", result));
 
     await BookingSession.deleteOne({ sessionId: bookingSessionId });
+    const invoiceNumber = generateInvoiceNumber();
+    
+    if(user){
+         const newInvoice = new Invoice({
+           bookingReference,
+           invoiceNumber,
+           invoiceDate: new Date(),
+           bookingId: newBooking._id,
+           loyaltyTier: user.loyaltyTier,
+           invoiceAmount: totalPrice,
+           status: "issued",
+           paymentMethod: paymentMethod,
+           paymentStatus: paymentStatus,
+           paymentDate: newBooking.createdAt,
+           paymentIntentId: paymentIntentId,
+           billingName: user?.username || contactName,
+           billingEmail: user?.email || contactEmail,
+           billingPhoneNumber: contactNumber,
+           rewardDiscount: rewardDiscount,
+         });
+         await newInvoice.save();
+    }
+ 
     return res.status(201).json({ newBooking, qrCodePublicURLfromCloudinary });
   } catch (error) {
     console.error("Error in creating booking:", error);
@@ -268,17 +295,23 @@ const getBookingByUser = async (req, res) => {
 
     console.log(roomsTypeMap);
 
-    const bookingDetails = userBookingInformation.map((booking) => {
+    const bookingDetails = await Promise.all(userBookingInformation.map(async (booking) => {
       const roomType = booking.room?.map((id) => {
         const key = id.toString();
         return roomsTypeMap[key];
       }); // Optional chaining for safety
+      // get invoice Id
+      const invoice = await Invoice.findOne({ bookingId: booking._id }).select("_id")
+      
       return {
         ...booking.toObject(),
+        invoiceId: invoice?._id,
         roomType: roomType || "unknown",
       };
-    });
+    })
+  );
 
+    console.log("userBooking: ", userBookingInformation);
     res.status(200).json(bookingDetails);
   } catch (error) {
     console.log("Error in getBookingByUser: ", error.message);

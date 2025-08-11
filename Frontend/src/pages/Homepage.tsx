@@ -15,12 +15,10 @@ const Homepage = () => {
   return (
     <div>
       <Carousel images={images} />
-      <div className="h-45 bg-cyan-400/10">
-        <div className="translate-y-10">
+      <div className="h-50 bg-gradient-to-b from-cyan-500/20">
           <SearchBar />
-        </div>
       </div>
-      <div>
+      <div className="mt-30 md:mt-5">
         <HomepageAboutUs />
       </div>
       <div className="flex items-center justify-center bg-gradient-to-b from-transparent to-cyan-500/20 px-5 py-10 text-center text-gray-800 md:flex md:flex-row md:items-center">

@@ -15,8 +15,8 @@ const conversationSchema = new mongoose.Schema(
     // Current conversation mode
     mode: {
       type: String,
-      enum: ["chatbot", "human"],
-      default: "chatbot",
+      enum: ["bot", "human"],
+      default: "bot",
     },
     handleByChatbot: {
       type: Boolean,

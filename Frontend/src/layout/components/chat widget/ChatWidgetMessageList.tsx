@@ -8,7 +8,7 @@ const ChatWidgetMessageList = ({
   messagesEndRef,
 }: {
   messages: Message[];
-  messagesEndRef: React.Ref<HTMLDivElement> | null;
+  messagesEndRef: React.Ref<HTMLDivElement> | null; 
 }) => {
   return (
     <div className="space-y-4">

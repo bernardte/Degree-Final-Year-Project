@@ -13,7 +13,7 @@ const usersSchema = mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ["admin", "user", "superAdmin"],
+      enum: ["admin", "user", "superAdmin", "bot"],
       default: "user",
     },
     isOTPVerified: {
@@ -50,7 +50,7 @@ const usersSchema = mongoose.Schema(
     isOnline: {
       type: Boolean,
       default: 0, 
-    }
+    },
   },
   { timestamps: true }
 );

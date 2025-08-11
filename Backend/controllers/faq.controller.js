@@ -11,7 +11,7 @@ const fetchAllFAQ = async (req, res) => {
 }
 
 const createFAQ = async (req, res) => {
-    const { question, answer } = req.body;
+    const { question, answer, intent } = req.body;
     const { data } = await axiosInstance.post("/raq-reply", { question });
    try {
     const faq = new FAQ({

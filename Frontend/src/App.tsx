@@ -40,6 +40,8 @@ import AdminEventCalendarPage from "./pages/AdminEventCalendarPage/AdminEventCal
 import AdminNotificationPage from "./pages/Admin notification page/AdminNotificationPage";
 import NotificationProvider from "./provider/NotificationProvider";
 import AdminChatPage from "./pages/Admin chat page/AdminChatPage";
+import InvoiceDetail from "./layout/components/invoice-component/InvoiceDetail";
+import PrintInvoice from "./layout/components/invoice-component/PrintInvoice";
 
 const App = () => {
   const { user, showLoginPopup, showSignupPopup } = useAuthStore();
@@ -87,6 +89,8 @@ const App = () => {
         <Route element={<RouteProvider />}>
           <Route path="/loading" element={<LoadingScreen />} />
           <Route path="/display-booking" element={<BookingDisplayPage />} />
+          <Route path="/invoice/:id" element={<InvoiceDetail />} />
+          <Route path="/invoice2/:id" element={<PrintInvoice />} />
         </Route>
 
         {/* Admin and SuperAdmin Routes */}

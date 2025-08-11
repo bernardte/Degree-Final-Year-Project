@@ -7,6 +7,7 @@ interface roomStore {
   mostBookingRoom: Room[];
   room: Room;
   filterRoom: Room[];
+  mostPopularBookedRoom: Room[];
   isLoading: boolean;
   totalPages: number;
   currentPage: number;
@@ -43,6 +44,7 @@ interface roomStore {
 
 const useRoomStore = create<roomStore>((set) => ({
   rooms: [],
+  mostPopularBookedRoom: [],
   mostBookingRoom: [],
   room: {} as Room,
   filterRoom: [],
@@ -127,7 +129,11 @@ const useRoomStore = create<roomStore>((set) => ({
       const response = await axiosInstance.get(
         `/api/rooms/filter?${params.toString()}`,
       );
-      set({ filterRoom: response.data });
+      console.log("testing:", response.data);
+      set({ filterRoom: response.data.filteredRooms });
+      set({
+        mostPopularBookedRoom: response.data.topBookedRooms,
+      }); //get the most booking room
 
       if (response.data.error) {
         set({ error: response.data.error });
@@ -207,7 +213,7 @@ const useRoomStore = create<roomStore>((set) => ({
         }
       })
       .catch((error) => set({ error: error?.response?.data?.error }))
-      .finally(() => set({ isLoading: false}));
+      .finally(() => set({ isLoading: false }));
   },
 }));
 

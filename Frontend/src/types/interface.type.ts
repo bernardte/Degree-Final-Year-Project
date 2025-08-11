@@ -1,5 +1,3 @@
-import { ComponentType } from "react";
-
 export interface User {
   _id: string;
   name: string;
@@ -10,7 +8,7 @@ export interface User {
   loyaltyTier: string;
   totalSpent: number;
   token: string;
-};
+}
 
 export interface Room {
   _id: string;
@@ -50,10 +48,48 @@ export enum Amenity {
 }
 
 export interface Reviews {
-    rating: number;
-    comment: string;
-    createdAt: string;
-    username: String;
+  rating: number;
+  comment: string;
+  createdAt: string;
+  username: String;
+}
+
+export interface Invoice {
+  _id: string;
+  invoiceNumber: string;
+  invoiceDate: Date;
+  bookingId: Bookings["_id"];
+  loyaltyTier: string;
+  invoiceAmount: number;
+  status: ["issued", "cancelled"];
+  paymentMethod: string;
+  paymentStatus: string;
+  paymentDate: Date;
+  paymentIntentId: string;
+  pdfUrl?: string;
+  billingName: string;
+  billingEmail: string;
+  billingPhoneNumber?: string;
+  bookingReference: string;
+  rewardDiscount: number;
+  roomCount: number;
+}
+
+export interface InvoiceWithBookingDetail extends Omit<Invoice, "bookingId"> {
+  bookingId: Bookings & {
+    room: Room[]; // ⬅ 声明为数组
+  };
+  _id: Room["_id"];
+  roomType: Room["roomType"];
+  startDate: Date;
+  endDate: Date;
+  totalGuests: {
+    adults: number;
+    children: number;
+  };
+  bookingDate: Date;
+  // status: string;
+  breakfastIncluded?: number;
 }
 
 export interface Bookings {
@@ -82,6 +118,10 @@ export interface Bookings {
   updatedAt: Date;
   qrCodeImageURL: string;
   userType: string;
+}
+
+export interface BookingWithInvoice extends Bookings {
+  invoiceId: string | null;
 }
 
 export interface CancelBookingRequest {
@@ -125,16 +165,17 @@ export interface BookingSession {
 }
 
 export interface RoomAvailability {
-    _id: string;
-    date: Date;
-    unAvailableRooms: Room[]
+  _id: string;
+  date: Date;
+  unAvailableRooms: Room[];
 }
 
 export interface Facility {
   _id: string;
   facilitiesName: string;
   description: string;
-  icon: ComponentType<{ className?: string }>;
+  category: string;
+  icon: string;
   iconColor: string;
   openTime: string;
   closeTime: string;
@@ -152,54 +193,54 @@ export interface Statistic {
 }
 
 export interface Event {
-  _id: string,
-  fullname: string,
-  phoneNumber: string,
-  email: string,
-  eventType: string,
-  eventDate: string,
-  totalGuests: number,
-  additionalInfo?: string,
-  createdAt: Date,
-  updatedAt: Date,
-  status: string,
+  _id: string;
+  fullname: string;
+  phoneNumber: string;
+  email: string;
+  eventType: string;
+  eventDate: string;
+  totalGuests: number;
+  additionalInfo?: string;
+  createdAt: Date;
+  updatedAt: Date;
+  status: string;
 }
 
 // Mock data for demonstration
 export interface RewardSettings {
-  bookingRewardPoints: number,
-  earningRatio: number,
-  minRedeemPoints: number,
-  maxRedeemPoints: number,
-  rewardProgramEnabled: boolean,
+  bookingRewardPoints: number;
+  earningRatio: number;
+  minRedeemPoints: number;
+  maxRedeemPoints: number;
+  rewardProgramEnabled: boolean;
   tierMultipliers: {
-    bronze: number,
-    silver: number,
-    gold: number,
-    platinum: number,
+    bronze: number;
+    silver: number;
+    gold: number;
+    platinum: number;
   };
-};
+}
 
-export interface RewardHistories{
-  _id: string,
-  user: User,
-  bookingId: Bookings["_id"][],
-  bookingReference: string,
-  points: number,
-  description: string,
-  type: "redeem" | "earn"
-  source: "booking" | "redemption" | "others"
-  createdAt: Date
+export interface RewardHistories {
+  _id: string;
+  user: User;
+  bookingId: Bookings["_id"][];
+  bookingReference: string;
+  points: number;
+  description: string;
+  type: "redeem" | "earn";
+  source: "booking" | "redemption" | "others";
+  createdAt: Date;
 }
 
 export interface Reward {
-  _id: string,
-  name: string,
-  description: string,
-  points: number,
-  category: string,
-  status: "active" | "inactive",
-  icon: string
+  _id: string;
+  name: string;
+  description: string;
+  points: number;
+  category: string;
+  status: "active" | "inactive";
+  icon: string;
 }
 
 export interface ClaimedReward {
@@ -215,38 +256,45 @@ export interface ClaimedReward {
   claimedBy: User;
 }
 export interface Notification {
-  _id: string,
-  userId: User["_id"],
-  message: string,
-  type: "reward" | "booking" | "user" | "room" | "facility" | "event" | "system",
+  _id: string;
+  userId: User["_id"];
+  message: string;
+  type:
+    | "reward"
+    | "booking"
+    | "user"
+    | "room"
+    | "facility"
+    | "event"
+    | "system";
   isRead: boolean;
-  createdAt: Date
-  updatedAt: Date
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface Conversation {
-  _id: string,
-  userId: string,
-  userCode: string,
-  mode: "chatbot"| "human",
-  status: "open" | "closed",
-  bookingId: Bookings["_id"],
-  roomType: string,
-  unreadCount: number,
-  lastMessage: string,
-  lastMessageAt: Date,
-  isLock: boolean,//? only one admin can take current conversation
-  lockedBy: User,
-  visibleToAdmin: User["_id"],//? visible for admin which have the authorization to view
+  _id: string;
+  userId: string;
+  userCode: string;
+  mode: "chatbot" | "human";
+  status: "open" | "closed";
+  bookingId: Bookings["_id"];
+  roomType: string;
+  unreadCount: number;
+  lastMessage: string;
+  lastMessageAt: Date;
+  isLock: boolean; //? only one admin can take current conversation
+  lockedBy: User;
+  visibleToAdmin: User["_id"]; //? visible for admin which have the authorization to view
 }
 
 export interface Message {
-  _id: string,
-  conversationId: Conversation["_id"],
-  senderType: "user" | "guest"| "admin" | "superAdmin" | "bot",
-  senderId: string,
-  content: string,
-  isRead: boolean,
-  image: string,
-  createdAt: Date,
+  _id: string;
+  conversationId: Conversation["_id"];
+  senderType: "user" | "guest" | "admin" | "superAdmin" | "bot";
+  senderId: string;
+  content: string;
+  isRead: boolean;
+  image: string;
+  createdAt: Date;
 }
