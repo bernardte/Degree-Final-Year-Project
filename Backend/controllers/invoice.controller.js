@@ -1,7 +1,10 @@
 import Invoice from "../models/invoice.model.js"
+import ClaimedReward from "../models/claimedReward.model.js"
+import Reward from "../models/reward.model.js";
 
 const getInvoice = async (req, res) => {
     const { invoiceId } = req.params;
+    const userId = req.user._id;
 
     try {
         const getCurrentUserInvoice = await Invoice.findOne({
@@ -10,13 +13,12 @@ const getInvoice = async (req, res) => {
           path: "bookingId",
           populate: {
             path: "room",
-            select: "roomType",
-            sun: ""
           },
         });
 
-        
-        console.log("invoice:  ", getCurrentUserInvoice);
+        console.log(getCurrentUserInvoice.bookingId.rewardCode)
+
+        const rewardUsedInCurrentBooking = await ClaimedReward.find({ user: userId, status: "used", rewardCode: getCurrentUserInvoice.bookingId.rewardCode }).populate("reward")
 
         if (!getCurrentUserInvoice) {
             return res.status(404).json({ message: "Invoice not found" });
@@ -26,6 +28,7 @@ const getInvoice = async (req, res) => {
 
         return res.status(200).json({
           ...getCurrentUserInvoice.toObject(),
+          reward: rewardUsedInCurrentBooking,
           roomCount,
         });
     } catch (error) {

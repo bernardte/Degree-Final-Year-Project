@@ -83,7 +83,7 @@ const FilterContent = ({
   }
 
   return (
-    <div className="h-screen bg-gradient-to-br from-sky-50 via-blue-50 to-white overflow-auto">
+    <div className="h-screen overflow-auto bg-gradient-to-br from-sky-50 via-blue-50 to-white">
       <div className="mx-auto w-full max-w-7xl flex-shrink-0 p-6">
         {/* Breadcrumb Navigation */}
         <div className="mb-8 pt-4">
@@ -174,110 +174,121 @@ const FilterContent = ({
         <div className="">
           <div className="mx-auto max-w-7xl">
             <div className="grid gap-8 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-              { Array.isArray(filterRoom) && filterRoom.map((room) => {
-                const isSelected = selectedRoom.some(
-                  (selected) => selected._id === room._id,
-                );
-                return (
-                  <div
-                    key={room._id}
-                    className={`overflow-hidden rounded-2xl border border-blue-100 bg-white shadow-xl transition-all duration-300 hover:border-blue-200 hover:shadow-2xl ${isSelected ? "ring-4 ring-blue-400" : ""}`}
-                  >
-                    {/* Image Section */}
-                    <div className="relative h-64 w-full">
-                      <div className="absolute inset-0 z-10 rounded-t-2xl bg-gradient-to-t from-blue-900/30 to-transparent" />
-                      <img
-                        src={getImageSrc(
-                          Array.isArray(room.images)
-                            ? room.images[0]
-                            : room.images,
-                        )}
-                        alt={room.roomName}
-                        className="h-full w-full rounded-t-2xl object-cover object-center"
-                      />
-                      <div className="absolute top-4 right-4 z-1">
-                        <button
-                          className={`rounded-full p-2 ${isSelected ? "bg-blue-600" : "bg-white/80"} shadow-md transition-colors`}
-                          onClick={() => toggleSelectRoom(room)}
-                        >
-                          <Heart
-                            className={`h-5 w-5 ${isSelected ? "fill-white text-white" : "text-blue-600"}`}
-                            fill={isSelected ? "currentColor" : "none"}
-                          />
-                        </button>
-                      </div>
-
-                      {mostPopularBookedRoom.map((popularRoom) => {
-                        if (popularRoom._id === room._id){
-                          return (
-                            <div key={popularRoom._id} className="absolute top-4 left-4 z-20 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 px-3 py-1 text-xs font-bold text-white">
-                              POPULAR
-                            </div>
-                          );
-                        }
-                      })}
-                    </div>
-
-                    {/* Content Section */}
-                    <div className="p-6">
-                      <div className="mb-3 flex items-start justify-between">
-                        <div>
-                          <h3 className="text-xl font-bold text-blue-900">
-                            {room.roomName}
-                          </h3>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-2xl font-bold text-blue-700">
-                            RM {room.pricePerNight}
-                          </p>
-                          <p className="text-sm text-blue-500">per night</p>
-                        </div>
-                      </div>
-
-                      <div className="mb-4 flex items-center">
-                        <div className="mr-4 flex">
-                          {[...Array(5)].map((_, i) => (
-                            <Star
-                              key={i}
-                              className={`h-4 w-4 ${i < (room.rating || 0) ? "fill-amber-400 text-amber-400" : "text-blue-200"}`}
+              {Array.isArray(filterRoom) &&
+                filterRoom.map((room) => {
+                  const isSelected = selectedRoom.some(
+                    (selected) => selected._id === room._id,
+                  );
+                  return (
+                    <div
+                      key={room._id}
+                      className={`overflow-hidden rounded-2xl border border-blue-100 bg-white shadow-xl transition-all duration-300 hover:border-blue-200 hover:shadow-2xl ${isSelected ? "ring-4 ring-blue-400" : ""}`}
+                    >
+                      {/* Image Section */}
+                      <div className="relative h-64 w-full">
+                        <div className="absolute inset-0 z-10 rounded-t-2xl bg-gradient-to-t from-blue-900/30 to-transparent" />
+                        <img
+                          src={getImageSrc(
+                            Array.isArray(room.images)
+                              ? room.images[0]
+                              : room.images,
+                          )}
+                          alt={room.roomName}
+                          className="h-full w-full rounded-t-2xl object-cover object-center"
+                        />
+                        <div className="absolute top-4 right-4 z-1">
+                          <button
+                            className={`rounded-full p-2 ${isSelected ? "bg-blue-600" : "bg-white/80"} shadow-md transition-colors`}
+                            onClick={() => toggleSelectRoom(room)}
+                          >
+                            <Heart
+                              className={`h-5 w-5 ${isSelected ? "fill-white text-white" : "text-blue-600"}`}
+                              fill={isSelected ? "currentColor" : "none"}
                             />
-                          ))}
+                          </button>
                         </div>
-                        <span className="text-sm font-medium text-blue-700">
-                          {room.rating || 0} Rating
-                        </span>
+
+                        {mostPopularBookedRoom.map((popularRoom) => {
+                          if (popularRoom._id === room._id) {
+                            return (
+                              <div
+                                key={popularRoom._id}
+                                className="absolute top-4 left-4 z-20 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 px-3 py-1 text-xs font-bold text-white"
+                              >
+                                POPULAR
+                              </div>
+                            );
+                          }
+                        })}
                       </div>
 
-                      <p className="mb-5 line-clamp-2 text-sm text-blue-700">
-                        {room.description ||
-                          "Luxuriously appointed room with premium amenities and stunning views."}
-                      </p>
-
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center text-sm text-blue-600">
-                          <BedDouble className="mr-1 h-4 w-4" />
-                          <span>
-                            {(room.capacity?.children || 0) +
-                              (room.capacity?.adults || 0) || 2}{" "}
-                            Guests
-                          </span>
-                          <span className="mx-2">•</span>
+                      {/* Content Section */}
+                      <div className="p-6">
+                        <div className="mb-3 flex items-start justify-between">
+                          <div>
+                            <h3 className="text-xl font-bold text-blue-900">
+                              {room.roomName}
+                            </h3>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-2xl font-bold text-blue-700">
+                              RM {room.pricePerNight}
+                            </p>
+                            <p className="text-sm text-blue-500">per night</p>
+                          </div>
                         </div>
-                        <Button
-                          className={`transform rounded-xl px-6 py-4 font-bold transition-all hover:scale-105 ${
-                            isSelected
-                              ? "bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700"
-                              : "bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"
-                          }`}
-                          onClick={() => toggleSelectRoom(room)}
-                        >
-                          {isSelected ? "Selected ✓" : "Select Room"}
-                        </Button>
+
+                        <div className="mb-4 flex items-center">
+                          <div className="mr-4 flex">
+                            {[...Array(5)].map((_, i) => (
+                              <Star
+                                key={i}
+                                className={`h-4 w-4 ${i < (room.rating || 0) ? "fill-amber-400 text-amber-400" : "text-blue-200"}`}
+                              />
+                            ))}
+                          </div>
+                          <span className="text-sm font-medium text-blue-700">
+                            {room.rating || 0} Rating
+                          </span>
+                        </div>
+
+                        <p className="mb-5 line-clamp-2 text-sm text-blue-700">
+                          {room.description ||
+                            "Luxuriously appointed room with premium amenities and stunning views."}
+                        </p>
+
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center justify-center text-xs text-blue-600">
+                            <BedDouble className="mr-1 h-4 w-4" />
+                            <span>
+                              {(room.capacity?.children || 0) +
+                                (room.capacity?.adults || 0) || 2}{" "}
+                              Guests
+                            </span>
+                            {room.breakfastIncluded && (
+                              <>
+                                <span className="mx-2">•</span>
+                                <span className="font-semibold text-emerald-500">
+                                  Include Breakfast
+                                </span>
+                              </>
+                            )}
+                          </div>
+                          <Button
+                            className={`transform rounded-xl px-6 py-4 font-bold transition-all hover:scale-105 ${
+                              isSelected
+                                ? "bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700"
+                                : "bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"
+                            }`}
+                            onClick={() => toggleSelectRoom(room)}
+                          >
+                            {isSelected ? "Selected ✓" : "Select Room"}
+                          </Button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
             </div>
           </div>
         </div>

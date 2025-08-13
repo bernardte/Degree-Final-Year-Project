@@ -7,6 +7,8 @@ interface BookingSessionStore {
   isLoading: boolean;
   error: string | null;
   additionalInfo: string;
+  breakfastCount: number;
+  setBreakfastCount: (value: number) => void;
   setAdditionalInfo: (info: string) => void;
   removeBookingSessionRoom: (roomId: string) => void;
   removeBookingSession: (sessionId: string) => void;
@@ -17,12 +19,17 @@ interface BookingSessionStore {
 
 const useBookingSessionStore = create<BookingSessionStore>((set, get) => ({
   bookingSession: {} as BookingSession,
+  breakfastCount: 0,
   userBookingSession: [],
   isLoading: false,
   error: null,
   additionalInfo: "",
   setAdditionalInfo: (info: string) => {
     set({ additionalInfo: info });
+  },
+
+  setBreakfastCount: (value: number) => {
+    set({ breakfastCount: value });
   },
   fetchBookingSession: async (sessionId: string) => {
     set({ isLoading: true });

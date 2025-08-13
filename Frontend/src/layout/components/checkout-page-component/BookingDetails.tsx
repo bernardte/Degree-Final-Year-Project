@@ -1,15 +1,14 @@
 import { motion } from "framer-motion";
 import { Coffee, X, XCircle, CheckCircle } from "lucide-react";
 import { formatDateInBookingCheckOut } from "@/utils/formatDate";
-import { Room, BookingSession } from "@/types/interface.type";
+import { Room, BookingSession, RoomDefaultWithBreakfast } from "@/types/interface.type";
 import useBookingSessionStore from "@/stores/useBookingSessionStore";
 import RewardCodeInput from "./RewardCodeInput";
 
 interface BookingDetailsProps {
   bookingSession: BookingSession;
   rooms: Room[];
-  breakfastIncluded: boolean;
-  onToggleBreakfast: () => void;
+  onToggleBreakfast: (roomId: string) => void;
   onApplyReward: (
     code: string,
   ) => Promise<{ success: boolean; discount?: number; message?: string }>;
@@ -20,7 +19,6 @@ interface BookingDetailsProps {
 const BookingDetails = ({
   bookingSession,
   rooms,
-  breakfastIncluded,
   onToggleBreakfast,
   onApplyReward,
   onRemoveReward,
@@ -29,6 +27,8 @@ const BookingDetails = ({
   const breakfastPrice = 30;
   const { removeBookingSessionRoom, setAdditionalInfo, additionalInfo } =
     useBookingSessionStore();
+
+    console.log("additional info: ", additionalInfo);
 
   return (
     <motion.div
@@ -115,33 +115,33 @@ const BookingDetails = ({
                         </span>
                       </div>
 
-                      {/* Add breakfast button (only shown if not included) */}
-                      {!room.breakfastIncluded && (
-                        <motion.button
-                          whileTap={{ scale: 0.96 }}
-                          whileHover={{ scale: 1.04 }}
-                          animate={{ y: [0, -2, 0] }}
-                          transition={{ repeat: Infinity, duration: 1.6 }}
-                          onClick={() => onToggleBreakfast()}
-                          className={`flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-semibold shadow-md transition ${
-                            breakfastIncluded
-                              ? "bg-rose-100 text-rose-600 hover:bg-rose-200"
-                              : "bg-blue-600 text-white hover:brightness-110"
-                          }`}
-                        >
-                          {breakfastIncluded ? (
-                            <>
-                              <XCircle className="h-4 w-4" />
-                              Remove
-                            </>
-                          ) : (
-                            <>
-                              <Coffee className="h-4 w-4" />
-                              Add Breakfast · RM {breakfastPrice}
-                            </>
-                          )}
-                        </motion.button>
-                      )}
+                      {/* Toggle breakfast button */}
+                      {!(room as RoomDefaultWithBreakfast)?.defaultBreakfast && (
+                          <motion.button
+                            whileTap={{ scale: 0.96 }}
+                            whileHover={{ scale: 1.04 }}
+                            animate={{ y: [0, -2, 0] }}
+                            transition={{ repeat: Infinity, duration: 1.6 }}
+                            onClick={() => onToggleBreakfast(room._id)}
+                            className={`flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-semibold shadow-md transition ${
+                              room.breakfastIncluded
+                                ? "bg-rose-100 text-rose-600 hover:bg-rose-200"
+                                : "bg-blue-600 text-white hover:brightness-110"
+                            }`}
+                          >
+                            {room.breakfastIncluded ? (
+                              <>
+                                <XCircle className="h-4 w-4" />
+                                Remove
+                              </>
+                            ) : (
+                              <>
+                                <Coffee className="h-4 w-4" />
+                                Add Breakfast · RM {breakfastPrice}
+                              </>
+                            )}
+                          </motion.button>
+                        )}
                     </div>
                   </motion.div>
                 ))}

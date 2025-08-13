@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import useInvoiceStore from "@/stores/useInvoiceStore";
 import { useParams } from "react-router-dom";
-import { InvoiceWithBookingDetail, Room } from "@/types/interface.type";
+import { Bookings, InvoiceWithBookingDetail, Room } from "@/types/interface.type";
 import { formatDate, formatDateInBookingCheckOut } from "@/utils/formatDate";
 import { differenceInCalendarDays } from "date-fns";
 
@@ -29,8 +29,8 @@ const InvoiceDetail = () => {
     status: "Paid",
     hotel: {
       name: "The Seraphine Hotel",
-      address: "123 Luxury Street, New York, NY 10001",
-      email: "reservations@grandplaza.com",
+      address: "George Town, Penang, Malaysia",
+      email: "theSeraphineHotel@gmail.com",
       phone: "+60 123456789",
       website: "www.theseraphinehotel.com",
     },
@@ -39,21 +39,6 @@ const InvoiceDetail = () => {
       "No-show fee equivalent to one night stay",
       "Check-in time: 3:00 PM, Check-out time: 12:00 PM",
     ],
-    charges: [
-      {
-        id: 1,
-        description: "Deluxe King Room (5 nights @ RM 240/night)",
-        amount: 1200.0,
-      },
-      { id: 2, description: "Breakfast (Daily x 2 adults)", amount: 150.0 },
-      { id: 3, description: "City Tax", amount: 85.5 },
-      { id: 4, description: "Airport Transfer", amount: 75.0 },
-    ],
-    discount: {
-      amount: 100.0,
-      description: "Loyalty Member Discount (GOLD)",
-    },
-    total: 1123,
   };
 
   const { fetchCurrentUserInvoice, invoice } = useInvoiceStore(
@@ -67,16 +52,25 @@ const InvoiceDetail = () => {
     }
   }, [fetchCurrentUserInvoice]);
 
-  // Calculate subtotal
-//   const subtotal = invoice?.rewardDiscount;
+  const handleCalculateStayNight = () => {
+    const checkInDate = (invoice as unknown as InvoiceWithBookingDetail)
+      ?.bookingId?.startDate;
+    const checkoutDate = (invoice as unknown as InvoiceWithBookingDetail)
+      ?.bookingId?.endDate;
 
-  const handleCalculateStayNight = (
-    checkoutDate: Date | string,
-    checkInDate: Date | string,
-  ) => {
     return differenceInCalendarDays(checkoutDate, checkInDate);
   };
 
+  const nights = handleCalculateStayNight();
+
+  const subtotal =
+    (invoice?.bookingId as InvoiceWithBookingDetail["bookingId"])?.room?.reduce(
+      (acc, rm) => acc + rm.pricePerNight * nights,
+      0,
+    ) || 0;
+
+  const totalBreakfastVoucher = (invoice?.bookingId as Bookings)
+                ?.breakfastIncluded || 0;
   return (
     <div className="p-6 print:p-0">
       {/* Header with hotel branding */}
@@ -100,7 +94,7 @@ const InvoiceDetail = () => {
           </div>
           <div className="mt-1 flex items-center">
             <span
-              className={`rounded-full px-3 py-1 text-sm font-medium RM {
+              className={`RM rounded-full px-3 py-1 text-sm font-medium ${
                 invoiceData?.status === "paid"
                   ? "bg-green-100 text-green-800"
                   : "bg-yellow-100 text-yellow-800"
@@ -163,11 +157,13 @@ const InvoiceDetail = () => {
             <Mail className="mr-2 text-gray-500" size={16} />
             {invoice?.billingEmail}
           </div>
-          <div className="mt-2 flex items-center text-gray-600">
-            <Phone className="mr-2 text-gray-500" size={16} />
-            {invoice?.billingPhoneNumber}
-          </div>
-          <div className="mt-2 flex items-center text-gray-600">
+          {invoice?.billingPhoneNumber && (
+            <div className="mt-2 flex items-center text-gray-600">
+              <Phone className="mr-2 text-gray-500" size={16} />
+              {invoice?.billingPhoneNumber}
+            </div>
+          )}
+          <div className="mt-2 flex items-center text-gray-600 capitalize">
             <Gift className="mr-2 text-gray-500" size={16} />
             Loyalty Member: {invoice?.loyaltyTier}
           </div>
@@ -215,14 +211,7 @@ const InvoiceDetail = () => {
         <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-4">
           <div>
             <p className="text-sm text-gray-500">Nights</p>
-            <p className="font-medium text-gray-800">
-              {handleCalculateStayNight(
-                (invoice as unknown as InvoiceWithBookingDetail)?.bookingId
-                  ?.endDate,
-                (invoice as unknown as InvoiceWithBookingDetail)?.bookingId
-                  ?.startDate,
-              )}
-            </p>
+            <p className="font-medium text-gray-800">{nights}</p>
           </div>
           <div>
             <p className="text-sm text-gray-500">Room Type</p>
@@ -233,9 +222,9 @@ const InvoiceDetail = () => {
               )?.bookingId?.room?.map((rm: Room) => (
                 <span
                   key={rm?._id}
-                  className="rounded-full bg-teal-100 px-2 py-1 text-sm text-teal-800"
+                  className="rounded-full bg-teal-100 px-2 py-1 text-sm text-teal-800 capitalize"
                 >
-                  {rm.roomType}
+                  {rm.roomType} Room
                 </span>
               ))}
             </div>
@@ -291,37 +280,51 @@ const InvoiceDetail = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 bg-white">
-              {invoiceData.charges.map((charge) => (
-                <tr key={charge.id}>
-                  <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-800">
-                    {charge.description}
+              {(
+                invoice?.bookingId as InvoiceWithBookingDetail["bookingId"]
+              )?.room.map((rm) => (
+                <tr key={rm._id}>
+                  <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-800 capitalize">
+                    {rm.roomType} Room ({nights} night @ RM{" "}
+                    {rm.pricePerNight.toFixed(2)} / night)
                   </td>
                   <td className="px-6 py-4 text-right text-sm font-medium whitespace-nowrap text-gray-800">
-                    RM {charge.amount.toFixed(2)}
+                    RM {(rm.pricePerNight * nights).toFixed(2)}
                   </td>
                 </tr>
               ))}
 
-              {invoice?.rewardDiscount && (
+              {totalBreakfastVoucher > 0 && (
+                <tr>
+                  <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-800 capitalize">
+                    Breakfast Voucher ( {totalBreakfastVoucher} x RM 30.00 )
+                  </td>
+                  <td className="px-6 py-4 text-right text-sm font-medium whitespace-nowrap text-gray-800">
+                    RM {(30 * totalBreakfastVoucher).toFixed(2)}
+                  </td>
+                </tr>
+              )}
+
+              {invoice?.reward[0] > 0 && (
                 <>
                   <tr className="bg-gray-50">
                     <td className="px-6 py-4 text-sm font-medium whitespace-nowrap text-gray-800">
                       Subtotal
                     </td>
                     <td className="px-6 py-4 text-right text-sm font-medium whitespace-nowrap text-gray-800">
-                      {/* ${subtotal?.toFixed(2)} */}
+                      RM {subtotal?.toFixed(2)}
                     </td>
                   </tr>
-
                   <tr>
                     <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-800">
                       <div className="flex items-center">
                         <Gift className="mr-2 text-green-500" size={16} />
-                        {invoiceData.discount.description}
+                        {invoice?.reward[0]?.reward?.name} (
+                        {invoice?.reward[0]?.reward?.description})
                       </div>
                     </td>
                     <td className="px-6 py-4 text-right text-sm font-medium whitespace-nowrap text-red-600">
-                      -RM{invoiceData.discount.amount.toFixed(2)}
+                      -RM{invoice?.rewardDiscount.toFixed(2)}
                     </td>
                   </tr>
                 </>
@@ -354,7 +357,18 @@ const InvoiceDetail = () => {
           <div className="mt-4">
             <div className="mb-2 flex justify-between">
               <span className="text-gray-600">Payment Method:</span>
-              <span className="font-medium">{invoice?.paymentMethod}</span>
+              <span className="font-medium">
+                {invoice?.paymentMethod?.toLowerCase() === "fpx"
+                  ? "FPX Online Banking"
+                  : invoice?.paymentMethod
+                      ?.split(" ") //space split
+                      .map(
+                        (word) =>
+                          word.charAt(0).toUpperCase() +
+                          word.slice(1).toLowerCase(),
+                      ) //every start character become uppercase
+                      .join(" ")}
+              </span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600">Transaction ID:</span>

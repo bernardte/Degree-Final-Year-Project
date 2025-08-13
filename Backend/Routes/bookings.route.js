@@ -23,4 +23,5 @@ router.delete(
   bookingControllers.handleDeleteAllCancelled
 );
 
+router.patch("/update-breakfast-count/:sessionId", bookingControllers.handleUpdateBreakfastCount);
 export default router;

@@ -35,6 +35,10 @@ export interface Room {
   updatedAt: string;
 }
 
+export interface RoomDefaultWithBreakfast extends Room {
+  defaultBreakfast: number;
+}
+
 export enum Amenity {
   Wifi = "wifi",
   Tv = "tv",
@@ -75,22 +79,21 @@ export interface Invoice {
   roomCount: number;
 }
 
+
 export interface InvoiceWithBookingDetail extends Omit<Invoice, "bookingId"> {
   bookingId: Bookings & {
-    room: Room[]; // ⬅ 声明为数组
+    room: Room[];
+    startDate: Date;
+    endDate: Date;
+    totalGuests: {
+      adults: number;
+      children: number;
+    };
+    bookingDate: Date;
+    breakfastIncluded?: number;
   };
-  _id: Room["_id"];
-  roomType: Room["roomType"];
-  startDate: Date;
-  endDate: Date;
-  totalGuests: {
-    adults: number;
-    children: number;
-  };
-  bookingDate: Date;
-  // status: string;
-  breakfastIncluded?: number;
 }
+
 
 export interface Bookings {
   title: any;
@@ -109,6 +112,7 @@ export interface Bookings {
   };
   totalPrice: number;
   BookingDate: Date;
+  breakfastIncluded?: number;
   status: "confirmed" | "pending" | "cancelled" | "completed";
   paymentMethod: "card" | "grabpay" | "fpx";
   paymentStatus: "paid" | "unpaid" | "refund";
@@ -150,7 +154,6 @@ export interface BookingSession {
     children: number;
   };
   breakfastIncluded: number;
-  isBreakfastIncluded: boolean;
   paymentIntentId: string; // Added this property
   paymentMethod: string;
   paymentStatus: string;

@@ -28,6 +28,11 @@ const invoiceSchema = new mongoose.Schema(
       enum: ["issued", "cancelled"],
       default: "issued",
     },
+    paymentMethod: {
+      type: String,
+      enum: ["card", "fpx", "grabpay"],
+      default: "card",
+    },
     paymentStatus: {
       type: String,
       enum: ["paid", "pending", "failed"],

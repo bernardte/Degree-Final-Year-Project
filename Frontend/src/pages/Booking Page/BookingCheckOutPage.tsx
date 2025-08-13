@@ -36,9 +36,8 @@ const BookingCheckOutPage = () => {
   const { isLoading, error, fetchBookingSession, bookingSession } =
     useBookingSessionStore();
   const [openDialog, setOpenDialog] = useState<boolean>(false);
-  const { rooms, fetchRooms } = useRoomStore();
+  const { rooms, fetchRooms, updateSelectedRoomBreakfast } = useRoomStore();
   const { showToast } = useToast();
-  const [breakfastIncluded, setBreakfastIncluded] = useState<boolean>(false);
   const [loadingTarget, setLoadingTarget] = useState<string | null>(null);
   const localStorageSearchParams =
     localStorage.getItem("searchParams") || "{}";
@@ -58,10 +57,13 @@ const BookingCheckOutPage = () => {
   }, [sessionId, fetchRooms]);
 
   useEffect(() => {
-    if (bookingSession?.isBreakfastIncluded) {
-      setBreakfastIncluded(true);
+    if (sessionId) {
+      fetchBookingSession(sessionId);
+      console.log("reach on  added refresh")
     }
-  }, [bookingSession]);
+
+    fetchRooms()
+  }, [bookingSession?.breakfastIncluded, sessionId]);
 
   if (error) {
     showToast("error", error);
@@ -84,11 +86,13 @@ const BookingCheckOutPage = () => {
     }
   };
 
-  const handleToggleBreakfast = () => {
-    setBreakfastIncluded(!breakfastIncluded);
+  const handleToggleBreakfast = (roomId: string) => {
+    updateSelectedRoomBreakfast(roomId, bookingSession._id);
+
+    const targetRoom = rooms.find((r) => r._id === roomId);
     showToast(
       "info",
-      breakfastIncluded ? "Breakfast removed." : "Breakfast added!",
+      targetRoom?.breakfastIncluded ? "Breakfast removed." : "Breakfast added!",
     );
   };
 
@@ -148,6 +152,8 @@ const BookingCheckOutPage = () => {
       localStorage.removeItem("searchParams");
     }, 1000);
   };
+
+  const breakfastCount = rooms.filter((r) => r.breakfastIncluded).length;
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-gradient-to-tr from-blue-100 via-white to-blue-50">
@@ -256,7 +262,6 @@ const BookingCheckOutPage = () => {
           <BookingDetails
             bookingSession={bookingSession}
             rooms={rooms}
-            breakfastIncluded={breakfastIncluded}
             onToggleBreakfast={handleToggleBreakfast}
             onApplyReward={handleApplyReward}
             onRemoveReward={handleRemoveReward}
@@ -270,7 +275,7 @@ const BookingCheckOutPage = () => {
               bookingSession.checkOutDate,
             )}
             roomId={bookingSession.roomId}
-            breakfastIncluded={breakfastIncluded}
+            breakfastIncluded={bookingSession?.breakfastIncluded}
             appliedReward={appliedReward}
           />
         </div>

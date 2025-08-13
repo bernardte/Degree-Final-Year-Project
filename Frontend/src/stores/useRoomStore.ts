@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import axiosInstance from "@/lib/axios";
-import { Room } from "@/types/interface.type";
+import { Room, RoomDefaultWithBreakfast } from "@/types/interface.type";
+import useBookingSessionStore from "./useBookingSessionStore";
 
 interface roomStore {
   rooms: Room[];
@@ -39,10 +40,15 @@ interface roomStore {
   //! the type of the keys and T represents the type of the values.
   fetchRoomsInFilter: (filter: Record<string, any>) => Promise<void>;
   fetchRoomRanking: () => Promise<void>;
+  handleUpdateBreakfast: (
+    breakfastCount: number,
+    sessionId: string,
+  ) => Promise<void>;
+  updateSelectedRoomBreakfast: (roomId: string, sessionId: string) => void;
   fetchRoomCalendarView: () => Promise<void>;
 }
 
-const useRoomStore = create<roomStore>((set) => ({
+const useRoomStore = create<roomStore>((set, get) => ({
   rooms: [],
   mostPopularBookedRoom: [],
   mostBookingRoom: [],
@@ -77,7 +83,12 @@ const useRoomStore = create<roomStore>((set) => ({
     set({ isLoading: true, error: null });
     try {
       const response = await axiosInstance.get("/api/rooms/get-all-rooms");
-      set({ rooms: response.data });
+      set({
+        rooms: response.data.map((room: Room) => ({
+          ...room,
+          defaultBreakfast: room.breakfastIncluded, // 记录原本是否有早餐
+        })),
+      });
     } catch (error: any) {
       set({ isLoading: false, error: error.message, rooms: [] });
     } finally {
@@ -203,6 +214,46 @@ const useRoomStore = create<roomStore>((set) => ({
     }
   },
 
+  handleUpdateBreakfast: async (breakfastCount: number, sessionId: string) => {
+    try {
+      await axiosInstance.patch(
+        "/api/bookings/update-breakfast-count/" + sessionId,
+        {
+          breakfastCount,
+        },
+      );
+    } catch (error: any) {
+      console.log(
+        "Error in handleUpdateBreakfast",
+        error?.response?.data?.error,
+      );
+    }
+  },
+
+  updateSelectedRoomBreakfast: (roomId: string, sessionId: string) => {
+    set((prevState) => {
+      const updatedRooms = prevState.rooms.map((room) =>
+        room._id === roomId
+          ? { ...room, breakfastIncluded: !room.breakfastIncluded }
+          : room,
+      );
+
+      // calculate breakfast
+       const breakfastCount = updatedRooms.reduce((count, r) => {
+         if (!(r as RoomDefaultWithBreakfast).defaultBreakfast && r.breakfastIncluded) {
+           return count + 1;
+         }
+         return count;
+       }, 0);
+
+        useBookingSessionStore.getState().setBreakfastCount(breakfastCount);
+      // send to backend
+      get().handleUpdateBreakfast(breakfastCount, sessionId);
+
+      return { ...prevState, rooms: updatedRooms };
+    });
+  },
+
   fetchRoomCalendarView: async () => {
     set({ isLoading: true, error: null });
     axiosInstance
@@ -218,3 +269,5 @@ const useRoomStore = create<roomStore>((set) => ({
 }));
 
 export default useRoomStore;
+
+

@@ -10,7 +10,6 @@ interface PaymentSummaryProps {
   checkInDate: string; // ISO date string
   checkOutDate: string; // ISO date string
   roomId: string[]; // Array of room IDs
-  breakfastIncluded: boolean;
   appliedReward?: { code: string; discount: number } | null;//apply reward
 }
 
@@ -18,19 +17,20 @@ const PaymentSummary = ({
   checkInDate,
   checkOutDate,
   roomId,
-  breakfastIncluded,
   appliedReward,
 }: PaymentSummaryProps) => {
   const breakfastPrice = 30;
-
+  
   // Calculate the number of nights
   const nights = differenceInCalendarDays(
     new Date(checkOutDate),
     new Date(checkInDate),
   );
-
+  
   // Access rooms from store
   const { rooms } = useRoomStore();
+  const breakfastCount = useBookingSessionStore((state) => state.breakfastCount);
+  const additionalInfo = useBookingSessionStore((state) => state.additionalInfo);
   const bookedRooms = rooms.filter((room) =>
     (roomId as string[])?.includes(room._id),
   );
@@ -43,13 +43,10 @@ const PaymentSummary = ({
   }));
   const basePrice = lineItems.reduce((sum, li) => sum + li.lineTotal, 0);
   const roomPrices = lineItems.map((li) => li.pricePerNight);
-  const roomsWithoutBreakfast = bookedRooms.filter(
-    (room) => !room.breakfastIncluded,
-  );
 
-  const breakfastTotal = breakfastIncluded
-    ? roomsWithoutBreakfast.length * breakfastPrice * nights
-    : 0;
+    console.log(breakfastCount)
+    const breakfastTotal =
+      breakfastCount > 0 ? breakfastCount * breakfastPrice * nights : 0;
     const rewardDiscount = appliedReward?.discount ?? 0;
     const rewardMultiplier = 1 - rewardDiscount / 100;
 
@@ -72,8 +69,7 @@ const PaymentSummary = ({
           checkOutDate,
           discount: appliedReward?.discount,
           rewardCode: appliedReward?.code,
-          breakfastIncluded,
-          nights,
+          additionalInfo,
           sessionId,
         },
       );
@@ -89,6 +85,7 @@ const PaymentSummary = ({
     }
   };
 
+  console.log(additionalInfo);
   return (
     <motion.div
       initial={{ x: 100, opacity: 0 }}
@@ -105,16 +102,16 @@ const PaymentSummary = ({
               <span>
                 {nights} night{nights > 1 ? "s" : ""} × RM {price}
               </span>
-              <span>RM {price * nights}</span>
+              <span>RM {nights * price}</span>
             </div>
           ))}
 
-          {breakfastIncluded && (
+          {breakfastCount > 0 && (
             <div className="flex justify-between text-sm text-green-200 italic">
               <span>
-                Breakfast for {roomsWithoutBreakfast.length} room
-                {roomsWithoutBreakfast.length > 1 ? "s" : ""} x {nights} night
-                {nights > 1 ? "s" : ""}
+                Breakfast for {breakfastCount} room
+                {roomId.length > 1 ? "s" : ""} × {nights} night
+                {nights > 1 ? "s" : ""} × RM {breakfastPrice}
               </span>
               <span>RM {breakfastTotal}</span>
             </div>
@@ -124,7 +121,7 @@ const PaymentSummary = ({
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
-              className="flex justify-between text-md text-green-300"
+              className="text-md flex justify-between text-green-300"
             >
               <span className="flex items-center">
                 <Gift className="mr-2" size={18} />
@@ -143,14 +140,12 @@ const PaymentSummary = ({
           >
             <span>Total</span>
             <div className="flex flex-col">
-              <span className="text-right">
-                RM {totalPrice}{" "}
-              </span>
-                {rewardDiscount > 0 && (
-                  <span className="text-sm font-normal text-green-100">
-                    (after {rewardDiscount}% discount)
-                  </span>
-                )}
+              <span className="text-right">RM {totalPrice} </span>
+              {rewardDiscount > 0 && (
+                <span className="text-sm font-normal text-green-100">
+                  (after {rewardDiscount}% discount)
+                </span>
+              )}
             </div>
           </motion.div>
         </div>

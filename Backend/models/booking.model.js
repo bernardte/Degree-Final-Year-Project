@@ -116,6 +116,10 @@ const bookingSchema = mongoose.Schema(
     rewardDiscount: {
       type: Number,
       default: 0,
+    },
+    rewardCode: {
+      type: String,
+      default: "",
     }
   },
   { timestamps: true }

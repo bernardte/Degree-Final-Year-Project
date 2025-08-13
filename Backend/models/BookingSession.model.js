@@ -19,10 +19,10 @@ const bookingSessionSchema = new mongoose.Schema(
         contactName: { type: String, required: false },
         contactEmail: { type: String, required: false },
         contactNumber: { type: String, required: false },
-        additionalDetails: { type: String },
       }),
       required: false, // make guestDetails optional
     },
+    additionalDetail: { type: String, required: false, default: "" },
     roomId: [
       {
         type: mongoose.Schema.Types.ObjectId,
@@ -37,7 +37,7 @@ const bookingSessionSchema = new mongoose.Schema(
       children: { type: Number, required: true },
     },
     totalPrice: { type: Number, required: true },
-    breakfastIncluded: { type: Number, default: false },
+    breakfastIncluded: { type: Number, default: 0 },
     // Payment tracking
     paymentStatus: {
       type: String,
@@ -61,6 +61,10 @@ const bookingSessionSchema = new mongoose.Schema(
     rewardDiscount: {
       type: Number,
       default: 0,
+    },
+    rewardCode: {
+      type: String,
+      required: false,
     },
   },
   { timestamps: true }

@@ -9,7 +9,8 @@ const createCheckoutSession = async (req, res) => {
     checkOutDate,
     sessionId,
     discount: rewardDiscount,
-    rewardCode
+    rewardCode,
+    additionalInfo,
   } = req.body;
 
   console.log("request: ", req.body);
@@ -48,6 +49,7 @@ const createCheckoutSession = async (req, res) => {
         totalPrice,
         rewardCode: rewardCode || "",
         rewardDiscount: rewardDiscount || 0,
+        additionalInfo
       },
     });
 
@@ -99,9 +101,11 @@ const updatePaymentDetails = async (req, res) => {
     }
 
     const userSessionId = session.metadata.sessionId;
-    const breakfastCount = session.metadata.breakfastCount;
     const totalPrice = session.metadata.totalPrice;
     const rewardDiscount = session.metadata.rewardDiscount;
+    const rewardCode = session.metadata.rewardCode;
+    const additionalInfo = session.metadata.additionalInfo;
+    console.log("updatePaymentDetails: ", additionalInfo);
 
     console.log("Metadata sessionId:", userSessionId);
 
@@ -112,7 +116,7 @@ const updatePaymentDetails = async (req, res) => {
     if (!bookingSession) {
       return res
         .status(404)
-        .json({ error: "BookingSession not found in database" });
+        .json({ error: "BookingSession not found" });
     }
 
     // Get payment method type
@@ -124,7 +128,7 @@ const updatePaymentDetails = async (req, res) => {
 
     // Get paymentIntentId from Stripe session
     const paymentIntentId = session?.payment_intent?.id || "unknown";
-
+    
     console.log("Payment method:", paymentMethodType);
     console.log("Payment status:", paymentStatus);
     console.log("PaymentIntent ID:", paymentIntentId);
@@ -133,9 +137,11 @@ const updatePaymentDetails = async (req, res) => {
     bookingSession.paymentStatus = paymentStatus;
     bookingSession.paymentMethod = paymentMethodType;
     bookingSession.paymentIntentId = paymentIntentId;
-    bookingSession.breakfastIncluded = breakfastCount;
     bookingSession.totalPrice = totalPrice;
     bookingSession.rewardDiscount = rewardDiscount;
+    bookingSession.rewardCode = rewardCode;
+    bookingSession.additionalDetail = additionalInfo;
+
     await bookingSession.save();
 
     res.status(200).json({

@@ -27,6 +27,9 @@ const createBooking = async (req, res) => {
     const session = await BookingSession.findOne({
       sessionId: bookingSessionId,
     });
+
+    console.log("your session: ", session)
+
     if (!session)
       return res.status(404).json({ error: "Booking session not found" });
 
@@ -46,6 +49,8 @@ const createBooking = async (req, res) => {
       contactNumber,
       guestDetails,
       rewardDiscount,
+      additionalDetail,
+      rewardCode,
     } = session;
 
     if (new Date(checkOutDate) <= new Date(checkInDate)) {
@@ -82,17 +87,19 @@ const createBooking = async (req, res) => {
       startDate: checkInDate,
       endDate: checkOutDate,
       totalGuests: totalGuest,
-      breakfastIncluded,
+      breakfastIncluded: breakfastIncluded,
       totalPrice,
       bookingReference,
       specialRequests,
       paymentMethod,
       paymentStatus,
       paymentIntentId,
+      specialRequests: additionalDetail,
       contactName: contactName || guestDetails?.contactName,
       contactEmail: contactEmail || guestDetails?.contactEmail,
       contactNumber: contactNumber || guestDetails?.contactNumber,
       rewardDiscount,
+      rewardCode,
     });
     await newBooking.save();
     for (let room of rooms) {
@@ -150,7 +157,9 @@ const createBooking = async (req, res) => {
     //* notify all admins
     await notifyUsers(
       adminIds,
-      `New booking# ${bookingReference} from ${contactEmail || user?.email}`,
+      `New booking# ${bookingReference} from ${
+        newBooking.contactEmail || user?.email
+      }`,
       "booking"
     );
 
@@ -163,30 +172,32 @@ const createBooking = async (req, res) => {
       emitBookingStatusUpdate(),
     ]).then(result => console.log("Socket updates emitted successfully: ", result));
 
-    await BookingSession.deleteOne({ sessionId: bookingSessionId });
     const invoiceNumber = generateInvoiceNumber();
     
     if(user){
-         const newInvoice = new Invoice({
-           bookingReference,
-           invoiceNumber,
-           invoiceDate: new Date(),
-           bookingId: newBooking._id,
-           loyaltyTier: user.loyaltyTier,
-           invoiceAmount: totalPrice,
-           status: "issued",
-           paymentMethod: paymentMethod,
-           paymentStatus: paymentStatus,
-           paymentDate: newBooking.createdAt,
-           paymentIntentId: paymentIntentId,
-           billingName: user?.username || contactName,
-           billingEmail: user?.email || contactEmail,
-           billingPhoneNumber: contactNumber,
-           rewardDiscount: rewardDiscount,
-         });
-         await newInvoice.save();
+      const newInvoice = new Invoice({
+        bookingReference,
+        invoiceNumber,
+        invoiceDate: new Date(),
+        bookingId: newBooking._id,
+        loyaltyTier: user.loyaltyTier,
+        invoiceAmount: totalPrice,
+        status: "issued",
+        paymentMethod: paymentMethod,
+        paymentStatus: paymentStatus,
+        paymentDate: newBooking.createdAt,
+        paymentIntentId: paymentIntentId,
+        billingName: user?.username || contactName,
+        billingEmail: user?.email || contactEmail,
+        billingPhoneNumber: contactNumber,
+        rewardDiscount: rewardDiscount,
+      });
+      await newInvoice.save();
     }
- 
+    
+    // delete current booking session 
+    await BookingSession.deleteOne({ sessionId: bookingSessionId });
+
     return res.status(201).json({ newBooking, qrCodePublicURLfromCloudinary });
   } catch (error) {
     console.error("Error in creating booking:", error);
@@ -548,6 +559,35 @@ const handleDeleteAllCancelled = async (req, res) => {
   }
 };
 
+// update breakfast total
+const handleUpdateBreakfastCount = async (req, res) => {
+  const { sessionId } = req.params;
+  const { breakfastCount } = req.body; 
+  console.log("breakfast from frotend: ", breakfastCount);
+  console.log("sessionId: ", sessionId);
+
+  if (typeof breakfastCount !== "number" || breakfastCount < 0) {
+    return res.status(400).json({ error: "Invalid breakfast count" });
+  }
+
+  try {
+    const session = await BookingSession.findById(sessionId);
+    if (!session) {
+      return res.status(404).json({ error: "Booking session not found!" });
+    }
+
+    await BookingSession.updateOne(
+      { _id: sessionId },
+      { $set: { breakfastIncluded: breakfastCount } }
+    );
+
+    return res.status(200).json(breakfastCount);
+  } catch (error) {
+    console.error("Error in handleUpdateBreakfastCount:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
 export default {
   createBooking,
   cancelBooking,
@@ -558,4 +598,5 @@ export default {
   deleteBookingSession,
   removeRoomFromBookingSession,
   handleDeleteAllCancelled,
+  handleUpdateBreakfastCount,
 };
