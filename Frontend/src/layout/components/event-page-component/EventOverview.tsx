@@ -42,16 +42,24 @@ const EventOverview = () => {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="overflow-hidden rounded-xl">
-                <div className="h-48 bg-gradient-to-br from-blue-300 to-cyan-300"></div>
+                <div className="h-48 bg-gradient-to-br from-blue-300 to-cyan-300">
+                  <img src="/meeting room.png" className="object-cover h-full" />
+                </div>
               </div>
               <div className="overflow-hidden rounded-xl">
-                <div className="h-48 bg-gradient-to-br from-cyan-300 to-blue-300"></div>
+                <div className="h-48 bg-gradient-to-br from-cyan-300 to-blue-300">
+                  <img src="/wedding room.png" className="object-cover h-full"/>
+                </div>
               </div>
               <div className="overflow-hidden rounded-xl">
-                <div className="h-48 bg-gradient-to-br from-blue-400 to-cyan-400"></div>
+                <div className="h-48 bg-gradient-to-br from-blue-400 to-cyan-400">
+                  <img src="/party room.png" className="object-full h-full"/>
+                </div>
               </div>
               <div className="overflow-hidden rounded-xl">
-                <div className="h-48 bg-gradient-to-br from-cyan-400 to-blue-400"></div>
+                <div className="h-48 bg-gradient-to-br from-cyan-400 to-blue-400">
+                  <img src="/wedding room2.png" className="object-cover h-full"/>
+                </div>
               </div>
             </div>
           </div>

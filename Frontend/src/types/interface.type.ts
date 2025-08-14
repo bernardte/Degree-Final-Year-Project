@@ -58,11 +58,19 @@ export interface Reviews {
   username: String;
 }
 
-export interface Invoice {
+interface RewardItem {
+  reward: {
+    name: string;
+    description: string;
+  };
+}
+
+
+export interface Invoice<TBooking = string> {
   _id: string;
   invoiceNumber: string;
   invoiceDate: Date;
-  bookingId: Bookings["_id"];
+  bookingId: TBooking;
   loyaltyTier: string;
   invoiceAmount: number;
   status: ["issued", "cancelled"];
@@ -77,10 +85,10 @@ export interface Invoice {
   bookingReference: string;
   rewardDiscount: number;
   roomCount: number;
+  reward?: RewardItem[];
 }
 
-
-export interface InvoiceWithBookingDetail extends Omit<Invoice, "bookingId"> {
+export type InvoiceWithBookingDetail = Invoice & {
   bookingId: Bookings & {
     room: Room[];
     startDate: Date;
@@ -92,7 +100,7 @@ export interface InvoiceWithBookingDetail extends Omit<Invoice, "bookingId"> {
     bookingDate: Date;
     breakfastIncluded?: number;
   };
-}
+};
 
 
 export interface Bookings {

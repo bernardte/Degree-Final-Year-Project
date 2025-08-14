@@ -124,6 +124,34 @@
 }
 
 @layer utilities {
+
+  
+/* 瀑布流布局优化 */
+.columns-1 {
+  columns: 1;
+}
+.columns-2 {
+  columns: 2;
+}
+.columns-3 {
+  columns: 3;
+}
+
+.break-inside-avoid {
+  break-inside: avoid;
+}
+
+@media (max-width: 640px) {
+  .columns-2, .columns-3 {
+    columns: 1;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .columns-3 {
+    columns: 2;
+  }
+}
   @keyframes blink {
     0%,
     100% {

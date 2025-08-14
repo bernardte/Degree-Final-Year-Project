@@ -22,7 +22,7 @@ import useToast from "@/hooks/useToast";
 import axiosInstance from "@/lib/axios";
 
 // Animation configurations
-const cardVariants = {
+const cardVariants= {
   hidden: { opacity: 0, y: 20 },
   visible: {
     opacity: 1,
@@ -41,7 +41,7 @@ const listVariants = {
   },
 };
 
-const buttonHoverVariants = {
+const buttonHoverVariants= {
   hover: {
     scale: 1.05,
     boxShadow: "0 4px 14px -2px rgba(59, 130, 246, 0.25)",
