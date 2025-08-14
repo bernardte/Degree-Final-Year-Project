@@ -1,5 +1,3 @@
-import React from "react";
-
 const ImageGalleryPage = () => {
   const images = [
     "/asian breakfast.png",
