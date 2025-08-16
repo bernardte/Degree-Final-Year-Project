@@ -17,6 +17,10 @@ import {
 import notifyUsers from "../utils/notificationSender.js";
 import Invoice from "../models/invoice.model.js";
 import { generateInvoiceNumber } from "../utils/invoiceNumberGenerator.js";
+import { sendInvoiceEmail } from "../utils/invoices/sendInvoiceEmail.js";
+import Reward from "../models/reward.model.js";
+import ClaimedReward from "../models/claimedReward.model.js";
+
 
 const createBooking = async (req, res) => {
   const { bookingSessionId, specialRequests } = req.body;
@@ -110,6 +114,7 @@ const createBooking = async (req, res) => {
     const roomDetails = rooms.map((r) => ({
       roomType: r.roomType,
       roomNumber: r.roomNumber,
+      pricePerNight: r.pricePerNight,
     }));
     const qrCodeData = {
       bookingReference,
@@ -120,6 +125,8 @@ const createBooking = async (req, res) => {
     const qrCodePublicURLfromCloudinary = await generateAndUploadQRCode(
       qrCodeData
     );
+
+    console.log("generated QR code: " ,qrCodePublicURLfromCloudinary)
     newBooking.qrCodeImageURL = qrCodePublicURLfromCloudinary;
     await newBooking.save();
 
@@ -135,13 +142,14 @@ const createBooking = async (req, res) => {
 
     const emailTo = user?.email || contactEmail || guestDetails?.contactEmail;
     if (emailTo && qrCodePublicURLfromCloudinary) {
+      console.log("reach here")
       await sendBookingConfirmationEmail(emailTo, {
-        username: user?.username || contactName,
+        username: user?.name || newBooking.contactName,
         bookingReference,
         roomDetail: roomDetails,
         checkInDate,
         checkOutDate,
-        breakfastIncluded,
+        breakfastIncluded: newBooking.breakfastIncluded,
         adults: totalGuest.adults,
         children: totalGuest.children,
         totalPrice,
@@ -173,27 +181,57 @@ const createBooking = async (req, res) => {
     ]).then(result => console.log("Socket updates emitted successfully: ", result));
 
     const invoiceNumber = generateInvoiceNumber();
+    const loyaltyTier = user ? user.loyaltyTier : null
     
-    if(user){
-      const newInvoice = new Invoice({
-        bookingReference,
-        invoiceNumber,
-        invoiceDate: new Date(),
-        bookingId: newBooking._id,
-        loyaltyTier: user.loyaltyTier,
-        invoiceAmount: totalPrice,
-        status: "issued",
-        paymentMethod: paymentMethod,
-        paymentStatus: paymentStatus,
-        paymentDate: newBooking.createdAt,
-        paymentIntentId: paymentIntentId,
-        billingName: user?.username || contactName,
-        billingEmail: user?.email || contactEmail,
-        billingPhoneNumber: contactNumber,
-        rewardDiscount: rewardDiscount,
-      });
+    const newInvoice = new Invoice({
+      bookingReference,
+      invoiceNumber,
+      invoiceDate: new Date(),
+      bookingId: newBooking._id,
+      loyaltyTier: loyaltyTier,
+      invoiceAmount: totalPrice,
+      status: "issued",
+      paymentMethod: paymentMethod,
+      paymentStatus: paymentStatus,
+      paymentDate: newBooking.createdAt,
+      paymentIntentId: paymentIntentId,
+      billingName: user?.username || newBooking.contactName,
+      billingEmail: user?.email || newBooking.contactEmail,
+      billingPhoneNumber: contactNumber,
+      rewardDiscount: rewardDiscount,
+    });
       await newInvoice.save();
-    }
+
+      const rewardClaimed = await ClaimedReward.findOne({ rewardCode: newBooking.rewardCode }).select("_id");
+      let reward = null;
+      if (rewardClaimed) {
+        reward = await Reward.findOne({ _id: rewardClaimed._id }).select(
+          "description discountPercentage"
+        );
+      }
+
+      if(newInvoice){
+        await sendInvoiceEmail(
+          emailTo,
+          {
+            username: user?.username || newBooking.contactName,
+            bookingReference,
+            roomDetail: roomDetails,
+            checkInDate,
+            checkOutDate,
+            breakfastIncluded: newBooking.breakfastIncluded,
+            adults: totalGuest.adults,
+            children: totalGuest.children,
+            totalPrice: totalPrice,
+            paymentStatus,
+            paymentIntentId,
+            paymentMethod,
+          },
+          reward,
+          loyaltyTier,
+          invoiceNumber,
+        );
+      }
     
     // delete current booking session 
     await BookingSession.deleteOne({ sessionId: bookingSessionId });
@@ -281,6 +319,7 @@ const cancelBooking = async (req, res) => {
 
 const getBookingByUser = async (req, res) => {
   const userId = req.user._id;
+  console.log("userid testing:  ", userId)
 
   try {
     // Fetch all bookings created by the user with userType 'user'

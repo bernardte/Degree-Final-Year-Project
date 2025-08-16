@@ -3,7 +3,16 @@ import FAQ from "../models/faq.model.js";
 
 const fetchAllFAQ = async (req, res) => {
     try {
-        
+        console.log("entering here")
+        const faqs = await FAQ.find({
+          category: { $ne: "Complaints" },
+          intent: { $ne: "complaint" },
+        });
+
+        if(!faqs){
+            return res.status(404).json({ error: "faqs not found!"})
+        }
+        return res.status(201).json(faqs);
     } catch (error) {
         console.log('Error in fetchAllFAQ: ', error.message);
         res.status(500).json({ message: 'Internal Server Error' });

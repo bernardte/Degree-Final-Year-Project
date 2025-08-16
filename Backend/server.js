@@ -71,7 +71,7 @@ app.use("/api/systemSetting", systemSettingRoute);
 app.use("/api/messages", messageRoute);
 app.use("/api/conversations", conversationRoute);
 app.use("/api/notification", notificationRoute);
-app.use("/api/faq", faqRouter);
+app.use("/api/faqs", faqRouter);
 app.use("/api/invoices", invoiceRouter);
 
 httpServer.listen(PORT, async () => {
