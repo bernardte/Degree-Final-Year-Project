@@ -309,3 +309,11 @@ export interface Message {
   image: string;
   createdAt: Date;
 }
+
+export interface FAQ {
+  _id: string;
+  intent: string;
+  question: string;
+  answer: string;
+  category: string;
+}

@@ -1,4 +1,3 @@
-// src/components/InvoiceDetail.js
 import { useEffect, useRef } from "react";
 import {
   Hotel,
@@ -23,7 +22,7 @@ import {
 } from "@/types/interface.type";
 import { formatDate, formatDateInBookingCheckOut } from "@/utils/formatDate";
 import { differenceInCalendarDays } from "date-fns";
-import { useReactToPrint } from "react-to-print"
+import { useReactToPrint } from "react-to-print";
 import useToast from "@/hooks/useToast";
 
 const InvoiceDetail = () => {
@@ -54,7 +53,7 @@ const InvoiceDetail = () => {
   const navigate = useNavigate();
   const contentRef = useRef<HTMLDivElement>(null);
   const { showToast } = useToast();
-  
+
   useEffect(() => {
     if (id) {
       fetchCurrentUserInvoice(id);
@@ -83,9 +82,9 @@ const InvoiceDetail = () => {
   const handlePrint = useReactToPrint({
     contentRef,
     documentTitle: "Invoice",
-    onPrintError: (error) => showToast("info", error)
-  })
-  
+    onPrintError: (error) => showToast("info", error),
+  });
+
   return (
     <>
       {/* Back to previous page */}
@@ -95,7 +94,7 @@ const InvoiceDetail = () => {
       >
         Back
       </button>
-      <div className="p-6 print:p-0 print:mx-10 print:my-4" ref={contentRef}>
+      <div className="p-6 print:mx-10 print:my-4 print:p-0" ref={contentRef}>
         {/* Header with hotel branding */}
         <div className="mb-8 flex flex-col items-start justify-between border-b border-gray-200 pb-6 md:flex-row md:items-center">
           <div className="flex items-center">
@@ -186,10 +185,12 @@ const InvoiceDetail = () => {
                 {invoice?.billingPhoneNumber}
               </div>
             )}
-            <div className="mt-2 flex items-center text-gray-600 capitalize">
-              <Gift className="mr-2 text-gray-500" size={16} />
-              Loyalty Member: {invoice?.loyaltyTier}
-            </div>
+            {invoice?.loyaltyTier && (
+              <div className="mt-2 flex items-center text-gray-600 capitalize">
+                <Gift className="mr-2 text-gray-500" size={16} />
+                Loyalty Member: {invoice?.loyaltyTier}
+              </div>
+            )}
           </div>
         </div>
 

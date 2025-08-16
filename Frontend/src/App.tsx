@@ -42,6 +42,7 @@ import NotificationProvider from "./provider/NotificationProvider";
 import AdminChatPage from "./pages/Admin chat page/AdminChatPage";
 import InvoiceDetail from "./layout/components/invoice-component/InvoiceDetail";
 import ImageGalleryPage from "./pages/image galery page/ImageGalleryPage";
+import FAQPage from "./pages/FAQ page/FAQPage";
 
 const App = () => {
   const { user, showLoginPopup, showSignupPopup } = useAuthStore();
@@ -81,6 +82,10 @@ const App = () => {
             element={<CancelBookingPage />}
           />
           <Route path="image-gallery" element={<ImageGalleryPage />} />
+          <Route path="faq" element={<FAQPage />} />
+          <Route path="profile" element={<ProfilePage />} />
+          <Route path="pending-booking" element={<PendingBookingPage />} />
+          <Route path="reward-redemption" element={<RewardRedemptionPage />} />
         </Route>
 
         {/* User Login Route */}
@@ -88,9 +93,6 @@ const App = () => {
           <Route path="/loading" element={<LoadingScreen />} />
           <Route path="/display-booking" element={<BookingDisplayPage />} />
           <Route path="/invoice/:id" element={<InvoiceDetail />} />
-          <Route path="profile" element={<ProfilePage />} />
-          <Route path="pending-booking" element={<PendingBookingPage />} />
-          <Route path="reward-redemption" element={<RewardRedemptionPage />} />
         </Route>
 
         {/* Admin and SuperAdmin Routes */}
