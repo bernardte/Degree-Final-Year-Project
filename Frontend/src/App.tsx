@@ -43,7 +43,7 @@ import AdminChatPage from "./pages/Admin chat page/AdminChatPage";
 import InvoiceDetail from "./layout/components/invoice-component/InvoiceDetail";
 import ImageGalleryPage from "./pages/image galery page/ImageGalleryPage";
 import FAQPage from "./pages/FAQ page/FAQPage";
-
+import FacilityDetailPage from "./pages/Facilities page/FacilityDetail";
 const App = () => {
   const { user, showLoginPopup, showSignupPopup } = useAuthStore();
 
@@ -75,6 +75,10 @@ const App = () => {
             element={<RoomInformationPage />}
           />
           <Route path="facilities" element={<FacilitiesPage />} />
+          <Route
+            path="facilities/facility/:facilityId"
+            element={<FacilityDetailPage />}
+          />
           <Route path="event" element={<EventPage />} />
           <Route path="contact-us" element={<ContactUsPage />} />
           <Route

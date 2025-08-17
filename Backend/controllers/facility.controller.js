@@ -229,6 +229,21 @@ const createFacility = async (req, res) => {
   }
 };
 
+const getCertainFacility = async (req, res) => {
+  const { facilityId } = req.params
+  try {
+    const facility = await Facility.findById(facilityId);
+    if (!facility) {
+     return res.status(401).json({ error: "facility not found" });
+    }
+    res.status(200).json(facility);
+  } catch (error) {
+    console.error("Error in getCertainFacility:", error.message);
+    res.status(500).json({ error: error.message });
+  }
+}
+
+
 export default {
   getFacility,
   getAdminPageFacility,
@@ -236,4 +251,5 @@ export default {
   updateFacility,
   updateFacilityStatus,
   createFacility,
+  getCertainFacility,
 };

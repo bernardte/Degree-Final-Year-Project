@@ -4,11 +4,13 @@ import axiosInstance from "@/lib/axios";
 
 interface FacilityStore {
   facilities: Facility[];
+  facility: Facility | null;
   isLoading: boolean;
   totalPages: number;
   currentPage: number;
   error: string | null;
   fetchFacility: () => Promise<void>;
+  fetchCertainFacility: (facilityId: string) => Promise<void>;
   fetchPaginatedFacility: (page: number) => Promise<void>;
   removeFacility: (facilityId: string) => void;
   createFacility: (facility: Facility) => void;
@@ -17,6 +19,7 @@ interface FacilityStore {
 
 const useFacilityStore = create<FacilityStore>((set) => ({
   facilities: [],
+  facility: null,
   isLoading: false,
   totalPages: 1,
   currentPage: 1,
@@ -24,7 +27,9 @@ const useFacilityStore = create<FacilityStore>((set) => ({
   fetchPaginatedFacility: async (page: number, limit = 10) => {
     try {
       set({ isLoading: true, error: null });
-      const response = await axiosInstance.get(`/api/facilities/paginated?page=${page}&limit=${limit}`);
+      const response = await axiosInstance.get(
+        `/api/facilities/paginated?page=${page}&limit=${limit}`,
+      );
       const { facility, totalPages, currentPage } = await response.data;
       set({ facilities: facility, totalPages, currentPage, isLoading: false });
     } catch (error: any) {
@@ -33,7 +38,20 @@ const useFacilityStore = create<FacilityStore>((set) => ({
       set({ isLoading: false });
     }
   },
-  fetchFacility: async() => {
+  fetchCertainFacility: async (facilityId: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await axiosInstance.get(
+        `/api/facilities/facility/${facilityId}`,
+      );
+      set({ facility: response?.data })
+    } catch (error: any) {
+      set({ error: error?.response?.data?.errror })
+    }finally{
+      set({ isLoading: false });
+    }
+  },
+  fetchFacility: async () => {
     try {
       set({ isLoading: true, error: null });
       const response = await axiosInstance.get("/api/facilities");
@@ -42,8 +60,8 @@ const useFacilityStore = create<FacilityStore>((set) => ({
       set({ facilities: data, isLoading: false });
     } catch (error: any) {
       set({ error: error.message, isLoading: false });
-    }finally{
-        set({ isLoading: false });
+    } finally {
+      set({ isLoading: false });
     }
   },
 
@@ -55,18 +73,21 @@ const useFacilityStore = create<FacilityStore>((set) => ({
 
   removeFacility: (facilityId: string) => {
     set((prevState) => ({
-      facilities: prevState.facilities.filter((facility) => facility._id !== facilityId),
+      facilities: prevState.facilities.filter(
+        (facility) => facility._id !== facilityId,
+      ),
     }));
   },
 
   updateFacility: (facilityId: string, updatedFacility: Facility) => {
     set((prevState) => ({
       facilities: prevState.facilities.map((facility) =>
-        facility._id === facilityId ? { ...facility, ...updatedFacility } : facility
+        facility._id === facilityId
+          ? { ...facility, ...updatedFacility }
+          : facility,
       ),
     }));
   },
-
 }));
 
 export default useFacilityStore;

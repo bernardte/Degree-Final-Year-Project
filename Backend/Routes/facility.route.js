@@ -6,6 +6,7 @@ const app = express();
 const router = express.Router();
 
 router.get("/", facilityController.getFacility);
+router.get("/facility/:facilityId", facilityController.getCertainFacility)
 router.get("/paginated", facilityController.getAdminPageFacility);
 
 router.use(protectRoute, verifyRole);

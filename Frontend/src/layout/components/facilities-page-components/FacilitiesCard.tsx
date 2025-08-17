@@ -1,6 +1,7 @@
 import { Facility } from "@/types/interface.type";
 import * as LucideIcons from "lucide-react";
 import { ComponentType } from "react";
+import { Link } from "react-router-dom";
 
 interface facilityProps {
   facility: Facility;
@@ -12,7 +13,7 @@ const FacilitiesCard = ({ facility }: facilityProps) => {
     className?: string;
     style?: React.CSSProperties;
   }>;
-  
+
   return (
     <div className="group relative overflow-hidden rounded-2xl bg-white shadow-xl transition-all duration-500 hover:shadow-2xl">
       {/* Image Area */}
@@ -56,23 +57,25 @@ const FacilitiesCard = ({ facility }: facilityProps) => {
         </p>
 
         {/* learn more button */}
-        <button className="mt-2 flex items-center text-sm font-medium text-blue-600 transition-colors group-hover:text-blue-800">
-          Learn more
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M9 5l7 7-7 7"
-            />
-          </svg>
-        </button>
+        <Link to={`facility/${facility._id}`}>
+          <button className="mt-2 flex items-center text-sm font-medium text-blue-600 transition-colors group-hover:text-blue-800 cursor-pointer">
+            Learn more
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 5l7 7-7 7"
+              />
+            </svg>
+          </button>
+        </Link>
       </div>
     </div>
   );
