@@ -9,6 +9,8 @@ const permissions = {
     events: ["view_all", "update_event_status"],
     amenities: ["view_all"],
     rateAndReview: ["create"],
+    OTP: ["view"],
+    settings: ["view"]
   },
 
   superAdmin: {
@@ -30,6 +32,7 @@ const permissions = {
     OTP: ["view", "update", "create"],
     rateAndReview: ["create"],
     rewardPoints: ["update", "create", "delete"],
+    settings: ["update", "view"]
   },
 
   user: {

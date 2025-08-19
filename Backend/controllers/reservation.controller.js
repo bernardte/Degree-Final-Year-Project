@@ -2,7 +2,6 @@ import Reservation from "../models/reservation.model.js"
 
 const handleNewReservation = async (req, res) => {
     const { name, email, phone, totalGuest, date, time, category } = req.body;
-    console.log(req.body)
     if(!name || !email || !phone || !totalGuest || !date || !time || !category){
         return res.status(400).json({ error: "All field required" });
     }

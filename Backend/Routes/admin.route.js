@@ -19,13 +19,6 @@ router.patch(
   adminControllers.updateUserRole
 );
 
-// changeOTP
-router.post(
-  "/change-otp",
-  accessControl("OTP", "update"),
-  adminControllers.changeOTPVerificationCode
-);
-
 // room
 router.post(
   "/add-room",

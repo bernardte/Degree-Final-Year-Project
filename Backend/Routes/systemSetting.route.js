@@ -19,4 +19,30 @@ router
   .route("/getAllRewardHistory")
   .get(systemSettingController.getAllRewardPointHistory);
 
+router.get(
+  "/get-hotel-information",
+  accessControl("settings", "view"),
+  systemSettingController.getHotelInformation
+);
+
+//get admin access OTP
+router.get(
+  "/get-admin-access-otp",
+  accessControl("OTP", "view"),
+  systemSettingController.getAdminAccessOTP
+);
+
+// changeOTP
+router.post(
+  "/change-otp",
+  accessControl("OTP", "update"),
+  systemSettingController.changeOTPVerificationCode
+);
+
+router.patch(
+  "/save-all-settings",
+  accessControl("settings", "update"),
+  systemSettingController.updateSettings
+);
+
 export default router;

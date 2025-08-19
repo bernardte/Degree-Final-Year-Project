@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useRef } from "react";
 import useAuthStore from "@/stores/useAuthStore";
 import io, { Socket } from "socket.io-client";
+import { generateSessionId } from "@/utils/generateSessionId";
 
 const SocketContext = createContext<Socket | null>(null);
 
@@ -23,6 +24,7 @@ export const SocketContextProvider = ({
     if (!guestId) {
       guestId = `guest_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
       localStorage.setItem("guestId", guestId);
+      generateSessionId(); //* To ensure non login user has sessionId for backend to track their activity log
     }
 
     // 1. Connect to socket only once

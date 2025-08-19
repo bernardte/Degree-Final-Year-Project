@@ -9,6 +9,7 @@ import {
   LayoutGrid,
   CalendarRange,
   MessageCircleMore,
+  Settings2,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -137,7 +138,6 @@ const Sidebar = () => {
           link={() => navigate("/admin-chat")}
           open={open}
         />
-
         <Option
           Icon={Bell}
           title="Notification"
@@ -149,7 +149,16 @@ const Sidebar = () => {
           open={open}
           notify={unreadNotification}
         />
-
+        <Option
+          Icon={Settings2}
+          title="Setting"
+          selected={selected}
+          titleColor="text-stone-500"
+          IconColor="text-stone-500"
+          setSelected={setSelected}
+          link={() => navigate("/admin-setting")}
+          open={open}
+        />
         <Option
           Icon={LogOut}
           title="Logout"

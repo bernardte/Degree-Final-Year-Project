@@ -1,5 +1,6 @@
 import axios from "axios";
 import useAuthStore from "../stores/useAuthStore";
+import { generateSessionId } from "@/utils/generateSessionId";
 
 const axiosInstance = axios.create({
   baseURL: "http://localhost:5000",
@@ -10,12 +11,18 @@ axiosInstance.interceptors.request.use(
   async (config) => {
     try {
       const token = useAuthStore.getState().token;
+      const sessionId = generateSessionId();
       console.log("Interceptor Token:", token);
+      console.log("Interceptor Session ID:", sessionId);
 
       if (token) {
         config.headers["Authorization"] = `Bearer ${token}`;
       }
 
+      // Ensure sessionId is always set in headers for all requests
+      config.headers["x-session-id"] = sessionId;
+
+      // default to application/json if not set
       if (!config.headers["Content-Type"]) {
         config.headers["Content-Type"] = "application/json";
       }

@@ -20,7 +20,11 @@ interface BookingStore {
   clearBookingInformation: () => void;
   fetchBooking: () => Promise<void>;
   fetchAllBookingViewInCalendar: () => Promise<void>;
-  fetchAllBooking: (page: number) => Promise<void>;
+  fetchAllBooking: (
+    page: number,
+    limit?: number,
+    searchTerm?: string,
+  ) => Promise<void>;
   removeBooking: (bookingId: string) => void;
   fetchAllCancelBookingRequest: () => Promise<void>;
   fetchAllAcceptCancelledBooking: () => Promise<void>;
@@ -120,10 +124,11 @@ const useBookingStore = create<BookingStore>((set) => ({
       .finally(() => set({ isLoading: false }));
   },
 
-  fetchAllBooking: async (page: number, limit = 10) => {
+  fetchAllBooking: async (page: number, limit = 10, searchTerm = "") => {
     set({ isLoading: true, error: null });
+    console.log("Fetching all bookings with search term: ", searchTerm);
     axiosInstance
-      .get(`/api/admin/get-all-bookings?page=${page}&limit=${limit}`)
+      .get(`/api/admin/get-all-bookings?page=${page}&limit=${limit}&search=${searchTerm}`)
       .then((response) => {
         const { bookings, totalPages, currentPage } = response.data;
         set({ bookings, totalPages, currentPage });

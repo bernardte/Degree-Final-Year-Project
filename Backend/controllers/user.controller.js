@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import { v2 as cloudinary } from "cloudinary";
 import generateTokensAndSetCookies from "../utils/generateTokensAndSetCookies.js";
 import { uploadToCloudinary } from "../utils/uploadToCloudinary.js";
+import OTP from "../models/adminOTP.model.js";
 
 const signupUser = async (req, res) => {
   const { name, username, email, password } = req.body;
@@ -77,7 +78,7 @@ const loginUser = async (req, res) => {
     if (!isPasswordCorrect)
       return res.status(400).json({ error: "Invalid username or password" });
 
-    const { accessToken }= generateTokensAndSetCookies(user._id, res, user.role);
+    const { accessToken } = generateTokensAndSetCookies(user._id, res, user.role);
 
     res.status(200).json({
       _id: user._id,
@@ -260,23 +261,23 @@ const getCurrentLoginUser = async (req, res) => {
   }
 }
 
-// TODO: must change otp after have admin controller
 const verifyOTP = async (req, res) => {
   const { otp } = req.body;
   const loginUserId = req.user._id
   console.log(otp);
-  const tempOTP = process.env.TEMPORARY_OTP;
 
   if (!otp)
     return res.status(400).json({ error: "OTP are required" });
 
-  // temporary otp
-  //check if the otp is valid
-  if (otp !== tempOTP) {
-    return res.status(400).json({ error: "Invalid OTP" });
-  }
-
   try {
+    const verifyOTP = OTP.findOne({
+      otpCode: otp,
+    });
+
+    if(!verifyOTP){
+      return res.status(400).json({ error: "Invalid OTP" });
+    }
+
     const user = await User.findById({ _id: loginUserId });
 
     if (!user) {

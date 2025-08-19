@@ -20,10 +20,24 @@ const getUser = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 5;
     const skip = (page - 1) * limit;
+    const searchTerm = req.query.search || "";
+    console.log("searchTerm: ", searchTerm);
+
+    let query = {};
+    if (searchTerm) {
+      query = {
+        $or: [
+          { username: { $regex: searchTerm, $options: "i" } },
+          { role: { $regex: searchTerm, $options: "i" } },
+          { userEmail: { $regex: searchTerm, $options: "i" } },
+        ],
+      };
+    }
+
 
     const [users, totalCount] = await Promise.all([
-      User.find().skip(skip).limit(limit).select("-password"),
-      User.countDocuments(),
+      User.find(query).skip(skip).limit(limit).select("-password"),
+      User.countDocuments(query),
     ]);
 
     if (!users) {
@@ -93,43 +107,6 @@ const updateUserRole = async (req, res) => {
   }
 };
 
-//OTP update
-const changeOTPVerificationCode = async (req, res) => {
-  const { newOTP } = req.body;
-  const superAdminId = req.user._id;
-
-  if (!newOTP) {
-    return res.status(400).json({ error: "OTP cannot be empty" });
-  }
-
-  try {
-    const updatedOTP = await OTP.findOneAndUpdate(
-      { superAdminId }, //filter
-      { otpCode: newOTP }, //update otp
-      { new: true, upsert: true } //if not found then create
-    );
-
-    //* Notify all admins
-    const allAdmins = await User.find({
-      role: { $in: ["admin", "superAdmin"] },
-    });
-    const adminIds = allAdmins.map((admin) => admin._id);
-
-    await notifyUsers(
-      adminIds,
-      `Admin portal access OTP has been updated to ${newOTP} by ${req.user.name}`,
-      "system"
-    );
-
-    res.status(200).json({
-      message: "OTP updated successfully",
-      updatedOTP,
-    });
-  } catch (error) {
-    console.log("Error in changeOTPVerificationCode", error.message);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
-};
 
 // create room by admin panel
 const addRoom = async (req, res) => {
@@ -570,6 +547,8 @@ const getAllBookings = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 5;
+    const searchTerm = req.query.search || "";
+    console.log("search: ", searchTerm);
     //* If page = 1, then skip = 0, meaning no records skipped, start from the first record.
     //* If page = 2 and limit = 10, then skip = 10, meaning skip the first 10 records, start from the 11th record.
     //* If page = 3 and limit = 10, then skip = 20, skip the first 20 records, start from the 21st.
@@ -584,14 +563,25 @@ const getAllBookings = async (req, res) => {
         { $set: { status: "completed" }}
       )
 
+      let query = {};
+      if (searchTerm) {
+        query = {
+          $or: [
+            { userEmail: { $regex: searchTerm, $options: "i" } },
+            { contactEmail: { $regex: searchTerm, $options: "i" } },
+            { bookingReference: { $regex: searchTerm, $options: "i" } },
+          ],
+        };
+      }
+
     const [bookings, totalCount] = await Promise.all([
-      Booking.find()
+      Booking.find(query)
         .skip(skip) // skip first 5 bookings
         .limit(limit) // get next 5 bookings
         .populate("room", "roomType pricePerNight")
         .populate("bookingCreatedByUser", "name email")
         .sort({ createdAt: -1 }),
-      Booking.countDocuments(),
+      Booking.countDocuments(query),
     ]);
 
     if (!bookings || bookings.length === 0) {
@@ -1185,7 +1175,6 @@ const rejectEvents = async (req, res) => {
 export default {
   getUser,
   updateUserRole,
-  changeOTPVerificationCode,
   addRoom,
   updateRoom,
   updateRoomStatus,

@@ -34,7 +34,7 @@ const policies = {
   payments: {
     view_all: isSuperAdminOrAdmin,
     update_payment_status: isSuperAdminOrAdmin,
-    approve_refund: isSuperAdmin, //todo: haven't created yet
+    approve_refund: isSuperAdmin, 
   },
 
   reports: {
@@ -66,7 +66,7 @@ const policies = {
   },
 
   OTP: {
-    view: isSuperAdmin,
+    view: isSuperAdminOrAdmin,
     update: isSuperAdmin,
     create: isSuperAdmin,
   },
@@ -74,6 +74,10 @@ const policies = {
     update: isSuperAdmin,
     create: isSuperAdmin,
     delete: isSuperAdmin,
+  },
+  settings: {
+    update: isSuperAdmin,
+    view: isSuperAdminOrAdmin,
   }
 };
 

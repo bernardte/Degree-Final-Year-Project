@@ -2,6 +2,7 @@ import RewardHistory from "../models/rewardHistory.model.js";
 import SystemSetting from "../models/systemSetting.model.js";
 import notifyUsers from "../utils/notificationSender.js";
 import User from "../models/user.model.js";
+import OTP from "../models/adminOTP.model.js"
 
 const updateRewardPointSetting = async (req, res) => {
     const { settings } = req.body;
@@ -61,10 +62,129 @@ const getAllRewardPointHistory = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
+//OTP update
+const changeOTPVerificationCode = async (req, res) => {
+  const { newOTP } = req.body;
+  const superAdminId = req.user._id;
+
+  if (!newOTP) {
+    return res.status(400).json({ error: "OTP cannot be empty" });
+  }
+
+  try {
+    const updatedOTP = await OTP.findOneAndUpdate(
+      { superAdminId }, //filter
+      { otpCode: newOTP }, //update otp
+      { new: true, upsert: true } //if not found then create
+    );
+
+    //* Notify all admins
+    const allAdmins = await User.find({
+      role: { $in: ["admin", "superAdmin"] },
+    });
+    const adminIds = allAdmins.map((admin) => admin._id);
+
+    await notifyUsers(
+      adminIds,
+      `Admin portal access OTP has been updated to ${newOTP} by ${req.user.name}`,
+      "system"
+    );
+
+    res.status(200).json({
+      message: "OTP updated successfully",
+      updatedOTP,
+    });
+  } catch (error) {
+    console.log("Error in changeOTPVerificationCode", error.message);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+const getAdminAccessOTP = async (req, res) => {
+  const superAdminId = req.user._id;
+
+  try {
+    const otp = await OTP.findOne({ superAdminId }).select("otpCode");
+    if(!otp){
+      return res.status(404).json({ error: "OTP not found" });
+    }
+
+    res.status(200).json({
+      success: true, 
+      accessCode: otp.otpCode,
+    })
+  } catch (error) {
+    console.log("Error in getAdminAccessOTP: ", error.message);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+const updateSettings = async (req, res) => {
+  const { settings, key } = req.body;
+  const username = req.user.name;
+  if(!settings || !key) {
+    return res.status(400).json({ error: "All fields are required" });
+  }
+
+  try {
+    const updatedSetting = await SystemSetting.findOneAndUpdate(
+      { key }, // filter by key
+      { value: settings, updatedAt: Date.now() }, //update value and timestamp
+      { new: true, upsert: true } //upsert: true to create if not exists
+    )
+
+    if(!updatedSetting){
+      return res.status(404).json({ error: "Settings not found" })
+    }
+
+    //* Notify all admins
+    const allAdmins = await User.find({
+      role: { $in: ["admin", "superAdmin"] },
+    });
+    const adminIds = allAdmins.map((admin) => admin._id);
+
+    await notifyUsers(
+      adminIds,
+      `System setting "${key}" has been updated by ${username}`,
+      "system"
+    );
+    res.status(200).json({
+      success: true,
+      message: "Settings updated successfully",
+      updatedSettings: updatedSetting,
+    })
+  } catch (error) {
+    console.log("Error in updatedHotelInformation: ", error.message);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+const getHotelInformation = async (req, res) => {
+  try {
+    const hotelInfo = await SystemSetting.findOne({ key: "Hotel Information"}).select("value");
+
+    if(!hotelInfo){
+      return res.status(404).json({ error: "Hotel information not found" });
+    }
+
+    res.status(200).json({
+      success: true,
+      hotelInformation: hotelInfo.value
+    })
   
+  } catch (error) {
+    console.log("Error in getHotelInformation: ", error.message);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
  
 export default {
   updateRewardPointSetting,
   getRewardPointSetting,
+  changeOTPVerificationCode,
   getAllRewardPointHistory,
+  getAdminAccessOTP,
+  updateSettings,
+  getHotelInformation
 };

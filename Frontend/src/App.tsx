@@ -44,6 +44,7 @@ import InvoiceDetail from "./layout/components/invoice-component/InvoiceDetail";
 import ImageGalleryPage from "./pages/image galery page/ImageGalleryPage";
 import FAQPage from "./pages/FAQ page/FAQPage";
 import FacilityDetailPage from "./pages/Facilities page/FacilityDetail";
+import AdminSettingPage from "./pages/Admin Setting Page/AdminSettingPage";
 const App = () => {
   const { user, showLoginPopup, showSignupPopup } = useAuthStore();
 
@@ -147,7 +148,8 @@ const App = () => {
               path="/admin-notification"
               element={<AdminNotificationPage />}
             />
-          </Route>
+            <Route path="/admin-setting" element={<AdminSettingPage />} />
+           </Route>
         </Route>
 
         {/* Catch-all route */}

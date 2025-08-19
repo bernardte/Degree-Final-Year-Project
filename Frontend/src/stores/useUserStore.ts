@@ -11,7 +11,7 @@ interface userStore {
     totalPages: number
     updateRole: (userId: string, newRole: "superAdmin" | "admin" | "user") => void;
     setUser: (user: User[]) => void;
-    fetchUser: (page: number) => Promise<void>;
+    fetchUser: (page: number, limit?: number, searchTerm?: string) => Promise<void>;
     fetchCurrentLoginUser: () => Promise<void>;
 }
 
@@ -28,10 +28,10 @@ const useUserStore = create<userStore>((set) => ({
         user: prevState.user.map((user) => user._id === userId ? { ...user, role: newRole} : user)
     }))
   },
-  fetchUser: async (page: number, limit = 5) => {
+  fetchUser: async (page: number, limit = 5, searchTerm = "") => {
     set({ isLoading: true, error: null });
     try {
-      const response = await axiosInstance.get(`/api/admin/get-user?page=${page}&limit=${limit}`);
+      const response = await axiosInstance.get(`/api/admin/get-user?page=${page}&limit=${limit}&search=${searchTerm}`);
       const { users, totalPages, currentPage } = response.data;
       set({ user: users, totalPages, currentPage });
       console.log(users);
