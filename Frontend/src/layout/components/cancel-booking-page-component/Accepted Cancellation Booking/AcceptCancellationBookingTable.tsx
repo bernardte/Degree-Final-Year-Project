@@ -10,9 +10,18 @@ import useBookingStore from "@/stores/useBookingStore";
 import { formatDateInBookingCheckOut } from "@/utils/formatDate";
 import { motion } from "framer-motion";
 import { ClipboardList, Clock, Mail, User2 } from "lucide-react";
+import { useEffect } from "react";
 
 const AcceptCancellationBookingTable = () => {
-  const { isLoading, error, acceptCancelledBookingsRequest } = useBookingStore();
+  const { isAcceptCancelledBookingsRequestLoading, error, acceptCancelledBookingsRequest } = useBookingStore((state) => state);
+  const fetchAllAcceptCancelledBooking = useBookingStore(
+    (state) => state.fetchAllAcceptCancelledBooking,
+  );
+    useEffect(() => {
+      fetchAllAcceptCancelledBooking();
+    }, [fetchAllAcceptCancelledBooking]);
+   
+  
   if (error) {
     return (
       <div className="flex h-full items-center justify-center">
@@ -21,7 +30,7 @@ const AcceptCancellationBookingTable = () => {
     );
   }
 
-  if (isLoading) {
+  if (isAcceptCancelledBookingsRequestLoading) {
     return (
       <motion.div
         initial={{ opacity: 0 }}

@@ -78,7 +78,7 @@ const EventPage = () => {
             className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm"
             onClick={() => setOpenForm(false)}
           />
-          <div className="fixed top-1/2 left-1/2 z-50 -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white p-6 shadow-xl">
+          <div className="fixed top-1/2 left-1/2 z-50 -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white p-6 shadow-xl mt-7">
             <EventInquireForm title={"Event Request Form"} />
           </div>
         </>

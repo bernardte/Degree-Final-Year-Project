@@ -16,7 +16,7 @@ import UserActivityTrackSetting from "@/layout/components/admin-page-component/s
 import axiosInstance from "@/lib/axios";
 
 const AdminSettingPage = () => {
-  // 状态管理
+  // status manage
   const [adminCode, setAdminCode] = useState("");
   const [newAdminCode, setNewAdminCode] = useState("");
   const [confirmAdminCode, setConfirmAdminCode] = useState("");

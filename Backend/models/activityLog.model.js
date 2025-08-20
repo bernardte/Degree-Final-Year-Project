@@ -4,7 +4,8 @@ import mongoose from "mongoose";
 const ActivityLogSchema = new mongoose.Schema(
   {
     userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", index: true },
-    sessionId: { type: String, index: true }, // 前端或服务端生成
+    userRole: { type: String, enum: ["admin", "superAdmin", "user", "bot", "guest"], default: "guest"  },
+    sessionId: { type: String, index: true }, // frontend generate sessionId for each users and return back to backend
     type: { type: String, required: true, index: true }, // 'login' | 'logout' | 'page_view' | 'action' | 'login_failed' ...
     action: { type: String }, // 'click_button', 'search', 'download_report' ...
     metadata: { type: mongoose.Schema.Types.Mixed }, // 自定义数据：页面URL、按钮ID、查询条件等

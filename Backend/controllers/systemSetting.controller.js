@@ -102,10 +102,8 @@ const changeOTPVerificationCode = async (req, res) => {
 };
 
 const getAdminAccessOTP = async (req, res) => {
-  const superAdminId = req.user._id;
-
   try {
-    const otp = await OTP.findOne({ superAdminId }).select("otpCode");
+    const otp = await OTP.findOne().select("otpCode");
     if(!otp){
       return res.status(404).json({ error: "OTP not found" });
     }

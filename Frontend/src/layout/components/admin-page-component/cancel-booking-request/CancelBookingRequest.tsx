@@ -9,7 +9,7 @@ import {
 import { formatDateInBookingCheckOut } from "@/utils/formatDate";
 import { ActionButtonWithAcceptDecline } from "../../share-components/ActionButton";
 import useBookingStore from "@/stores/useBookingStore";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import useToast from "@/hooks/useToast";
 import axiosInstance from "@/lib/axios";
 import useStatisticStore from "@/stores/useStatisticStore";
@@ -17,10 +17,18 @@ import { ClipboardList, Clock, Mail } from "lucide-react";
 import { motion } from "framer-motion";
 
 const CancelBookingRequest = () => {
-    const { cancelledBookings, updateBookingStatus, updateCancelBookingRequest, isLoading: isTableLoading, error } = useBookingStore();
+    const { cancelledBookings, updateBookingStatus, updateCancelBookingRequest, isCancelBookingRequestLoading, error } = useBookingStore((state) => state);
+
+    const fetchAllCancelBookingRequest = useBookingStore(
+      (state) => state.fetchAllCancelBookingRequest,
+    );
     const { updateRefundBooking } = useStatisticStore();
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const { showToast } = useToast();
+
+    useEffect(() => {
+       fetchAllCancelBookingRequest();
+     }, [fetchAllCancelBookingRequest]);
 
     async function handleAccepted(
       requestId: string,
@@ -98,7 +106,7 @@ const CancelBookingRequest = () => {
       );
     }
 
-    if (isTableLoading) {
+    if (isCancelBookingRequestLoading) {
       return (
         <motion.div
           initial={{ opacity: 0 }}

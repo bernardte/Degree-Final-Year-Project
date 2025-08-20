@@ -27,7 +27,7 @@ import roomStatusScheduler from "./cronjob/roomStatusScheduler.js";
 import { initializeSocket } from "./config/socket.js";
 import { createServer } from "http"; //http server
 import { initAISocket } from "./websocket/websocket.js";
-import { baseLogger } from "./middleware/activityLogger.js";
+import { activityLogger } from "./middleware/activityLogger.js";
 
 dotenv.config();
 const app = express();
@@ -41,25 +41,25 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
-app.use(baseLogger); //* Use activity logger middleware, to keep track of user activities
 
 const PORT = process.env.PORT || 5000;
 
 const __dirname = path.resolve();
 
 app.use(
-    fileupload({
-        useTempFiles: true,
-        tempFileDir: path.join(__dirname, "temp"),
-        createParentPath: true,
-        limits: {
-            fileSize: 10 * 1024 * 1024, // 10MB
-        },
-    }
+  fileupload({
+    useTempFiles: true,
+    tempFileDir: path.join(__dirname, "temp"),
+    createParentPath: true,
+    limits: {
+      fileSize: 10 * 1024 * 1024, // 10MB
+    },
+  }
 ))
 
 const httpServer = createServer(app);
 initializeSocket(httpServer)
+app.use(activityLogger); //* Use activity logger middleware, to keep track of user recent activities
 
 app.use("/api/users", usersRoute);
 app.use("/api/rooms", roomRoute);

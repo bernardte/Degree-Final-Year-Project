@@ -14,7 +14,7 @@ import {
   LayoutDashboard,
   ShieldAlert,
   ShieldCheck,
-} from "lucide-react"; // Added more icons
+} from "lucide-react"; 
 import AcceptCancellationBookingTable from "@/layout/components/cancel-booking-page-component/Accepted Cancellation Booking/AcceptCancellationBookingTable";
 import RequireRole from "@/permission/RequireRole";
 import { ROLE } from "@/constant/roleList";
@@ -26,11 +26,8 @@ import PieChartDistribution from "@/layout/components/chart/PieChartDistribution
 const UserManagePage = () => {
   // State management hooks
   const { fetchUser } = useUserStore();
-  const {
-    fetchAllBooking,
-    fetchAllAcceptCancelledBooking,
-    fetchAllCancelBookingRequest,
-  } = useBookingStore();
+  const fetchAllBooking = useBookingStore((state) => state.fetchAllBooking);
+
   const { fetchAllStatisticCardData } = useStatisticStore();
   const {
     handleDeleteAllAcceptCancelledBooking,
@@ -46,8 +43,6 @@ const UserManagePage = () => {
         fetchUser(1),
         fetchAllBooking(1),
         fetchAllStatisticCardData(),
-        fetchAllAcceptCancelledBooking(),
-        fetchAllCancelBookingRequest(),
       ]);
       setIsLoading(false);
     };

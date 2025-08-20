@@ -31,7 +31,7 @@ const enquireEvents = async (req, res) => {
     const adminIds = allAdmins.map((admin) => admin._id);
     await notifyUsers(
       adminIds,
-      `New Event Enquire Request from ${fullname} and ${email}`,
+      `New Event Enquire Request from ${name} and ${email}`,
       "event"
     );
 

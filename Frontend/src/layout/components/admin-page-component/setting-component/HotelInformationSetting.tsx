@@ -1,4 +1,5 @@
 import RequireRole from "@/permission/RequireRole";
+import useAuthStore from "@/stores/useAuthStore";
 import {
     Hotel,
     Save,
@@ -25,6 +26,9 @@ const HotelInformationSetting = ({
   saveAllSettings,
 }: HotelInformationSettingProps) => {
 
+  const user = useAuthStore(state => state);
+  const disabledUserToInput = user?.roles === "admin"
+
   
   return (
     <div className="mb-8 rounded-xl bg-white p-6 shadow-md">
@@ -46,6 +50,7 @@ const HotelInformationSetting = ({
               name="name"
               value={hotelInfo?.name || ""}
               onChange={handleHotelInfoChange}
+              disabled={disabledUserToInput}
               className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -58,6 +63,7 @@ const HotelInformationSetting = ({
               name="email"
               value={hotelInfo?.email || ""}
               onChange={handleHotelInfoChange}
+              disabled={disabledUserToInput}
               className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -70,6 +76,7 @@ const HotelInformationSetting = ({
               name="phone"
               value={hotelInfo?.phone || ""}
               onChange={handleHotelInfoChange}
+              disabled={disabledUserToInput}
               className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -83,6 +90,7 @@ const HotelInformationSetting = ({
                 name="checkInTime"
                 value={hotelInfo?.checkInTime || ""}
                 onChange={handleHotelInfoChange}
+                disabled={disabledUserToInput}
                 className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -95,6 +103,7 @@ const HotelInformationSetting = ({
                 name="checkOutTime"
                 value={hotelInfo?.checkOutTime || ""}
                 onChange={handleHotelInfoChange}
+                disabled={disabledUserToInput}
                 className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -108,6 +117,7 @@ const HotelInformationSetting = ({
               value={hotelInfo?.address || ""}
               onChange={handleHotelInfoChange}
               rows={2}
+              disabled={disabledUserToInput}
               className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
             />
           </div>
