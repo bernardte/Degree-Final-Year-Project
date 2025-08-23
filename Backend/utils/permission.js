@@ -2,15 +2,21 @@ const permissions = {
   admin: {
     profile: ["update", "view"],
     users: ["update", "view"],
-    booking: ["view_all", "view", "update_booking_status", "view_own"],
+    booking: [
+      "view_all",
+      "view",
+      "update_booking_status",
+      "view_own",
+      "decline_request",
+    ],
     payments: ["view_all", "update_payment_status"],
-    reports: ["generate", "view"],
+    reports: ["view", "generate"],
     rooms: ["view_all"],
     events: ["view_all", "update_event_status"],
     amenities: ["view_all"],
     rateAndReview: ["create"],
     OTP: ["view"],
-    settings: ["view"]
+    settings: ["view"],
   },
 
   superAdmin: {
@@ -22,6 +28,7 @@ const permissions = {
       "cancel_any",
       "update_booking_status",
       "view_own",
+      "decline_request",
     ],
     rooms: ["view_all", "create_room", "delete_room", "update_room"],
     payments: ["view_all", "approve_refund", "update_payment_status"],
@@ -32,7 +39,7 @@ const permissions = {
     OTP: ["view", "update", "create"],
     rateAndReview: ["create"],
     rewardPoints: ["update", "create", "delete"],
-    settings: ["update", "view"]
+    settings: ["update", "view", "view_user_activity_tracking"],
   },
 
   user: {

@@ -11,7 +11,14 @@ interface AdminPortalAccessSettingTabProps {
   setConfirmAdminCode: Dispatch<React.SetStateAction<string>>;
 }
 
-const AdminPortalAccessSettingTab = ({ handleUpdateAccessCode, adminCode, newAdminCode, confirmAdminCode, setNewAdminCode, setConfirmAdminCode } : AdminPortalAccessSettingTabProps) => {
+const AdminPortalAccessSettingTab = ({
+  handleUpdateAccessCode,
+  adminCode,
+  newAdminCode,
+  confirmAdminCode,
+  setNewAdminCode,
+  setConfirmAdminCode,
+}: AdminPortalAccessSettingTabProps) => {
   return (
     <div className="mb-8 rounded-xl bg-white p-6 shadow-md">
       <div className="mb-6 flex items-center">
@@ -34,57 +41,57 @@ const AdminPortalAccessSettingTab = ({ handleUpdateAccessCode, adminCode, newAdm
         </p>
       </div>
       <RequireRole allowedRoles={["superAdmin"]}>
-          <form onSubmit={handleUpdateAccessCode}>
-            <div className="mb-6 grid grid-cols-1 gap-6 md:grid-cols-2">
-              <div>
-                <label className="mb-2 block font-medium text-gray-700">
-                  New Access Code
-                </label>
-                <input
-                  type="password"
-                  value={newAdminCode}
-                  onChange={(e) => setNewAdminCode(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter new access code"
-                  minLength={6}
-                  maxLength={6}
-                  required
-                />
-              </div>
-              <div>
-                <label className="mb-2 block font-medium text-gray-700">
-                  Confirm New Code
-                </label>
-                <input
-                  type="password"
-                  value={confirmAdminCode}
-                  onChange={(e) => setConfirmAdminCode(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
-                  placeholder="Confirm new access code"
-                  minLength={6}
-                  maxLength={6}
-                  required
-                />
-              </div>
+        <form onSubmit={handleUpdateAccessCode}>
+          <div className="mb-6 grid grid-cols-1 gap-6 md:grid-cols-2">
+            <div>
+              <label className="mb-2 block font-medium text-gray-700">
+                New Access Code
+              </label>
+              <input
+                type="password"
+                value={newAdminCode}
+                onChange={(e) => setNewAdminCode(e.target.value)}
+                className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+                placeholder="Enter new access code"
+                minLength={6}
+                maxLength={6}
+                required
+              />
             </div>
+            <div>
+              <label className="mb-2 block font-medium text-gray-700">
+                Confirm New Code
+              </label>
+              <input
+                type="password"
+                value={confirmAdminCode}
+                onChange={(e) => setConfirmAdminCode(e.target.value)}
+                className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+                placeholder="Confirm new access code"
+                minLength={6}
+                maxLength={6}
+                required
+              />
+            </div>
+          </div>
 
-            <div className="flex items-center">
-              <button
-                type="submit"
-                className="flex items-center rounded-lg bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700"
-                disabled={!newAdminCode || !confirmAdminCode || newAdminCode !== confirmAdminCode}
-              >
-                <Lock className="mr-2" size={18} />
-                Update Access Code
-              </button>
-              <p className="ml-4 text-sm text-gray-600">
-                Use 6 characters including letters and numbers
-              </p>
-            </div>
-          </form>
+          <div className="flex items-center">
+            <button
+              type="submit"
+              className={`flex items-center rounded-lg px-4 py-2 text-white transition ${newAdminCode.length === 0 || confirmAdminCode.length === 0 ? "bg-gray-500" : "bg-blue-600 hover:bg-blue-700"}`}
+              disabled={newAdminCode.length === 0 || confirmAdminCode.length === 0}
+            >
+              <Lock className="mr-2" size={18} />
+              Update Access Code
+            </button>
+            <p className="ml-4 text-sm text-gray-600">
+              Use 6 characters including letters and numbers
+            </p>
+          </div>
+        </form>
       </RequireRole>
     </div>
   );
-}
+};
 
-export default AdminPortalAccessSettingTab
+export default AdminPortalAccessSettingTab;

@@ -5,7 +5,6 @@ import { sanitizeSensitiveData } from "./sanitizeSensitiveData.js";
 export const anomalyDetector = async (activityLog) => {
   try {
     if (activityLog) {
-      console.log("your active log: ", activityLog);
       const { ip, action, userId, sessionId, type, metadata, device } =
         activityLog;
       //check rate limit of within 1 miniute of same ip and action request

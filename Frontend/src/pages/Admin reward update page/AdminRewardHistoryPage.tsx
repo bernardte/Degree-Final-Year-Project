@@ -88,12 +88,13 @@ const AdminRewardHistoryPage = () => {
     .filter((item) => item.type === "redeem")
     .reduce((sum, item) => sum + item.points, 0);
 
+  // total transaction in this reward point history
   const totalTransactions = rewardPointsHistory.length;
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="mb-8">
-        <h1 className="mb-2 text-2xl font-bold text-gray-800">
+        <h1 className="mb-2 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-3xl font-bold text-transparent">
           Reward Points History
         </h1>
         <p className="text-gray-600">

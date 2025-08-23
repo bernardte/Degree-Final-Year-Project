@@ -11,6 +11,8 @@ const AdminRoomCalendarPage = () => {
     fetchRoomCalendarView();
   }, [fetchRoomCalendarView]);
 
+  console.log(rooms);
+
   // Only show deactivation events (since API returns only rooms with scheduled deactivations)
   const roomEvents = rooms.map((room) => ({
     id: `deactivation-${room._id}`,
@@ -28,10 +30,14 @@ const AdminRoomCalendarPage = () => {
   }));
 
   return (
-    <div className="p-4">
+    <div className="bg-sky-50 p-4">
       <h1 className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-3xl font-bold text-transparent">
         Room Deactivation Calendar
       </h1>
+      <p className="text-gray-600 mb-5">
+        {rooms.length} {rooms.length === 1 ? "room" : "room's"}{" "}
+        scheduled
+      </p>
       <RoomCalendarView
         events={roomEvents}
         isLoading={isLoading}

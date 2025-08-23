@@ -5,9 +5,9 @@ const RewardHeader = ({ setShowModal }: {setShowModal: React.Dispatch<SetStateAc
   return (
     <div className="mb-8 flex flex-col items-center justify-between md:flex-row">
       <div>
-        <h1 className="flex items-center text-3xl font-bold text-gray-800">
+        <h1 className="flex items-center bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-3xl font-bold text-transparent">
           <Gift className="mr-3 text-indigo-600" size={32} />
-          Reward Management 
+          Reward Management
         </h1>
         <p className="mt-2 text-gray-600">
           Create, edit, and manage rewards for your hotel loyalty program

@@ -10,7 +10,8 @@ interface PaymentSummaryProps {
   checkInDate: string; // ISO date string
   checkOutDate: string; // ISO date string
   roomId: string[]; // Array of room IDs
-  appliedReward?: { code: string; discount: number } | null;//apply reward
+  appliedReward?: { code: string; discount: number } | null; //apply reward
+  breakfastIncluded: number;
 }
 
 const PaymentSummary = ({
@@ -59,6 +60,23 @@ const PaymentSummary = ({
 
   const handleContinuePayment = async () => {
     const sessionId = bookingSession.sessionId;
+
+    const metadata = {
+      page: `http://localhost:3000/booking/confirm/${sessionId}`,
+      actionId: "continue make payment",
+      params: {
+          totalPrice,
+          checkInDate,
+          roomId,
+          checkOutDate,
+          discount: appliedReward?.discount,
+          rewardCode: appliedReward?.code,
+          additionalInfo,
+          sessionId,
+      },
+      extra: {}
+    };
+
     try {
       const response = await axiosInstance.post(
         "/api/checkout/payment-gateway",
@@ -71,7 +89,12 @@ const PaymentSummary = ({
           rewardCode: appliedReward?.code,
           additionalInfo,
           sessionId,
-        },
+        },{
+          params: {
+            type: "action",
+            metadata: JSON.stringify(metadata)
+          }
+        }
       );
 
       if (response.data?.sessionUrl) {

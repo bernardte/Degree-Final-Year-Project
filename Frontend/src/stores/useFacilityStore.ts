@@ -40,9 +40,25 @@ const useFacilityStore = create<FacilityStore>((set) => ({
   },
   fetchCertainFacility: async (facilityId: string) => {
     set({ isLoading: true, error: null });
+    const metadata = {
+      page: `http://localhost:3000/facilities/facility/${facilityId}`,
+      actionId: "Entering facilities info page.",
+      params: {
+        facilityId: facilityId
+      },
+      extra: {}
+    };
+
     try {
       const response = await axiosInstance.get(
         `/api/facilities/facility/${facilityId}`,
+        {
+          params: {
+            type: "facility view",
+            action: "click facility button to get specific facility",
+            metadata: JSON.stringify(metadata),
+          }
+        }
       );
       set({ facility: response?.data })
     } catch (error: any) {

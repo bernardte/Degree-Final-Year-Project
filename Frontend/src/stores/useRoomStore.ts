@@ -68,9 +68,7 @@ const useRoomStore = create<roomStore>((set, get) => ({
   fetchPaginatedRooms: async (page: number, limit = 10) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await axiosInstance.get(
-        `/api/rooms/?page=${page}&limit=${limit}`,
-      );
+      const response = await axiosInstance.get(`/api/rooms/?page=${page}&limit=${limit}`);
       const { rooms, totalPages, currentPage } = response?.data;
       set({ rooms, totalPages, currentPage });
     } catch (error: any) {
@@ -79,6 +77,7 @@ const useRoomStore = create<roomStore>((set, get) => ({
       set({ isLoading: false });
     }
   },
+
   fetchRooms: async () => {
     set({ isLoading: true, error: null });
     try {
@@ -86,7 +85,7 @@ const useRoomStore = create<roomStore>((set, get) => ({
       set({
         rooms: response.data.map((room: Room) => ({
           ...room,
-          defaultBreakfast: room.breakfastIncluded, // 记录原本是否有早餐
+          defaultBreakfast: room.breakfastIncluded, // Record whether breakfast was originally served
         })),
       });
     } catch (error: any) {
@@ -99,7 +98,20 @@ const useRoomStore = create<roomStore>((set, get) => ({
   fetchEachRoomsType: async () => {
     set({ isLoading: true, error: null });
     try {
-      const response = await axiosInstance.get(`/api/rooms/get-each-room-type`);
+
+      const metadata = {
+        page: "http://localhost:3000/room-suite",
+        actionId: "view each room type",
+        params: {},
+        extra: {}
+      };
+
+      const response = await axiosInstance.get(`/api/rooms/get-each-room-type`, {
+        params: {
+          type: "page view",
+          metadata: JSON.stringify(metadata)
+        }
+      });
       const data = response.data;
       set({ rooms: data });
     } catch (error: any) {
@@ -112,7 +124,19 @@ const useRoomStore = create<roomStore>((set, get) => ({
   fetchRoomById: async (id: string | undefined) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await axiosInstance.get(`/api/rooms/room/${id}`);
+      const metadata = {
+        page: `http://localhost:3000/room-suite/room/${id}`,
+        actionId: "button view room",
+        params: { roomId: id },
+        extra: {}
+      }
+
+      const response = await axiosInstance.get(`/api/rooms/room/${id}`, {
+        params: {
+          type: "page view",
+          metadata: JSON.stringify(metadata)
+        },
+      });
       const data = response.data;
       console.log(data);
       set({ room: data });
@@ -127,6 +151,14 @@ const useRoomStore = create<roomStore>((set, get) => ({
     set({ isLoading: true, error: null });
 
     try {
+
+      const metadata = {
+        page: `http://localhost:3000/filter-room`,
+        actionId: "filter rooms",
+        params: filters,
+        extra: {},
+      };
+
       const params = new URLSearchParams();
 
       Object.entries(filters).forEach(([Key, value]) => {
@@ -137,9 +169,10 @@ const useRoomStore = create<roomStore>((set, get) => ({
         }
       });
 
-      const response = await axiosInstance.get(
-        `/api/rooms/filter?${params.toString()}`,
-      );
+     params.append("type", "action");
+     params.append("metadata", JSON.stringify(metadata));
+
+      const response = await axiosInstance.get(`/api/rooms/filter?${params.toString()}`);
       console.log("testing:", response.data);
       set({ filterRoom: response.data.filteredRooms });
       set({
@@ -216,10 +249,21 @@ const useRoomStore = create<roomStore>((set, get) => ({
 
   handleUpdateBreakfast: async (breakfastCount: number, sessionId: string) => {
     try {
+      const metadata = {
+        page: "http://localhost:3000/booking/confirm/" + sessionId,
+        actionId: "add breakfast",
+        params: {
+          bookingSessionId: sessionId,
+          breakfastCount: breakfastCount
+        },
+      };
       await axiosInstance.patch(
         "/api/bookings/update-breakfast-count/" + sessionId,
         {
           breakfastCount,
+          type: "action",
+          metadata: JSON.stringify(metadata),
+
         },
       );
     } catch (error: any) {

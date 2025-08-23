@@ -45,4 +45,24 @@ router.patch(
   systemSettingController.updateSettings
 );
 
+router.get(
+  "/get-user-activity",
+  accessControl("settings", "view_user_activity_tracking"),
+  systemSettingController.getUserActivityTracking
+);
+
+// fetch data in stream by SSE
+router.get(
+  "/stream-activity-fetching",
+  accessControl("settings", "view_user_activity_tracking"),
+  systemSettingController.activityStreamFetching
+);
+
+router
+  .route("/report")
+  .post(
+    accessControl("reports", "generate"),
+    systemSettingController.generateReport
+  );
+
 export default router;

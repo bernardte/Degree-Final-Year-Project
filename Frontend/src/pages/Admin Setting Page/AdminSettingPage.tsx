@@ -14,13 +14,16 @@ import HotelInformationSetting from "@/layout/components/admin-page-component/se
 import ReportGeneratorSetting from "@/layout/components/admin-page-component/setting-component/ReportGeneratorSetting";
 import UserActivityTrackSetting from "@/layout/components/admin-page-component/setting-component/UserActivityTrackSetting";
 import axiosInstance from "@/lib/axios";
+import RequireRole from "@/permission/RequireRole";
+import useAuthStore from "@/stores/useAuthStore";
+import useToast from "@/hooks/useToast";
 
 const AdminSettingPage = () => {
   // status manage
   const [adminCode, setAdminCode] = useState("");
   const [newAdminCode, setNewAdminCode] = useState("");
   const [confirmAdminCode, setConfirmAdminCode] = useState("");
-  const [reportType, setReportType] = useState("daily");
+  const [reportType, setReportType] = useState("occupancy");
   const [reportDate, setReportDate] = useState("");
   const [hotelInfo, setHotelInfo] = useState({
     name: "",
@@ -35,13 +38,22 @@ const AdminSettingPage = () => {
   const [showModal, setShowModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState<string>("");
-
+  const user = useAuthStore();
+  const { showToast } = useToast();
+  
   const handleUpdateAccessCode = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (newAdminCode === "" || confirmAdminCode === "") {
       return;
     }
+
+    if(newAdminCode.length !== 6 || confirmAdminCode.length !== 6){
+      setErrorMessage("New access code required at least 6 digits")
+      setTimeout(() => setErrorMessage(""), 3000);
+      return;
+    }
+
     if (newAdminCode !== confirmAdminCode) {
       setErrorMessage("New access code and confirmation do not match.");
       setTimeout(() => setErrorMessage(""), 3000);
@@ -97,10 +109,46 @@ const AdminSettingPage = () => {
     }, []);
     
 
-  // 处理报表生成
-  const handleGenerateReport = () => {
+  // generate report
+  const handleGenerateReport = async (startDate: Date, endDate: Date, type: string) => {
     setShowModal(true);
-    // 实际应用中这里会调用API生成报表
+     const metadata = {
+       page: "http://localhost:3000/admin-setting",
+       actionId: "generate report",
+       params: {
+         startDate,
+         endDate,
+         type
+       },
+       extra: {},
+     };
+
+    try {
+      const response = await axiosInstance.post(
+        "/api/systemSetting/report",
+        {
+          startDate,
+          endDate,
+          type,
+        },
+        {
+          params: {
+            type: "action",
+            action: "Generate new report",
+            metadata: JSON.stringify(metadata),
+          },
+        },
+      );
+    } catch (error: any) {
+      const message = error?.response?.data?.error || error?.response?.data?.message
+
+      if(message.includes("Access denied")){
+        showToast("warn", error?.response?.data?.message)
+        return;
+      }
+
+      showToast("error", error?.response?.data?.error)
+    }
   };
 
   // update hotel information without saving system setting
@@ -180,7 +228,7 @@ const AdminSettingPage = () => {
           </div>
         )}
 
-        {(errorMessage && !isSaved) && (
+        {errorMessage && (
           <div className="mb-6 rounded-lg border border-rose-400 bg-rose-100 px-4 py-3 text-rose-700">
             {errorMessage || "Opps! Something went wrong."}
           </div>
@@ -189,24 +237,28 @@ const AdminSettingPage = () => {
         {/* tab option */}
         <div className="mb-6 flex flex-wrap border-b border-gray-200">
           {[
-            { id: "access", label: "Access Code", icon: Key },
-            { id: "reports", label: "Reports", icon: FileText },
-            { id: "hotel", label: "Hotel Info", icon: Hotel },
-            { id: "activity", label: "Activity", icon: UserCog2 },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              className={`mr-2 mb-2 flex items-center rounded-t-lg px-4 py-2 text-sm font-medium ${
-                activeTab === tab.id
-                  ? "bg-blue-600 text-white"
-                  : "text-gray-700 hover:bg-gray-100"
-              }`}
-              onClick={() => setActiveTab(tab.id)}
-            >
-              <tab.icon className="mr-2" size={16} />
-              {tab.label}
-            </button>
-          ))}
+            { _id: "access", label: "Access Code", icon: Key },
+            { _id: "reports", label: "Reports", icon: FileText },
+            { _id: "hotel", label: "Hotel Info", icon: Hotel },
+            { _id: "activity", label: "Activity", icon: UserCog2 },
+          ].map((tab) => {
+            if (tab._id === "activity" && user.roles === "admin") return;
+
+            return (
+              <button
+                key={tab._id}
+                className={`mr-2 mb-2 flex items-center rounded-t-lg px-4 py-2 text-sm font-medium ${
+                  activeTab === tab._id
+                    ? "bg-blue-600 text-white"
+                    : "text-gray-700 hover:bg-gray-100"
+                }`}
+                onClick={() => setActiveTab(tab._id)}
+              >
+                <tab.icon className="mr-2" size={16} />
+                {tab.label}
+              </button>
+            );
+          })}
         </div>
 
         {/* admin access code */}
@@ -242,12 +294,14 @@ const AdminSettingPage = () => {
         )}
 
         {/* user tracking */}
-        {activeTab === "activity" && <UserActivityTrackSetting />}
+        <RequireRole allowedRoles={["superAdmin"]}>
+          {activeTab === "activity" && <UserActivityTrackSetting />}
+        </RequireRole>
       </div>
 
       {/* Report generation modal box */}
       {showModal && (
-        <div className="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black p-4">
+        <div className="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm p-4">
           <div className="w-full max-w-md rounded-xl bg-white shadow-xl">
             <div className="flex items-center justify-between border-b border-gray-200 p-4">
               <h3 className="text-lg font-semibold text-gray-800">

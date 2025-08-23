@@ -22,6 +22,7 @@ const policies = {
     update_booking_status: isSuperAdminOrAdmin,
     cancel_any: isSuperAdmin,
     view_own: isSuperAdminOrAdminOrUser,
+    decline_request: isSuperAdminOrAdmin,
   },
 
   rooms: {
@@ -34,12 +35,22 @@ const policies = {
   payments: {
     view_all: isSuperAdminOrAdmin,
     update_payment_status: isSuperAdminOrAdmin,
-    approve_refund: isSuperAdmin, 
+    approve_refund: isSuperAdmin,
   },
 
   reports: {
     view: isSuperAdminOrAdmin,
-    generate: isSuperAdminOrAdmin,
+    generate: (req) => {
+      const { type } = req.body;
+
+      //! restrict with only superadmin able to generate
+      if (["financial", "revenue"].includes(type)) {
+        return isSuperAdmin(req);
+      }
+
+      //! "occupancy" and "cancellation" allow to generate by both administrator role
+      return isSuperAdminOrAdmin;
+    },
   },
 
   assignRole: {
@@ -77,8 +88,9 @@ const policies = {
   },
   settings: {
     update: isSuperAdmin,
+    view_user_activity_tracking: isSuperAdmin,
     view: isSuperAdminOrAdmin,
-  }
+  },
 };
 
 export default policies;

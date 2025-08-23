@@ -36,9 +36,18 @@ const RewardRedemptionPage = () => {
       try {
         setLoading(true);
         const [rewardsRes, pointsRes, claimedRes] = await Promise.all([
-          request("get", "/reward/show-user-all-reward", false),
-          request("get", "/users/getUserRewardPoints", false),
-          request("get", "/reward/show-user-claimed-reward", false),
+          request("get", "/reward/show-user-all-reward", {
+            type: "page view",
+            action: "Entering reward page."
+        }, false),
+          request("get", "/users/getUserRewardPoints", {
+              type: "reward point view",
+              action: "Get specific user current remaining reward point"
+            }, false),
+          request("get", "/reward/show-user-claimed-reward", {
+                type: "reward view",
+                action: "show user reward claimed before."
+          }, false),
         ]);
 
         setRewards(rewardsRes);
@@ -66,10 +75,22 @@ const RewardRedemptionPage = () => {
     setRedeemedRewardId(rewardId);
 
     try {
+      const metadata = {
+        page: "http://localhost:3000/reward-redemption",
+        actionId: "click claimed reward button",
+        params: {
+          rewardId: rewardId
+        },
+        extra: {}
+      };
       const response = await request(
         "post",
         `/reward/reward-claim/${rewardId}`,
-        {},
+        {
+          type: "action",
+          action: `user trying to claimed the reward`,
+          metadata: JSON.stringify(metadata)
+        },
         {},
         "Reward redemption successful!",
         "success",
@@ -80,7 +101,10 @@ const RewardRedemptionPage = () => {
       // Refresh claimed rewards after redemption
       const claimedRes = await request(
         "get",
-        "/reward/show-user-claimed-reward",
+        "/reward/show-user-claimed-reward", {
+            type: "page view",
+            action: "refresh claimed reward page after redemption"
+        },
         false,
       );
       setClaimedRewards(claimedRes ?? []);

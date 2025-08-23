@@ -97,6 +97,7 @@ const useNotificationStore = create<notificationStore>()((set, get) => ({
     try {
       await axiosInstance.delete("/api/notification");
       set({ notifications: [] });
+      set({ unreadNotification: 0 });
     } catch (error: any) {
       set({ error: error?.response?.data?.error});
     }

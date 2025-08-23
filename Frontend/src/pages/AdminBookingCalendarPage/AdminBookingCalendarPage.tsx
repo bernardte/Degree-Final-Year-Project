@@ -55,7 +55,7 @@ const AdminBookingCalendarPage = () => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
-      className="p-4"
+      className="p-4 bg-sky-50"
     >
       <div className="my-2 flex flex-col items-center justify-between gap-4 md:flex-row">
         <div>

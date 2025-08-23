@@ -67,12 +67,12 @@ const loyaltyTiers = {
   },
   platinum: {
     name: "Platinum",
-    color: "#e5e4e2",
-    gradient: "linear-gradient(135deg, #f8f9fa, #e5e4e2, #d3d3d3, #f8f9fa)",
-    icon: <Gem className="text-[#e5e4e2]" />,
-    badgeClass: "bg-gradient-to-r from-gray-200 to-gray-100",
-    borderClass: "border-gray-200",
-    glowClass: "shadow-[0_0_20px_rgba(229,228,226,0.4)]",
+    color: "#6559a4",
+    gradient: "linear-gradient(135deg, #8172c1, #6559a4, #4d4487, #8172c1)",
+    icon: <Gem className="text-[#6559a4]" />,
+    badgeClass: "bg-gradient-to-r from-indigo-400 to-indigo-500",
+    borderClass: "border-indigo-400",
+    glowClass: "shadow-[0_0_20px_rgba(101,89,164,0.4)]",
   },
 };
 
@@ -103,12 +103,12 @@ const Profile = () => {
     currentLoginUser?.role?.replace(/([a-z])([A-Z])/g, "$1 $2") || "";
   const { setCurrentLoginUser } = useAuthStore();
 
-  // 获取当前用户的忠诚度等级配置
+  //Get the current user's loyalty level configuration
   const userTier = currentLoginUser?.loyaltyTier?.toLowerCase() || "bronze";
   const tierConfig =
     loyaltyTiers[userTier as keyof typeof loyaltyTiers] || loyaltyTiers.bronze;
 
-  // 获取用户数据
+  // Get user data
   useEffect(() => {
     fetchCurrentLoginUser().finally(() => setIsLoading(false));
   }, [fetchCurrentLoginUser]);
@@ -162,7 +162,7 @@ const Profile = () => {
     return newErrors;
   };
 
-  // 处理表单提交
+  // handle form submit
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -186,6 +186,18 @@ const Profile = () => {
       return;
     }
 
+    const metadata = {
+      page: "http://localhost:3000/profile",
+      actionId: "update profile",
+      params: {
+        username: formData.username,
+        email: formData.email,
+        hasNewPassword: !!formData.newPassword,
+        hasAvatar: !!avatar,
+      },
+      extra: {}
+    };
+
     setIsLoading(true);
     try {
       const payload = new FormData();
@@ -199,7 +211,12 @@ const Profile = () => {
       const { data } = await axiosInstance.put(
         `/api/users/updateProfile/${currentLoginUser?._id}`,
         payload,
-        { headers: { "Content-Type": "multipart/form-data" } },
+        { headers: { "Content-Type": "multipart/form-data" }, params: {
+          type: "action",
+          action: "update profile page",
+          metadata: JSON.stringify(metadata),
+        } },
+        
       );
 
       showToast("success", "Profile updated successfully!");
@@ -239,12 +256,12 @@ const Profile = () => {
           <h1 className="mb-2 text-3xl font-bold text-gray-900">
             Profile Settings
           </h1>
-          <p className="text-gray-600 pb-5">
+          <p className="pb-5 text-gray-600">
             Manage your account information and security
           </p>
         </div>
 
-        {/* 头像部分 */}
+        {/* avatar part */}
         <div className="mb-12 flex flex-col items-center">
           <label className="group relative cursor-pointer">
             <div
@@ -282,9 +299,9 @@ const Profile = () => {
           )}
         </div>
 
-        {/* 个人资料表单 */}
+        {/* Personal Information Form */}
         <form onSubmit={handleSubmit} className="space-y-8">
-          {/* 用户名输入 */}
+          {/* username */}
           <div className="space-y-2">
             <label className="flex items-center font-medium text-gray-700">
               <User
@@ -308,7 +325,7 @@ const Profile = () => {
             )}
           </div>
 
-          {/* 邮箱输入 */}
+          {/* email */}
           <div className="space-y-2">
             <label className="flex items-center font-medium text-gray-700">
               <Mail
@@ -334,9 +351,9 @@ const Profile = () => {
             )}
           </div>
 
-          {/* 账户信息卡片 */}
+          {/* Account Information Card */}
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            {/* 账户角色显示 */}
+            {/* Account role display */}
             <RequireRole allowedRoles={[ROLE.Admin, ROLE.SuperAdmin]}>
               <div className="space-y-2">
                 <label className="flex items-center font-medium text-gray-700">
@@ -356,7 +373,7 @@ const Profile = () => {
               </div>
             </RequireRole>
 
-            {/* 忠诚度等级显示 */}
+            {/* Loyalty level display */}
             <div className="space-y-2">
               <label className="flex items-center font-medium text-gray-700">
                 <BadgeCheck
@@ -379,7 +396,7 @@ const Profile = () => {
             </div>
           </div>
 
-          {/* 密码更新部分 */}
+          {/* password setting part */}
           <div className="space-y-6 border-t border-gray-200 pt-8">
             <div className="flex items-center justify-between">
               <h3 className="text-xl font-semibold text-gray-900">
@@ -400,7 +417,7 @@ const Profile = () => {
               </div>
             </div>
 
-            {/* 当前密码 */}
+            {/* current password */}
             <div className="space-y-2">
               <label className="flex items-center font-medium text-gray-700">
                 <Lock
@@ -436,7 +453,7 @@ const Profile = () => {
               </div>
             </div>
 
-            {/* 新密码 */}
+            {/* new password */}
             <div className="space-y-2">
               <label className="flex items-center font-medium text-gray-700">
                 <Lock
@@ -472,7 +489,7 @@ const Profile = () => {
               </div>
             </div>
 
-            {/* 确认密码 */}
+            {/* confirm password */}
             <div className="space-y-2">
               <label className="flex items-center font-medium text-gray-700">
                 <Lock
@@ -514,7 +531,7 @@ const Profile = () => {
             </div>
           </div>
 
-          {/* 表单操作按钮 */}
+          {/* form button */}
           <div className="flex justify-end gap-4 border-t border-gray-200 pt-8">
             <button
               type="button"

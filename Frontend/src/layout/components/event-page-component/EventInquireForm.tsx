@@ -70,10 +70,28 @@ const EventInquireForm = ({title} : { title: string }) => {
       setErrors(validationErrors);
       return;
     }
+    const metadata = {
+      page: "http://localhost:3000/event",
+      actionId: "submit event enquiry form",
+      params: {
+        ...formData 
+      },
+      extra: {}
+    };
 
     try{
       setIsSubmitting(true);
-      const response = await axiosInstance.post("/api/event/event-enquiry", formData);
+      const response = await axiosInstance.post(
+        "/api/event/event-enquiry",
+        formData,
+        {
+          params: {
+            type: "action",
+            action: `${name} submitting a event enquiry form`,
+            metadata: JSON.stringify(metadata)
+          },
+        },
+      );
       console.log(formData);
       if(response.data){
         showToast("success", "successfully send!")

@@ -100,9 +100,14 @@ router.patch(
   accessControl("booking", "cancel_any"),
   adminControllers.updateCancellationRequest
 ); // Update cancellation request status
+router.patch(
+  "/update-pending-status-to-confirm",
+  accessControl("booking", "update_booking_status"),
+  adminControllers.updateAllPendingBookingStatusToConfirmed
+);
 router.delete(
   "/delete-cancellation-request/:requestId",
-  accessControl("booking", "cancel_any"),
+  accessControl("booking", "decline_request"),
   adminControllers.deleteCancellationRequest
 ); // Delete cancellation request
 

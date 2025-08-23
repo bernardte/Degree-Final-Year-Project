@@ -317,3 +317,23 @@ export interface FAQ {
   answer: string;
   category: string;
 }
+
+export interface Settings {
+  _id: string;
+  action: string;
+  type: string;
+  userRole: string;
+  geo: {
+    city: string,
+    country: string;
+  }
+  userId: {
+    _id: string,
+    username: string,
+  }
+  ip: string,
+  status: "failed" | "success";
+  errorMessage: string; 
+  name: string;
+  createdAt: Date;
+}

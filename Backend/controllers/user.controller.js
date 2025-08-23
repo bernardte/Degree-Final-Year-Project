@@ -65,6 +65,7 @@ const loginUser = async (req, res) => {
     const user = await User.findOne({ email });
 
     if (!user) {
+      res.locals.errorMessage = "User not found!" 
       return res.status(400).json({ error: "User not found" });
     }
 
@@ -75,8 +76,10 @@ const loginUser = async (req, res) => {
       user?.password || ""
     );
 
-    if (!isPasswordCorrect)
+    if (!isPasswordCorrect){
+      res.locals.errorMessage = "Invalid username or password"
       return res.status(400).json({ error: "Invalid username or password" });
+    }
 
     const { accessToken } = generateTokensAndSetCookies(user._id, res, user.role);
 

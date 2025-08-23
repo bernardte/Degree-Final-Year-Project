@@ -13,6 +13,8 @@ interface BookingStore {
   totalPages: number;
   currentPage: number;
   error: string | null;
+  setUpdatePaymentStatus: (bookingId: string) => void;
+  setBookingStatus: (newStatus: "confirmed" | "pending") => void;
   updateCancelBookingRequest: (bookingId: string) => void;
   updateBookingStatus: (
     bookingId: string,
@@ -44,15 +46,36 @@ const useBookingStore = create<BookingStore>((set) => ({
   isAcceptCancelledBookingsRequestLoading: false,
   isCancelBookingRequestLoading: false,
   error: null,
+  setUpdatePaymentStatus: (bookingId: string) => {
+    set((prev) => ({
+      bookings: prev.bookings.map((booking) =>
+        bookingId === booking._id
+          ? { ...booking, paymentStatus: "refund" }
+          : booking,
+      ),
+    }));
+  },
+  setBookingStatus: (newStatus: "confirmed" | "pending") => {
+    set((prev) => ({
+      bookings: prev.bookings.map((booking) =>
+        booking.status === "pending"
+          ? { ...booking, status: newStatus }
+          : booking,
+      ),
+    }));
+  },
   handleDeleteAllAcceptCancelledBooking: async () => {
     try {
-        const response = await axiosInstance.delete("/api/bookings/deleteAllCancellationBookingRequest");
-        if(response?.data){
-          set({acceptCancelledBookingsRequest: []})
-        }
-
+      const response = await axiosInstance.delete(
+        "/api/bookings/deleteAllCancellationBookingRequest",
+      );
+      if (response?.data) {
+        set({ acceptCancelledBookingsRequest: [] });
+      }
     } catch (error: any) {
-      set({ error: error?.response?.data?.error || error?.response?.data?.message})
+      set({
+        error: error?.response?.data?.error || error?.response?.data?.message,
+      });
     }
   },
   clearBookingInformation: () => {
@@ -107,7 +130,7 @@ const useBookingStore = create<BookingStore>((set) => ({
         );
         set({ error: error.message });
       }
-    }finally{
+    } finally {
       set({ isCancelBookingRequestLoading: false });
     }
   },
@@ -134,7 +157,9 @@ const useBookingStore = create<BookingStore>((set) => ({
     set({ isLoading: true, error: null });
     console.log("Fetching all bookings with search term: ", searchTerm);
     axiosInstance
-      .get(`/api/admin/get-all-bookings?page=${page}&limit=${limit}&search=${searchTerm}`)
+      .get(
+        `/api/admin/get-all-bookings?page=${page}&limit=${limit}&search=${searchTerm}`,
+      )
       .then((response) => {
         const { bookings, totalPages, currentPage } = response.data;
         set({ bookings, totalPages, currentPage });
@@ -154,9 +179,13 @@ const useBookingStore = create<BookingStore>((set) => ({
       .get("/api/admin/get-all-bookings-view-in-calendar")
       .then((response) => {
         set({ bookings: response.data, error: null });
-      }).catch((error: any) => {
-        set({error: error?.response?.data?.error || error?.response?.data?.message})
-      }).finally(() => set({ isLoading: false }))
+      })
+      .catch((error: any) => {
+        set({
+          error: error?.response?.data?.error || error?.response?.data?.message,
+        });
+      })
+      .finally(() => set({ isLoading: false }));
   },
 
   removeBooking: (bookingId: string) => {
@@ -190,7 +219,7 @@ const useBookingStore = create<BookingStore>((set) => ({
       set({
         error: error?.response?.data?.error || error?.response?.data?.message,
       });
-    }finally{
+    } finally {
       set({ isAcceptCancelledBookingsRequestLoading: false });
     }
   },

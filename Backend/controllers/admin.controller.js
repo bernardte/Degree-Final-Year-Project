@@ -786,6 +786,23 @@ const updateBookingStatus = async (req, res) => {
   }
 };
 
+const updateAllPendingBookingStatusToConfirmed =  async (req, res) => {
+  try {
+    await Booking.updateMany(
+      { status: "pending"},
+      { $set: { status: "confirmed"} }
+    )
+
+    res.status(201).json({
+      message: `${result.modifiedCount} pending bookings updated to confirmed`,
+      newStatus: "confirmed",
+    });
+  } catch (error) {
+    console.log("Error in updateAllPendingBookingStatusToConfirmed: ", error.message);
+    res.status(500).json({ "error": "Internal Server Error" })
+  }
+}
+
 const getAllCancelledBookings = async (req, res) => {
   try {
     const cancelledBookings = await CancellationRequest.find().sort({
@@ -1186,6 +1203,7 @@ export default {
   getAllBookings,
   getAllBookingsViewInCalendar,
   updateBookingStatus,
+  updateAllPendingBookingStatusToConfirmed,
   getAllCancelledBookings,
   getAllAcceptCancelledBookings,
   updateCancellationRequest,

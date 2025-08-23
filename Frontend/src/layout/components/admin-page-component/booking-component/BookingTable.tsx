@@ -31,7 +31,6 @@ import axiosInstance from "@/lib/axios";
 import { Room } from "@/types/interface.type";
 import { ROLE } from "@/constant/roleList";
 import useStatisticStore from "@/stores/useStatisticStore";
-import useAuthStore from "@/stores/useAuthStore";
 import { Bookings } from "@/types/interface.type";
 import ViewBookingDialog from "../dialog-component/ViewBookingDialog";
 
@@ -50,10 +49,11 @@ const BookingTable = () => {
   const [booking, setBooking] = useState<Bookings | null>(null);
   const [showModal, setShowModal] = useState<boolean>(false);
   const { showToast } = useToast();
-  const user = useAuthStore((state) => state.user);
   const handleStatusChange = (bookingId: string, newStatus: string) => {
     setStatus((prev) => ({ ...prev, [bookingId]: newStatus }));
   };
+
+  const setUpdatePaymentStatus  = useBookingStore((state) => state.setUpdatePaymentStatus);
 
   const handleEdit = async (bookingId: string) => {
     if (!bookingId) return;
@@ -75,6 +75,7 @@ const BookingTable = () => {
         if (updateStatus === "cancelled") {
           updateCancelBookingRequest(response?.data?.bookingId);
           updateRefundBooking(response?.data?.refund);
+          setUpdatePaymentStatus(bookingId);
         }
       }
     } catch (error: any) {
@@ -262,23 +263,7 @@ const BookingTable = () => {
                       {booking?.paymentStatus}
                     </span>
                   </TableCell>
-                  {user?.role === ROLE.Admin ? (
-                    <TableCell>
-                      <span
-                        className={`flex items-center justify-center font-medium capitalize ${
-                          booking.status === "completed"
-                            ? "text-emerald-500"
-                            : booking.status === "cancelled"
-                              ? "text-rose-500"
-                              : booking.status === "pending"
-                                ? "text-amber-300"
-                                : "text-blue-500"
-                        }`}
-                      >
-                        {booking.status}
-                      </span>
-                    </TableCell>
-                  ) : (
+                  {
                     <TableCell>
                       {booking.status === "completed" ||
                       booking.status === "cancelled" ? (
@@ -342,7 +327,7 @@ const BookingTable = () => {
                         </Select>
                       )}
                     </TableCell>
-                  )}
+                  }
 
                   <TableCell className="text-right text-blue-500">
                     <ActionButton

@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import path from "path";
-import { connnectDB } from "./config/db.js";
+import { connectDB } from "./config/db.js";
 import usersRoute from "./Routes/users.route.js";
 import roomRoute from "./Routes/room.route.js";
 import facilityRoute from "./Routes/facility.route.js";
@@ -28,6 +28,7 @@ import { initializeSocket } from "./config/socket.js";
 import { createServer } from "http"; //http server
 import { initAISocket } from "./websocket/websocket.js";
 import { activityLogger } from "./middleware/activityLogger.js";
+import deleteTempfileScheduler from "./cronjob/deleteTempfileScheduler.js";
 
 dotenv.config();
 const app = express();
@@ -81,7 +82,8 @@ app.use("/api/reservations", reservationRoute);
 
 httpServer.listen(PORT, async () => {
     console.log("Server is running on port", PORT);
-    await connnectDB();
+    await connectDB();
+    deleteTempfileScheduler.start();
     bookingStatusUpdater.start();
     roomStatusScheduler.start();
     initAISocket();

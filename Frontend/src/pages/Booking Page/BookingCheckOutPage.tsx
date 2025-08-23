@@ -39,16 +39,15 @@ const BookingCheckOutPage = () => {
   const { rooms, fetchRooms, updateSelectedRoomBreakfast } = useRoomStore();
   const { showToast } = useToast();
   const [loadingTarget, setLoadingTarget] = useState<string | null>(null);
-  const localStorageSearchParams =
-    localStorage.getItem("searchParams") || "{}";
+  const localStorageSearchParams = localStorage.getItem("searchParams") || "{}";
   const parse = JSON.parse(localStorageSearchParams) || {};
   const [appliedReward, setAppliedReward] = useState<{
     code: string;
     discount: number;
   } | null>(null);
 
-  const user = localStorage.getItem("user")
-  const isLoggedIn = !!user; 
+  const user = localStorage.getItem("user");
+  const isLoggedIn = !!user;
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -59,10 +58,10 @@ const BookingCheckOutPage = () => {
   useEffect(() => {
     if (sessionId) {
       fetchBookingSession(sessionId);
-      console.log("reach on  added refresh")
+      console.log("reach on  added refresh");
     }
 
-    fetchRooms()
+    fetchRooms();
   }, [bookingSession?.breakfastIncluded, sessionId]);
 
   if (error) {
@@ -104,20 +103,37 @@ const BookingCheckOutPage = () => {
   };
 
   const handleApplyReward = async (code: string) => {
+    const metadata = {
+      page: "http://localhost:3000/booking/confirm/" + sessionId,
+      actionId: "apply reward code",
+      params: { code },
+      extra: {},
+    };
+
     try {
-      const response = await axiosInstance.post("/api/reward/reward-code-used", { code });
-      if(response.data?.success){
+      const response = await axiosInstance.post(
+        "/api/reward/reward-code-used",
+        { code },
+        {
+          params: {
+            type: "action",
+            action: "user applying reward code",
+            metadata: JSON.stringify(metadata),
+          },
+        },
+      );
+      if (response.data?.success) {
         setAppliedReward({ code, discount: response?.data?.discount });
         return {
           success: true,
           discount: response?.data?.discount,
-          message: response.data.message
-        }
-      }else{
+          message: response.data.message,
+        };
+      } else {
         return {
           success: false,
-          message: response.data.error
-        }
+          message: response.data.error,
+        };
       }
     } catch (error: any) {
       return {
@@ -127,15 +143,29 @@ const BookingCheckOutPage = () => {
           "Something went wrong applying reward code",
       };
     }
-   
   };
 
   const handleRemoveReward = async (code: string) => {
+     const metadata = {
+       page: "http://localhost:3000/checkout",
+       actionId: "remove reward code",
+       params: { code },
+       extra: {},
+     };
+
     try {
       const response = await axiosInstance.post(
-        "/api/reward/remove-reward-code", { code }
+        "/api/reward/remove-reward-code",
+        { code },
+        {
+          params: {
+            type: "action",
+            action: "user removing reward code",
+            metadata: JSON.stringify(metadata),
+          },
+        },
       );
-      if(response.data?.success){
+      if (response.data?.success) {
         setAppliedReward(null);
         showToast("info", `Reward ${code} removed!`);
       }
@@ -152,8 +182,6 @@ const BookingCheckOutPage = () => {
       localStorage.removeItem("searchParams");
     }, 1000);
   };
-
-  const breakfastCount = rooms.filter((r) => r.breakfastIncluded).length;
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-gradient-to-tr from-blue-100 via-white to-blue-50">
