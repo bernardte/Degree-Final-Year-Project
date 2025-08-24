@@ -337,3 +337,12 @@ export interface Settings {
   name: string;
   createdAt: Date;
 }
+
+export interface Reports {
+  _id: string,
+  name: string,
+  type: string,
+  fileFormat: string,
+  data: Record<string, any>,
+  createdAt: Date,
+}

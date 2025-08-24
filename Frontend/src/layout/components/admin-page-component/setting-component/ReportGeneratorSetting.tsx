@@ -1,11 +1,19 @@
-import { Download, FileText } from "lucide-react";
+import { Download, FileText, Trash2 } from "lucide-react";
 import { Dispatch, useState } from "react";
 import { format } from "date-fns";
 import { DayPicker, DateRange } from "react-day-picker";
-import { parse } from "date-fns"
+import { parse } from "date-fns";
 import "react-day-picker/dist/style.css";
+import { Reports } from "@/types/interface.type";
+import { formatDateInBookingCheckOut } from "@/utils/formatDate";
+import useSettingStore from "@/stores/useSettingStore";
+import useToast from "@/hooks/useToast";
+import axiosInstance from "@/lib/axios";
 
 interface ReportGeneratorSettingProps {
+  reports: Reports[];
+  error: null | string;
+  isLoading: boolean;
   reportType: string;
   setReportType: Dispatch<React.SetStateAction<string>>;
   reportDate: string;
@@ -14,10 +22,14 @@ interface ReportGeneratorSettingProps {
     startDate: Date,
     endDate: Date,
     type: string,
+    exportFileFormat: string,
   ) => Promise<void>;
 }
 
 const ReportGeneratorSetting = ({
+  reports,
+  error,
+  isLoading,
   reportType,
   setReportType,
   reportDate,
@@ -25,7 +37,10 @@ const ReportGeneratorSetting = ({
   handleGenerateReport,
 }: ReportGeneratorSettingProps) => {
   const [selectedRange, setSelectedRange] = useState<DateRange | undefined>();
-  const [isPickerOpen, setIsPickerOpen] = useState(false);
+  const [isPickerOpen, setIsPickerOpen] = useState<boolean>(false);
+  const [exportFileFormat, setExportFileFormat] = useState<string>("csv");
+  const { handleDownloadReport } = useSettingStore();
+  const { showToast } = useToast();
 
   const handleRangeSelect = (range: DateRange | undefined) => {
     setSelectedRange(range);
@@ -45,7 +60,7 @@ const ReportGeneratorSetting = ({
     }
   };
 
-  // Parse an existing date string 
+  // Parse an existing date string
   const parseExistingDate = () => {
     if (reportDate && reportDate.includes(" - ")) {
       const [fromStr, toStr] = reportDate.split(" - ");
@@ -59,6 +74,26 @@ const ReportGeneratorSetting = ({
     return undefined;
   };
 
+  const handleDeleteAllReport = async () => {
+    try {
+      const response = await axiosInstance.delete("/api/systemSetting/report");
+
+      if(response?.data?.message){
+        showToast("success", response?.data?.message)
+        useSettingStore.setState((state) => ({ reports: [] }));
+      }
+    } catch (error: any) {
+      const message =
+        error?.response?.data?.error || error?.response?.data?.message;
+
+      if (message.includes("Access denied")) {
+        showToast("warn", error?.response?.data?.message);
+        return;
+      }
+      showToast("error", error?.response?.data?.error);
+    }
+  };
+
   return (
     <div className="mb-8 rounded-xl bg-white p-6 shadow-md">
       <div className="mb-6 flex items-center">
@@ -67,6 +102,16 @@ const ReportGeneratorSetting = ({
           Report Generation
         </h2>
       </div>
+
+      {/* 错误提示 */}
+      {error && (
+        <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">
+          <p className="font-medium">Error: {error}</p>
+          <p className="mt-1 text-sm">
+            Please try again or contact support if the issue persists.
+          </p>
+        </div>
+      )}
 
       <div className="mb-6 grid grid-cols-1 gap-6 md:grid-cols-2">
         <div>
@@ -77,6 +122,7 @@ const ReportGeneratorSetting = ({
             value={reportType}
             onChange={(e) => setReportType(e.target.value)}
             className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+            disabled={isLoading}
           >
             <option value="occupancy">Occupancy Report</option>
             <option value="revenue">Revenue Report</option>
@@ -90,13 +136,15 @@ const ReportGeneratorSetting = ({
             Date Range
           </label>
           <div
-            onClick={() => setIsPickerOpen(!isPickerOpen)}
-            className="w-full cursor-pointer rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+            onClick={() => !isLoading && setIsPickerOpen(!isPickerOpen)}
+            className={`w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 ${
+              isLoading ? "cursor-not-allowed bg-gray-100" : "cursor-pointer"
+            }`}
           >
             {reportDate || "Select date range"}
           </div>
 
-          {isPickerOpen && (
+          {isPickerOpen && !isLoading && (
             <div className="absolute z-10 mt-1 rounded-lg border border-gray-200 bg-white shadow-lg">
               <DayPicker
                 mode="range"
@@ -128,97 +176,215 @@ const ReportGeneratorSetting = ({
 
       <div className="flex flex-wrap gap-4">
         <button
-          onClick={() =>
+          onClick={async () => {
             handleGenerateReport(
               selectedRange?.from || new Date(),
               selectedRange?.to || new Date(),
               reportType,
-            )
-          }
-          className="flex items-center rounded-lg bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700"
+              exportFileFormat,
+            );
+            setSelectedRange(undefined);
+            setReportDate("");
+          }}
+          disabled={isLoading}
+          className={`flex cursor-pointer items-center rounded-lg px-4 py-2 text-white transition ${
+            isLoading
+              ? "cursor-not-allowed bg-blue-400"
+              : "bg-blue-600 hover:bg-blue-700"
+          }`}
         >
-          <FileText className="mr-2" size={18} />
-          Generate Report
+          {isLoading ? (
+            <>
+              <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+              Generating...
+            </>
+          ) : (
+            <>
+              <FileText className="mr-2" size={18} />
+              Generate Report
+            </>
+          )}
         </button>
-        <button className="flex items-center rounded-lg bg-green-600 px-4 py-2 text-white transition hover:bg-green-700">
+        <button
+          disabled={isLoading}
+          className={`flex cursor-pointer items-center rounded-lg px-4 py-2 text-white transition ${
+            isLoading
+              ? "cursor-not-allowed bg-green-400"
+              : "bg-green-600 hover:bg-green-700"
+          }`}
+          onClick={() => {
+            setExportFileFormat("csv");
+            showToast("info", "You selcted to export CSV file");
+          }}
+        >
           <Download className="mr-2" size={18} />
           Export as CSV
         </button>
-        <button className="flex items-center rounded-lg bg-purple-600 px-4 py-2 text-white transition hover:bg-purple-700">
+        <button
+          disabled={isLoading}
+          className={`flex cursor-pointer items-center rounded-lg px-4 py-2 text-white transition ${
+            isLoading
+              ? "cursor-not-allowed bg-purple-400"
+              : "bg-purple-600 hover:bg-purple-700"
+          }`}
+          onClick={() => {
+            setExportFileFormat("pdf");
+            showToast("info", "You selcted to export PDF file");
+          }}
+        >
           <Download className="mr-2" size={18} />
           Export as PDF
         </button>
+        <button
+          disabled={isLoading || reports.length <= 0}
+          className={`flex items-center rounded-lg px-4 py-2 text-white transition ${
+            isLoading
+              ? "cursor-not-allowed bg-rose-400"
+              : reports.length <= 0
+                ? "cursor-not-allowed bg-gray-500"
+                : "cursor-pointer bg-rose-600 hover:bg-rose-700"
+          }`}
+          onClick={handleDeleteAllReport}
+        >
+          <Trash2 className="mr-2" size={18} />
+          Delete All Reports
+        </button>
       </div>
-      <div className="mt-8">
-        <h3 className="mb-4 text-lg font-semibold text-gray-800">
-          Recent Reports
-        </h3>
-        <div className="overflow-x-auto">
-          <table className="min-w-full rounded-lg border border-gray-200 bg-white">
-            <thead>
-              <tr className="bg-gray-100">
-                <th className="px-4 py-3 text-left font-medium text-gray-700">
-                  Report Name
-                </th>
-                <th className="px-4 py-3 text-left font-medium text-gray-700">
-                  Type
-                </th>
-                <th className="px-4 py-3 text-left font-medium text-gray-700">
-                  Date
-                </th>
-                <th className="px-4 py-3 text-left font-medium text-gray-700">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr className="border-b border-gray-200 hover:bg-gray-50">
-                <td className="px-4 py-3">Daily Occupancy - Aug 10, 2023</td>
-                <td className="px-4 py-3">Daily</td>
-                <td className="px-4 py-3">Aug 10, 2023</td>
-                <td className="px-4 py-3">
-                  <button className="mr-3 text-blue-600 hover:text-blue-800">
-                    View
-                  </button>
-                  <button className="text-green-600 hover:text-green-800">
-                    Download
-                  </button>
-                </td>
-              </tr>
-              <tr className="border-b border-gray-200 hover:bg-gray-50">
-                <td className="px-4 py-3">Weekly Revenue - Week 32</td>
-                <td className="px-4 py-3">Weekly</td>
-                <td className="px-4 py-3">Aug 7-13, 2023</td>
-                <td className="px-4 py-3">
-                  <button className="mr-3 text-blue-600 hover:text-blue-800">
-                    View
-                  </button>
-                  <button className="text-green-600 hover:text-green-800">
-                    Download
-                  </button>
-                </td>
-              </tr>
-              <tr className="hover:bg-gray-50">
-                <td className="px-4 py-3">
-                  Monthly Financial Summary - July 2023
-                </td>
-                <td className="px-4 py-3">Monthly</td>
-                <td className="px-4 py-3">July 1-31, 2023</td>
-                <td className="px-4 py-3">
-                  <button className="mr-3 text-blue-600 hover:text-blue-800">
-                    View
-                  </button>
-                  <button className="text-green-600 hover:text-green-800">
-                    Download
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+
+      {isLoading ? (
+        <SkeletonTable />
+      ) : (
+        <div className="mt-8">
+          <h3 className="mb-4 text-lg font-semibold text-gray-800">
+            Recent Reports
+          </h3>
+          <div className="overflow-x-auto">
+            <table className="min-w-full rounded-lg border border-gray-200 bg-indigo-50">
+              <thead>
+                <tr className="bg-indigo-100">
+                  <th className="px-4 py-3 text-left font-medium text-gray-700">
+                    Report Name
+                  </th>
+                  <th className="px-4 py-3 text-left font-medium text-gray-700">
+                    Type
+                  </th>
+                  <th className="px-4 py-3 text-left font-medium text-gray-700">
+                    File Format
+                  </th>
+                  <th className="px-4 py-3 text-left font-medium text-gray-700">
+                    Date
+                  </th>
+                  <th className="px-4 py-3 text-left font-medium text-gray-700">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {reports.length > 0 ? (
+                  reports.map((report) => (
+                    <tr
+                      key={report._id}
+                      className="border-b border-gray-200 font-semibold hover:bg-gray-50"
+                    >
+                      <td className="px-4 py-3 capitalize">{report.name}</td>
+                      <td className="px-4 py-3 capitalize">{report.type}</td>
+                      <td
+                        className={`px-6 py-3 uppercase ${report.fileFormat === "pdf" ? "text-rose-400" : "text-emerald-400"}`}
+                      >
+                        {report.fileFormat} File
+                      </td>
+                      <td className="px-4 py-3">
+                        {formatDateInBookingCheckOut(report.createdAt)}
+                      </td>
+                      <td className="px-4 py-3">
+                        <button className="mr-3 cursor-pointer text-blue-600 hover:text-blue-800">
+                          View
+                        </button>
+                        <button
+                          onClick={() =>
+                            handleDownloadReport(
+                              report._id,
+                              report.type,
+                              report.fileFormat,
+                            )
+                          }
+                          className="cursor-pointer text-green-600 hover:text-green-800"
+                        >
+                          Download
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td
+                      colSpan={4}
+                      className="px-4 py-6 text-center text-gray-500"
+                    >
+                      No reports generated yet. Create your first report above.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };
 
 export default ReportGeneratorSetting;
+
+const SkeletonTable = () => (
+  <div className="mt-8">
+    <div className="mb-4 h-6 w-48 animate-pulse rounded bg-gray-200"></div>
+    <div className="overflow-x-auto">
+      <table className="min-w-full rounded-lg border border-gray-200 bg-indigo-50">
+        <thead>
+          <tr className="bg-indigo-100">
+            <th className="px-4 py-3 text-left">
+              <div className="h-4 animate-pulse rounded bg-gray-300"></div>
+            </th>
+            <th className="px-4 py-3 text-left">
+              <div className="h-4 animate-pulse rounded bg-gray-300"></div>
+            </th>
+            <th className="px-4 py-3 text-left">
+              <div className="h-4 animate-pulse rounded bg-gray-300"></div>
+            </th>
+            <th className="px-4 py-3 text-left">
+              <div className="h-4 animate-pulse rounded bg-gray-300"></div>
+            </th>
+            <th className="px-4 py-3 text-left">
+              <div className="h-4 animate-pulse rounded bg-gray-300"></div>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {[...Array(3)].map((_, index) => (
+            <tr key={index} className="border-b border-gray-200">
+              <td className="px-4 py-3">
+                <div className="h-4 animate-pulse rounded bg-gray-200"></div>
+              </td>
+              <td className="px-4 py-3">
+                <div className="h-4 animate-pulse rounded bg-gray-200"></div>
+              </td>
+              <td className="px-4 py-3">
+                <div className="h-4 animate-pulse rounded bg-gray-200"></div>
+              </td>
+              <td className="px-4 py-3">
+                <div className="h-4 animate-pulse rounded bg-gray-200"></div>
+              </td>
+              <td className="px-4 py-3">
+                <div className="flex gap-2">
+                  <div className="h-6 w-12 animate-pulse rounded bg-gray-300"></div>
+                  <div className="h-6 w-16 animate-pulse rounded bg-gray-300"></div>
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </div>
+);

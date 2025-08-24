@@ -1,4 +1,3 @@
-// src/pages/AdminSettingPage.jsx
 import { useState, useEffect } from "react";
 import {
   Key,
@@ -17,6 +16,8 @@ import axiosInstance from "@/lib/axios";
 import RequireRole from "@/permission/RequireRole";
 import useAuthStore from "@/stores/useAuthStore";
 import useToast from "@/hooks/useToast";
+import useSettingStore from "@/stores/useSettingStore";
+import { Reports } from "@/types/interface.type";
 
 const AdminSettingPage = () => {
   // status manage
@@ -38,9 +39,22 @@ const AdminSettingPage = () => {
   const [showModal, setShowModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState<string>("");
+  const [isSuccess, setIsSuccess] = useState<boolean>(false);
+  const [newReport, setNewReport] = useState<Reports | null>(null);
   const user = useAuthStore();
   const { showToast } = useToast();
-  
+  const {
+    fetchAllReportData,
+    error,
+    isLoading,
+    reports,
+    handleDownloadReport,
+  } = useSettingStore((state) => state);
+
+  useEffect(() => {
+    fetchAllReportData();
+  }, [fetchAllReportData]);
+
   const handleUpdateAccessCode = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -48,8 +62,8 @@ const AdminSettingPage = () => {
       return;
     }
 
-    if(newAdminCode.length !== 6 || confirmAdminCode.length !== 6){
-      setErrorMessage("New access code required at least 6 digits")
+    if (newAdminCode.length !== 6 || confirmAdminCode.length !== 6) {
+      setErrorMessage("New access code required at least 6 digits");
       setTimeout(() => setErrorMessage(""), 3000);
       return;
     }
@@ -88,40 +102,48 @@ const AdminSettingPage = () => {
     }
   };
 
-    useEffect(() => {
-      const fetchAdminAccessCode = async () => {
-        try {
-          const response = await axiosInstance.get(
-            "/api/systemSetting/get-admin-access-otp",
-          );
-          if (response?.data?.success === true) {
-            setAdminCode(response.data.accessCode);
-          }
-        } catch (error: any) {
-          console.log(
-            "Error fetching admin access code:",
-            error?.response?.data?.message ||
-              "Failed to fetch admin access code.",
-          );
+  useEffect(() => {
+    const fetchAdminAccessCode = async () => {
+      try {
+        const response = await axiosInstance.get(
+          "/api/systemSetting/get-admin-access-otp",
+        );
+        if (response?.data?.success === true) {
+          setAdminCode(response.data.accessCode);
         }
-      };
-      fetchAdminAccessCode();
-    }, []);
-    
+      } catch (error: any) {
+        console.log(
+          "Error fetching admin access code:",
+          error?.response?.data?.message ||
+            "Failed to fetch admin access code.",
+        );
+      }
+    };
+    fetchAdminAccessCode();
+  }, []);
 
   // generate report
-  const handleGenerateReport = async (startDate: Date, endDate: Date, type: string) => {
+  const handleGenerateReport = async (
+    startDate: Date,
+    endDate: Date,
+    type: string,
+    exportFileFormat: string,
+  ) => {
+    if (!startDate || !endDate || !type || !exportFileFormat) {
+      return;
+    }
+
     setShowModal(true);
-     const metadata = {
-       page: "http://localhost:3000/admin-setting",
-       actionId: "generate report",
-       params: {
-         startDate,
-         endDate,
-         type
-       },
-       extra: {},
-     };
+    const metadata = {
+      page: "http://localhost:3000/admin-setting",
+      actionId: "generate report",
+      params: {
+        startDate,
+        endDate,
+        type,
+      },
+      extra: {},
+    };
 
     try {
       const response = await axiosInstance.post(
@@ -130,6 +152,7 @@ const AdminSettingPage = () => {
           startDate,
           endDate,
           type,
+          exportFileFormat,
         },
         {
           params: {
@@ -139,15 +162,26 @@ const AdminSettingPage = () => {
           },
         },
       );
+      if (response?.data?.success === true) {
+        useSettingStore.setState((prev) => ({
+          reports: [response?.data?.report, ...prev.reports],
+        }));
+        setIsSuccess(response?.data?.success);
+        setNewReport(response?.data?.report);
+        setReportDate("");
+      } else {
+        setIsSuccess(false);
+      }
     } catch (error: any) {
-      const message = error?.response?.data?.error || error?.response?.data?.message
+      const message =
+        error?.response?.data?.error || error?.response?.data?.message;
 
-      if(message.includes("Access denied")){
-        showToast("warn", error?.response?.data?.message)
+      if (message.includes("Access denied")) {
+        showToast("warn", error?.response?.data?.message);
         return;
       }
 
-      showToast("error", error?.response?.data?.error)
+      showToast("error", error?.response?.data?.error);
     }
   };
 
@@ -162,18 +196,23 @@ const AdminSettingPage = () => {
   // save all settings
   const saveAllSettings = async () => {
     try {
-      const response = await axiosInstance.patch("/api/systemSetting/save-all-settings", {
-        settings: {
-          ...hotelInfo
+      const response = await axiosInstance.patch(
+        "/api/systemSetting/save-all-settings",
+        {
+          settings: {
+            ...hotelInfo,
+          },
+          key: "Hotel Information",
         },
-        key: "Hotel Information"
-      });
-      if(response?.data?.success){
+      );
+      if (response?.data?.success) {
         setIsSaved(true);
-        if(response.data.updatedSettings.value){
+        if (response.data.updatedSettings.value) {
           setHotelInfo(response.data.updatedSettings.value);
         }
-        setSuccessMessage(response.data.message || "Setings saved successfully!");
+        setSuccessMessage(
+          response.data.message || "Setings saved successfully!",
+        );
         setTimeout(() => {
           setIsSaved(false);
           setSuccessMessage("");
@@ -181,8 +220,13 @@ const AdminSettingPage = () => {
         }, 3000);
       }
     } catch (error: any) {
-      console.log('Error in saveAllSettings: ', error?.response?.data?.error || "Failed to save settings.");
-      setErrorMessage(error?.response?.data?.error || "Failed to save settings.");
+      console.log(
+        "Error in saveAllSettings: ",
+        error?.response?.data?.error || "Failed to save settings.",
+      );
+      setErrorMessage(
+        error?.response?.data?.error || "Failed to save settings.",
+      );
       setIsSaved(false);
       setTimeout(() => setErrorMessage(""), 3000);
     }
@@ -194,10 +238,13 @@ const AdminSettingPage = () => {
         .get("/api/systemSetting/get-hotel-information")
         .then((response) => {
           console.log("hotel information: ", response.data);
-          setHotelInfo(response.data.hotelInformation)
+          setHotelInfo(response.data.hotelInformation);
         })
         .catch((error: any) => {
-          setErrorMessage(error?.response?.data?.error || "Failed to fetch hotel information.");
+          setErrorMessage(
+            error?.response?.data?.error ||
+              "Failed to fetch hotel information.",
+          );
           setTimeout(() => setErrorMessage(""), 3000);
         });
     };
@@ -209,8 +256,8 @@ const AdminSettingPage = () => {
       <div className="mx-auto max-w-6xl">
         <div className="mb-8 flex flex-col items-start justify-between md:flex-row md:items-center">
           <div>
-            <div className="flex items-center mb-2">
-              <div className=" mr-2 bg-blue-200 rounded-2xl p-2 border-1 border-blue-300">
+            <div className="mb-2 flex items-center">
+              <div className="mr-2 rounded-2xl border-1 border-blue-300 bg-blue-200 p-2">
                 <Sliders className="mx-auto text-blue-600" size={32} />
               </div>
               <h1 className="flex items-center text-3xl font-bold text-gray-800">
@@ -276,6 +323,9 @@ const AdminSettingPage = () => {
         {/* report generate */}
         {activeTab === "reports" && (
           <ReportGeneratorSetting
+            reports={reports}
+            error={error}
+            isLoading={isLoading}
             reportType={reportType}
             setReportType={setReportType}
             reportDate={reportDate}
@@ -300,8 +350,8 @@ const AdminSettingPage = () => {
       </div>
 
       {/* Report generation modal box */}
-      {showModal && (
-        <div className="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm p-4">
+      {showModal && isSuccess === true && (
+        <div className="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-xl bg-white shadow-xl">
             <div className="flex items-center justify-between border-b border-gray-200 p-4">
               <h3 className="text-lg font-semibold text-gray-800">
@@ -335,10 +385,27 @@ const AdminSettingPage = () => {
                 >
                   View Later
                 </button>
-                <button className="flex items-center rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">
-                  <Download className="mr-2" size={18} />
-                  Download Now
-                </button>
+                {newReport &&
+                  newReport._id &&
+                  newReport.type &&
+                  newReport.fileFormat && (
+                    <button
+                      onClick={() =>{
+                        handleDownloadReport(
+                          newReport._id,
+                          newReport.type,
+                          newReport.fileFormat,
+                        )
+                        setShowModal(false)
+                        setIsSuccess(true);
+                      }
+                      }
+                      className="flex items-center rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+                    >
+                      <Download className="mr-2" size={18} />
+                      Download Now
+                    </button>
+                  )}
               </div>
             </div>
           </div>
