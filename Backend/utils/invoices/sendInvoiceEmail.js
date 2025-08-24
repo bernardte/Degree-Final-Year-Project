@@ -15,7 +15,7 @@ export const sendInvoiceEmail = async (
   let pdfBuffer;
 
   try {
-    // 生成 HTML 内容
+    //generate html content
     const htmlContent = generateBookingEmailHTML({
       userEmail,
       ...bookingData,

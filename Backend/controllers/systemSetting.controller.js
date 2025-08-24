@@ -1,15 +1,18 @@
+import fs from "fs";
+import path from "path";
 import RewardHistory from "../models/rewardHistory.model.js";
 import SystemSetting from "../models/systemSetting.model.js";
 import notifyUsers from "../utils/notificationSender.js";
 import User from "../models/user.model.js";
 import OTP from "../models/adminOTP.model.js";
 import ActivityLog from "../models/activityLog.model.js";
+import Report from "../models/report.model.js";
 import { actionMap } from "../utils/constant/ActivityMap.js";
-import { generateOccupancyReport } from "../utils/report/generateOccupancyReport.js"
+import { generateOccupancyReport } from "../utils/report/generateOccupancyReport.js";
 import { generaterRevenueReport } from "../utils/report/generateRevenueReport.js";
 import { generateFinancialReport } from "../utils/report/generateFinancialReport.js";
 import { generateCancellationReport } from "../utils/report/generateCancellationReport.js";
-import Report from "../models/report.model.js";
+import { generateCSV, generatePDF } from "../utils/report/Generate File/generateFile.js";
 
 const updateRewardPointSetting = async (req, res) => {
   const { settings } = req.body;
@@ -270,10 +273,10 @@ const getUserActivityTracking = async (req, res) => {
 };
 
 const generateReport = async (req, res) => {
-  const { type, startDate, endDate } = req.body;
+  const { type, startDate, endDate, exportFileFormat } = req.body;
 
   console.log(req.body);
-  if (!type || !startDate || !endDate) {
+  if (!type || !startDate || !endDate || !exportFileFormat) {
     return res.status(400).json({ error: "Missing required fields" });
   }
 
@@ -298,7 +301,25 @@ const generateReport = async (req, res) => {
         break;
 
       default:
-       return res.status(404).json({ error: "Unable to generate report" });
+        return res.status(404).json({ error: "Unable to generate report" });
+    }
+
+    const reportsDir = path.join(process.cwd(), "reports");
+    if (!fs.existsSync(reportsDir)) {
+      fs.mkdirSync(reportsDir, { recursive: true });
+    }
+
+    const timestamp = Date.now();
+    const fileName = `${type}_report_${timestamp}.${exportFileFormat}`;
+    const filePath = path.join(reportsDir, fileName);
+
+    let fileBuffer;
+    if (exportFileFormat === "csv") {
+       await generateCSV(type, reportData, filePath);
+    } else if (exportFileFormat === "pdf") {
+      await generatePDF(type, reportData, filePath, start, end);
+    } else {
+      return res.status(400).json({ error: "unknown file path" });
     }
 
     const formatDate = (date) =>
@@ -306,26 +327,91 @@ const generateReport = async (req, res) => {
         day: "2-digit",
         month: "short",
         year: "numeric",
-    });
-
+      });
 
     const newReport = new Report({
       name: `${type} report ${formatDate(start)} - ${formatDate(end)}`,
       type: type,
       dateRange: { startDate: startDate, endDate: endDate },
       data: reportData,
+      fileFormat: exportFileFormat,
+      filePath: fileName,
     });
 
     await newReport.save();
 
     res
       .status(201)
-      .json({ message: "Report generated successfully", report: newReport });
+      .json({ success: true, message: "Report generated successfully", report: newReport });
   } catch (error) {
     console.log("Error in fetching user activity: ", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
+
+const getAllReportHistory = async (req, res) => {
+  try {
+    const getAllReportHistory = await Report.find().sort({ createdAt: -1 });
+    if (!getAllReportHistory) {
+      return res.status(404).json({ error: "Report not found" });
+    }
+
+    res.status(200).json({ success: "true", reports: getAllReportHistory });
+  } catch (error) {
+    console.log("Error in fetching get all report history: ", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+const reportDownload = async(req, res) => {
+  const { reportId } = req.params;
+  const { type, format } = req.query
+  try {
+    const report = await Report.findById(reportId);
+    if (!report) {
+      res.status(404).json({ error: "Report not found" });
+    }
+
+    const filePath = path.resolve("reports", report.filePath);
+
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${type}.${format}"`
+    );
+    res.setHeader("Content-Type", `application/${report.fileFormat}`); 
+
+    return res.download(filePath, (error) => {
+      if (error) {
+        console.error("Error in res.download:", error.message);
+        return res.status(500).json({ error: "Error downloading file" });
+      }
+    });
+  } catch (error) {
+    console.log("Error in downloadReport: ", error.message);
+    res.status(500).json({ error: "Internal server error" });
+  }
+}
+
+const deleteAllReports = async(req, res) => {
+  try{
+    await Report.deleteMany();
+
+    const reportsDir = path.join(process.cwd(), "reports"); 
+
+    if (fs.existsSync(reportsDir)) {
+      fs.rmSync(reportsDir, { recursive: true, force: true });
+      // recursive: true recursively delete the entire directory
+      // force: true force delete even if errors occur
+    }
+
+    res
+      .status(200)
+      .json({ message: "All reports and files removed successfully" });
+  }catch(error){
+    console.log("Error in deleteAllReports: ", error.message);
+    res.status(500).json({ error: "Internal server error" });
+  }
+}
 
 export default {
   updateRewardPointSetting,
@@ -338,4 +424,7 @@ export default {
   getUserActivityTracking,
   activityStreamFetching,
   generateReport,
+  getAllReportHistory,
+  reportDownload,
+  deleteAllReports,
 };

@@ -5,7 +5,7 @@ export const generateCancellationReport = async (start, end) => {
     paymentStatus: "refund",
     status: "cancelled",
     startDate: { $gte: start, $lte: end },
-  });
+  }).populate("bookingCreatedByUser", "username");
 
   console.log("cancelled bookings: ", cancellationBookings)
 

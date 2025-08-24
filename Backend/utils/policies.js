@@ -40,8 +40,20 @@ const policies = {
 
   reports: {
     view: isSuperAdminOrAdmin,
+    delete: isSuperAdmin,
     generate: (req) => {
       const { type } = req.body;
+
+      //! restrict with only superadmin able to generate
+      if (["financial", "revenue"].includes(type)) {
+        return isSuperAdmin(req);
+      }
+
+      //! "occupancy" and "cancellation" allow to generate by both administrator role
+      return isSuperAdminOrAdmin;
+    },
+    download: (req) => {
+      const { type } = req.query;
 
       //! restrict with only superadmin able to generate
       if (["financial", "revenue"].includes(type)) {

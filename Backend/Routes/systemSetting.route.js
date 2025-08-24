@@ -60,9 +60,23 @@ router.get(
 
 router
   .route("/report")
+  .get(
+    accessControl("reports", "view"),
+    systemSettingController.getAllReportHistory
+  )
   .post(
     accessControl("reports", "generate"),
     systemSettingController.generateReport
+  )
+  .delete(
+    accessControl("reports", "delete"),
+    systemSettingController.deleteAllReports
   );
+
+router.get(
+  "/download-report/:reportId",
+  accessControl("reports", "download"),
+  systemSettingController.reportDownload
+);
 
 export default router;

@@ -8,7 +8,19 @@ const reportSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      required: true, 
+      required: true,
+    },
+    filePath: {
+      type: String,
+    },
+    status: {
+      type: String,
+      enum: ["pending", "completed", "failed"],
+      default: "pending",
+    },
+    fileFormat: {
+      type: String,
+      requierd: true,
     },
     data: {
       type: mongoose.Schema.Types.Mixed,
