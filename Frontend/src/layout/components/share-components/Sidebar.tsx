@@ -32,7 +32,7 @@ const Sidebar = () => {
   return (
     <motion.nav
       layout
-      className="flex h-screen shrink-0 flex-col border-r border-slate-300 bg-white p-2 overflow-y-auto z-100"
+      className="z-100 flex h-screen shrink-0 flex-col overflow-y-auto border-r border-slate-300 bg-white p-2"
       style={{
         width: open ? "225px" : "fit-content",
       }}
@@ -91,16 +91,20 @@ const Sidebar = () => {
           setSelected={setSelected}
           items={[
             {
-              label: "Reservation Calendar",
+              label: "Booking Reservation",
               path: "/admin-booking-calendar",
             },
             {
-              label: "Room Deactivation Calendar",
+              label: "Room Deactivation",
               path: "/admin-deactivation-room-calendar",
             },
             {
-              label: "Event Booking Calendar",
+              label: "Event Booking",
               path: "/admin-event-request-calendar",
+            },
+            {
+              label: "Restaurant Reservation",
+              path: "/admin-reservation-calendar",
             },
           ]}
         />

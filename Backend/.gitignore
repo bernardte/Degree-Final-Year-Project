@@ -26,3 +26,7 @@ dist-ssr
 
 # environment variable
 .env
+
+# exclude reports file and folder
+reports/
+

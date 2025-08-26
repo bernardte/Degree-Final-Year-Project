@@ -35,6 +35,12 @@ export const activityLogger = (req, res, next) => {
         req.headers["x-forwarded-for"] ||
         "unknown_ip";
 
+      //! third party(API calling) to take user current IP address 
+      //* This API calling has limit for only 1000 Geo IP request per day. 
+      // const geoRes = await fetch("https://ipapi.co/json/");
+      // const geoData = await geoRes.json();
+      // console.log("current user IP: ", geoData);
+
       //! Normalize localhost IPv6 (::1) to IPv4 (127.0.0.1) (localhost)
       if (ip === "::1" || ip === "0:0:0:0:0:0:0:1") {
         ip = "127.0.0.1";

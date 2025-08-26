@@ -24,6 +24,22 @@ const handleNewReservation = async (req, res) => {
     }
 }
 
+const getAllRestaurantReservation = async(req, res) => {
+    try {
+        const allReservation = await Reservation.find();
+        
+        if(!allReservation){
+            return res.status(404).json({ error: "Reservation not found" });
+        }
+
+        res.status(200).json(allReservation)
+    } catch (error) {
+        console.log('Error in getAllRestaurantReservation: ', error.message);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+}
+
 export default {
     handleNewReservation,
+    getAllRestaurantReservation,
 }

@@ -6,6 +6,8 @@ import accessControl from "../middleware/accessControl.js";
 
 const router = express.Router();
 
+router.get("/get-all-hotel-information", systemSettingController.getHotelInformation);
+
 //update reward point
 router.use(protectRoute, verifyRoles);
 router

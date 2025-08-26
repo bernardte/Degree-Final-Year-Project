@@ -45,6 +45,7 @@ import ImageGalleryPage from "./pages/image galery page/ImageGalleryPage";
 import FAQPage from "./pages/FAQ page/FAQPage";
 import FacilityDetailPage from "./pages/Facilities page/FacilityDetail";
 import AdminSettingPage from "./pages/Admin Setting Page/AdminSettingPage";
+import ReservationCalendarView from "./layout/components/calendar/ReservationCalendarView";
 const App = () => {
   const { user, showLoginPopup, showSignupPopup } = useAuthStore();
 
@@ -128,6 +129,10 @@ const App = () => {
             <Route
               path="/admin-event-request-calendar"
               element={<AdminEventCalendarPage />}
+            />
+            <Route
+              path="/admin-reservation-calendar"
+              element={<ReservationCalendarView />}
             />
             <Route path="/admin-room" element={<AdminRoomPage />} />
             <Route path="/admin-event" element={<AdminEventsPage />} />

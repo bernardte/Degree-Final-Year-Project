@@ -15,6 +15,7 @@ export const generateBookingEmailHTML = ({
   reward,
   loyaltyTier,
   invoiceNumber,
+  hotelDetail
 }) => {
   console.log("your total price: ", totalPrice);
   console.log("room details: ", roomDetail);
@@ -31,7 +32,7 @@ export const generateBookingEmailHTML = ({
     <div id="invoice" style="max-width: 900px; margin: 0 auto; background-color: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); padding: 30px; position: relative;">
         <!-- Watermark -->
         <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg); font-size: 120px; font-weight: bold; color: rgba(66, 153, 225, 0.08); z-index: 0; pointer-events: none; user-select: none;">
-            SERAPHINE
+            ${hotelDetail?.name}
         </div>
         
         <!-- Header -->
@@ -41,7 +42,7 @@ export const generateBookingEmailHTML = ({
                     <i class="fas fa-hotel" style="font-size: 28px; color: #2563eb;"></i>
                 </div>
                 <div>
-                    <h1 style="font-size: 28px; font-weight: 700; color: #1e293b; margin: 0;">The Seraphine Hotel</h1>
+                    <h1 style="font-size: 28px; font-weight: 700; color: #1e293b; margin: 0;">${hotelDetail?.name}</h1>
                     <p style="font-size: 18px; font-weight: 600; color: #2563eb; margin: 5px 0 0 0;">Reservation Invoice</p>
                 </div>
             </div>
@@ -78,22 +79,18 @@ export const generateBookingEmailHTML = ({
                     <i class="fas fa-hotel" style="font-size: 18px; color: #2563eb; margin-right: 10px;"></i>
                     <h3 style="font-size: 18px; font-weight: 600; color: #1e293b; margin: 0;">Hotel Information</h3>
                 </div>
-                <p style="font-weight: 700; color: #1e293b; margin: 0 0 10px 0;">The Seraphine Hotel</p>
+                <p style="font-weight: 700; color: #1e293b; margin: 0 0 10px 0;">${hotelDetail?.name}</p>
                 <div style="display: flex; align-items: flex-start; color: #4a5568; margin-bottom: 8px;">
                     <i class="fas fa-map-marker-alt" style="margin-top: 4px; margin-right: 10px; color: #718096;"></i>
-                    <span>123 Geroge Town, Penang, Malaysia</span>
+                    <span>${hotelDetail?.address}</span>
                 </div>
                 <div style="display: flex; align-items: center; color: #4a5568; margin-bottom: 8px;">
                     <i class="fas fa-phone-alt" style="margin-right: 10px; color: #718096;"></i>
-                    <span>+60 3 1234 5678</span>
+                    <span>${hotelDetail?.phone}</span>
                 </div>
                 <div style="display: flex; align-items: center; color: #4a5568; margin-bottom: 8px;">
                     <i class="fas fa-envelope" style="margin-right: 10px; color: #718096;"></i>
-                    <span>reservations@seraphinehotel.com</span>
-                </div>
-                <div style="display: flex; align-items: center; color: #4a5568;">
-                    <i class="fas fa-globe" style="margin-right: 10px; color: #718096;"></i>
-                    <span>www.seraphinehotel.com</span>
+                    <span>${hotelDetail?.email}</span>
                 </div>
             </div>
             
@@ -124,7 +121,7 @@ export const generateBookingEmailHTML = ({
             
             <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 20px;">
                 <div>
-                    <p style="font-size: 14px; color: #4a5568; margin: 0 0 5px 0;">Reservation ID</p>
+                    <p style="font-size: 14px; color: #4a5568; margin: 0 0 5px 0;">Booking Reference</p>
                     <p id="bookingReference" style="font-weight: 500; color: #1e293b; margin: 0;">${bookingReference}</p>
                 </div>
                 <div>
@@ -356,7 +353,7 @@ export const generateBookingEmailHTML = ({
         
         <!-- Footer -->
         <div style="margin-top: 30px; border-top: 1px solid #e2e8f0; padding-top: 20px; text-align: center; font-size: 14px; color: #4a5568; position: relative; z-index: 1;">
-            <p style="margin: 0;">Thank you for choosing The Seraphine Hotel! We look forward to serving you.</p>
+            <p style="margin: 0;">Thank you for choosing ${hotelDetail?.name}! We look forward to serving you.</p>
             <p style="margin: 10px 0 0 0; font-size: 12px;">Invoice generated on August 16, 2023</p>
         </div>
     </div>

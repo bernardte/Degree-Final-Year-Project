@@ -7,6 +7,7 @@ import {
   X,
   Sliders,
   UserCog2,
+  Settings,
 } from "lucide-react";
 import AdminPortalAccessSettingTab from "@/layout/components/admin-page-component/setting-component/AdminPortalAccessSettingTab";
 import HotelInformationSetting from "@/layout/components/admin-page-component/setting-component/HotelInformationSetting";
@@ -18,6 +19,17 @@ import useAuthStore from "@/stores/useAuthStore";
 import useToast from "@/hooks/useToast";
 import useSettingStore from "@/stores/useSettingStore";
 import { Reports } from "@/types/interface.type";
+import CarouselSetting from "@/layout/components/admin-page-component/setting-component/CarouselSetting";
+
+type hotelInfo = {
+  name: string;
+  logo: string | File | null;
+  address: string;
+  phone: string;
+  email: string;
+  checkInTime: string;
+  checkOutTime: string;
+};
 
 const AdminSettingPage = () => {
   // status manage
@@ -26,8 +38,9 @@ const AdminSettingPage = () => {
   const [confirmAdminCode, setConfirmAdminCode] = useState("");
   const [reportType, setReportType] = useState("occupancy");
   const [reportDate, setReportDate] = useState("");
-  const [hotelInfo, setHotelInfo] = useState({
+  const [hotelInfo, setHotelInfo] = useState<hotelInfo>({
     name: "",
+    logo: null,
     address: "",
     phone: "",
     email: "",
@@ -41,6 +54,7 @@ const AdminSettingPage = () => {
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [isSuccess, setIsSuccess] = useState<boolean>(false);
   const [newReport, setNewReport] = useState<Reports | null>(null);
+  const [carouselItems, setCarouselItems] = useState<any[]>([]);
   const user = useAuthStore();
   const { showToast } = useToast();
   const {
@@ -189,20 +203,42 @@ const AdminSettingPage = () => {
   const handleHotelInfoChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
-    const { name, value } = e.target;
-    setHotelInfo((prev) => ({ ...prev, [name]: value }));
+    const { name, value, files } = e.target as HTMLInputElement;
+
+    if (name === "logo" && files && files[0]) {
+      const file = files[0];
+      const reader = new FileReader();
+
+      reader.onload = () => {
+        setHotelInfo((prev) => ({ ...prev, logo: file }));
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setHotelInfo((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
   // save all settings
   const saveAllSettings = async () => {
     try {
+      const formData = new FormData();
+      formData.append("settings", JSON.stringify(hotelInfo));
+      formData.append("key", "Hotel Information");
+      if (hotelInfo.logo instanceof File) {
+        formData.append("logo", hotelInfo.logo);
+        console.log("Uploading file logo: ", hotelInfo.logo);
+      } else if (typeof hotelInfo.logo === "string") {
+        formData.append("logoUrl", hotelInfo.logo);
+        console.log("Passing existing logo URL: ", hotelInfo.logo);
+      }
+
       const response = await axiosInstance.patch(
         "/api/systemSetting/save-all-settings",
+        formData,
         {
-          settings: {
-            ...hotelInfo,
+          headers: {
+            "Content-Type": "multipart/form-data",
           },
-          key: "Hotel Information",
         },
       );
       if (response?.data?.success) {
@@ -287,6 +323,7 @@ const AdminSettingPage = () => {
             { _id: "access", label: "Access Code", icon: Key },
             { _id: "reports", label: "Reports", icon: FileText },
             { _id: "hotel", label: "Hotel Info", icon: Hotel },
+            { _id: "carousel", label: "Carousel Setting", icon: Settings },
             { _id: "activity", label: "Activity", icon: UserCog2 },
           ].map((tab) => {
             if (tab._id === "activity" && user.roles === "admin") return;
@@ -343,6 +380,14 @@ const AdminSettingPage = () => {
           />
         )}
 
+        {/* Carousel Setting */}
+        {activeTab === "carousel" && (
+          <CarouselSetting
+            carouselItems={carouselItems}
+            onItemsUpdate={setCarouselItems}
+          />
+        )}
+
         {/* user tracking */}
         <RequireRole allowedRoles={["superAdmin"]}>
           {activeTab === "activity" && <UserActivityTrackSetting />}
@@ -390,16 +435,15 @@ const AdminSettingPage = () => {
                   newReport.type &&
                   newReport.fileFormat && (
                     <button
-                      onClick={() =>{
+                      onClick={() => {
                         handleDownloadReport(
                           newReport._id,
                           newReport.type,
                           newReport.fileFormat,
-                        )
-                        setShowModal(false)
+                        );
+                        setShowModal(false);
                         setIsSuccess(true);
-                      }
-                      }
+                      }}
                       className="flex items-center rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
                     >
                       <Download className="mr-2" size={18} />

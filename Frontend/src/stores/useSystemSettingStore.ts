@@ -1,20 +1,25 @@
 import { create } from "zustand";
-import { RewardHistories, RewardSettings } from "@/types/interface.type";
+import { RewardHistories, RewardSettings, HotelInfo } from "@/types/interface.type";
 import axiosInstance from "@/lib/axios";
 
 interface useSystemSettingStore {
     systemSetting: RewardSettings;
     rewardPointsHistory: RewardHistories[];
+    hotelInformation: HotelInfo | null;
     error: null | string;
     isLoading: boolean;
+    logo: string;
     fetchSystemSettingRewardPoint: () => Promise<void>;
     fetchRewardPointsHistory: () => Promise<void>;
+    fetchAllHotelInformationInCustomerSide: () => Promise<void>;
 }
 
 const useSystemSettingStore = create<useSystemSettingStore>()((set) => ({
     error: null,
     isLoading: false,
     rewardPointsHistory: [],
+    hotelInformation: null,
+    logo: "",
     systemSetting: {
         bookingRewardPoints: 0,
         earningRatio: 0,
@@ -56,6 +61,14 @@ const useSystemSettingStore = create<useSystemSettingStore>()((set) => ({
             set({isLoading: false})
         }
     },
+    fetchAllHotelInformationInCustomerSide: async () => {
+        axiosInstance
+          .get("/api/systemSetting/get-all-hotel-information")
+          .then((response) => {
+              set({ logo: response?.data?.hotelInformation?.logo })
+              set({ hotelInformation: response?.data?.hotelInformation });
+          }).catch((error) => set({ error: error?.response?.data?.error }));
+    }
 }));
 
 export default useSystemSettingStore;

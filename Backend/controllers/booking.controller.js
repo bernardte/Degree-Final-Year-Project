@@ -20,7 +20,7 @@ import { generateInvoiceNumber } from "../utils/invoiceNumberGenerator.js";
 import { sendInvoiceEmail } from "../utils/invoices/sendInvoiceEmail.js";
 import Reward from "../models/reward.model.js";
 import ClaimedReward from "../models/claimedReward.model.js";
-
+import SystemSetting from "../models/systemSetting.model.js";
 
 const createBooking = async (req, res) => {
   const { bookingSessionId, specialRequests } = req.body;
@@ -140,6 +140,11 @@ const createBooking = async (req, res) => {
         rooms
       );
 
+     const hotelInfoDoc = await SystemSetting.findOne({
+       key: "Hotel Information",
+     }).select("value");
+
+     const hotelInfo = hotelInfoDoc?.value;
     const emailTo = user?.email || contactEmail || guestDetails?.contactEmail;
     if (emailTo && qrCodePublicURLfromCloudinary) {
       console.log("reach here")
@@ -153,6 +158,7 @@ const createBooking = async (req, res) => {
         adults: totalGuest.adults,
         children: totalGuest.children,
         totalPrice,
+        hotelDetail: hotelInfo,
         qrCodeImageURL: qrCodePublicURLfromCloudinary,
       });
     }
@@ -230,6 +236,7 @@ const createBooking = async (req, res) => {
           reward,
           loyaltyTier,
           invoiceNumber,
+          hotelInfo,
         );
       }
     

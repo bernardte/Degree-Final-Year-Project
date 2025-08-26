@@ -26,7 +26,7 @@ const UserActivityTrackSetting = () => {
   });
 
   const {
-    isLoading,
+    loading,
     fetchUsersTrackingData,
     error,
     tableData,
@@ -39,12 +39,6 @@ const UserActivityTrackSetting = () => {
 
   // handle page change
   useEffect(() => {
-    //! when filtering required and current page is not first page reset to first page then after started to fetch the corresponding data
-    if (page !== 1 && filters) {
-      setPage(1);
-      return;
-    }
-
     if (page > 0) {
       fetchUsersTrackingData(
         filters.role,
@@ -81,13 +75,13 @@ const UserActivityTrackSetting = () => {
             new Date(newActivity.createdAt) <= new Date(filters.endDate))
         ) {
           useSettingStore.setState((prev) => {
-            if(prev.tableData.some((data) => data._id === newActivity._id)){
+            if (prev.tableData.some((data) => data._id === newActivity._id)) {
               return prev;
             }
 
             return {
               tableData: [newActivity, ...prev.tableData],
-            }
+            };
           });
         }
       } catch (error) {}
@@ -96,12 +90,12 @@ const UserActivityTrackSetting = () => {
 
   // handle filter change
   const handleFilterChange = (filterType: string, value: string) => {
-    setFilters((prev) => ({
-      ...prev,
-      [filterType]: value,
-    }));
+    setFilters((prev) => {
+      const newFilters = { ...prev, [filterType]: value };
+      setPage(1); // ✅ 在这里重置页码
+      return newFilters;
+    });
   };
-
   // get status colors and icon
   const getStatusIcon = (status: string) => {
     if (status === "success") {
@@ -237,14 +231,14 @@ const UserActivityTrackSetting = () => {
         </div>
       </div>
 
-      {/* 活动列表 */}
+      {/* Recent Activity Display */}
       <div className="mt-4">
         <h3 className="mb-4 flex items-center text-lg font-semibold text-gray-800">
           <Activity size={20} className="mr-2" />
           Recent Activity
         </h3>
 
-        {isLoading ? (
+        {loading ? (
           <div className="rounded-lg bg-gray-50 p-8 text-center">
             <p className="text-gray-500">Loading activities...</p>
           </div>
@@ -320,7 +314,7 @@ const UserActivityTrackSetting = () => {
         )}
       </div>
 
-      {/* 分页控件 */}
+      {/* Pagination Control */}
       {totalPages > 1 && (
         <div className="mt-6 flex items-center justify-between px-2">
           <div className="text-sm text-gray-600">

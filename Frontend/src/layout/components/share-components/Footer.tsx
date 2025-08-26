@@ -1,15 +1,25 @@
 import { Link, NavLink } from "react-router-dom";
 import list from "@/constant/navBarList";
 import { Phone, Mail, MapPin } from "lucide-react";
+import { useEffect } from "react";
+import useSystemSettingStore from "@/stores/useSystemSettingStore";
 
 const Footer = () => {
+  const { fetchAllHotelInformationInCustomerSide, hotelInformation } = useSystemSettingStore();
+
+  useEffect(() => {
+    fetchAllHotelInformationInCustomerSide();
+  }, [fetchAllHotelInformationInCustomerSide]);
+
+  console.log(hotelInformation);
+
   return (
     <footer className="bg-blue-800 px-6 pt-10 pb-8 text-white">
       <div className="mx-auto max-w-6xl">
         <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
           {/* Brand Info */}
           <div className="flex flex-col gap-4">
-            <h2 className="text-2xl font-bold">The Seraphine Hotel</h2>
+            <h2 className="text-2xl font-bold">{hotelInformation?.name}</h2>
             <p className="max-w-xs text-sm text-blue-100">
               A luxurious escape in the heart of the city. Discover serenity and
               timeless elegance.
@@ -19,18 +29,18 @@ const Footer = () => {
               <div className="flex items-center gap-3">
                 <MapPin className="text-blue-200" size={18} />
                 <p className="text-sm text-blue-100">
-                  123 George Town, Malaysia
+                 {hotelInformation?.address}
                 </p>
               </div>
 
               <div className="flex items-center gap-3">
                 <Phone className="text-blue-200" size={18} />
-                <p className="text-sm text-blue-100">+60 123456789</p>
+                <p className="text-sm text-blue-100">{hotelInformation?.phone}</p>
               </div>
 
               <div className="flex items-center gap-3">
                 <Mail className="text-blue-200" size={18} />
-                <p className="text-sm text-blue-100">theseraphinehotel@gmail.com</p>
+                <p className="text-sm text-blue-100">{hotelInformation?.email}</p>
               </div>
             </div>
           </div>
@@ -162,7 +172,7 @@ const Footer = () => {
         <div className="mt-10 border-t border-blue-700 pt-6 text-center text-sm text-blue-200">
           <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
             <div>
-              &copy; {new Date().getFullYear()} The Seraphine Hotel. All rights
+              &copy; {new Date().getFullYear()} {hotelInformation?.name}. All rights
               reserved.
             </div>
             <div className="flex gap-4">

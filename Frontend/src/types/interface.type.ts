@@ -346,3 +346,27 @@ export interface Reports {
   data: Record<string, any>,
   createdAt: Date,
 }
+
+export interface HotelInfo {
+  _id: string,
+  name: string,
+  checkInDate: Date,
+  checkOutDate: Date,
+  address: string,
+  logo: string,
+  email: string,
+  phone: string, 
+}
+
+export interface Reservation {
+  _id: string,
+  name: string,
+  email: string,
+  phone: string,
+  date: Date,
+  numberOfGuest: number,
+  category: string,
+  time: string,
+  createdAt: Date,
+  updatedAt: Date,
+}

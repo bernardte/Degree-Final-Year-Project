@@ -4,6 +4,7 @@ import { create } from "zustand";
 
 interface settingStore {
   isLoading: boolean;
+  loading: boolean;
   error: string | null;
   tableData: Settings[];
   limit: number;
@@ -26,6 +27,7 @@ interface settingStore {
 
 const useSettingStore = create<settingStore>()((set) => ({
   isLoading: false,
+  loading: false,
   error: null,
   tableData: [],
   reports: [],
@@ -58,7 +60,7 @@ const useSettingStore = create<settingStore>()((set) => ({
     page = 1,
     limit = 10,
   ) => {
-    set({ isLoading: true, error: null });
+    set({ loading: true, error: null });
     const params = new URLSearchParams({
       limit: String(limit),
       page: String(page),
@@ -79,7 +81,7 @@ const useSettingStore = create<settingStore>()((set) => ({
         });
       })
       .catch((error) => set({ error: error?.response?.data?.error }))
-      .finally(() => set({ isLoading: false }));
+      .finally(() => set({ loading: false }));
   },
 
   handleDownloadReport: async (reportId: string, reportType: string, fileFormat: string) => {

@@ -103,6 +103,9 @@ const policies = {
     view_user_activity_tracking: isSuperAdmin,
     view: isSuperAdminOrAdmin,
   },
+  reservation: {
+    view: isSuperAdminOrAdmin,
+  }
 };
 
 export default policies;

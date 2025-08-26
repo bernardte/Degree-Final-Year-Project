@@ -374,6 +374,12 @@
     font-weight: 700;
     color: #1f2937;
   }
+
+/* Control the pop-up layer after clicking "+N more" */
+  .fc-popover {
+    max-height: 290px;   /* 你想要的最大高度 */
+    overflow-y: auto;   
+  }
 }
 
 @layer base {

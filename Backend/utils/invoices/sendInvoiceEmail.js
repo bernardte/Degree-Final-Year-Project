@@ -9,7 +9,8 @@ export const sendInvoiceEmail = async (
   bookingData,
   reward,
   loyaltyTier,
-  invoiceNumber
+  invoiceNumber,
+  hotelDetail,
 ) => {
 
   let pdfBuffer;
@@ -22,6 +23,7 @@ export const sendInvoiceEmail = async (
       reward,
       loyaltyTier,
       invoiceNumber,
+      hotelDetail,
     });
 
     console.log("html content generated ✅");

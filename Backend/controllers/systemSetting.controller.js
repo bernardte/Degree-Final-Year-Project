@@ -12,7 +12,11 @@ import { generateOccupancyReport } from "../utils/report/generateOccupancyReport
 import { generaterRevenueReport } from "../utils/report/generateRevenueReport.js";
 import { generateFinancialReport } from "../utils/report/generateFinancialReport.js";
 import { generateCancellationReport } from "../utils/report/generateCancellationReport.js";
-import { generateCSV, generatePDF } from "../utils/report/Generate File/generateFile.js";
+import {
+  generateCSV,
+  generatePDF,
+} from "../utils/report/Generate File/generateFile.js";
+import { uploadToCloudinary } from "../utils/uploadToCloudinary.js";
 
 const updateRewardPointSetting = async (req, res) => {
   const { settings } = req.body;
@@ -136,15 +140,29 @@ const getAdminAccessOTP = async (req, res) => {
 
 const updateSettings = async (req, res) => {
   const { settings, key } = req.body;
+  const logo = req.files?.logo;
   const username = req.user.name;
+
+  console.log("logo", logo);
+  let imageURL;
+
   if (!settings || !key) {
     return res.status(400).json({ error: "All fields are required" });
   }
 
   try {
+    if (logo) {
+      imageURL = await uploadToCloudinary(logo);
+    }
+
+    const mergeValue = {
+      ...(typeof settings === "string" ? JSON.parse(settings) : settings),
+      ...(imageURL && { logo: imageURL })
+    }
+
     const updatedSetting = await SystemSetting.findOneAndUpdate(
       { key }, // filter by key
-      { value: settings, updatedAt: Date.now() }, //update value and timestamp
+      { value: mergeValue, updatedAt: Date.now() }, //update value and timestamp
       { new: true, upsert: true } //upsert: true to create if not exists
     );
 
@@ -315,7 +333,7 @@ const generateReport = async (req, res) => {
 
     let fileBuffer;
     if (exportFileFormat === "csv") {
-       await generateCSV(type, reportData, filePath);
+      await generateCSV(type, reportData, filePath);
     } else if (exportFileFormat === "pdf") {
       await generatePDF(type, reportData, filePath, start, end);
     } else {
@@ -340,9 +358,11 @@ const generateReport = async (req, res) => {
 
     await newReport.save();
 
-    res
-      .status(201)
-      .json({ success: true, message: "Report generated successfully", report: newReport });
+    res.status(201).json({
+      success: true,
+      message: "Report generated successfully",
+      report: newReport,
+    });
   } catch (error) {
     console.log("Error in fetching user activity: ", error);
     res.status(500).json({ error: "Internal server error" });
@@ -363,9 +383,9 @@ const getAllReportHistory = async (req, res) => {
   }
 };
 
-const reportDownload = async(req, res) => {
+const reportDownload = async (req, res) => {
   const { reportId } = req.params;
-  const { type, format } = req.query
+  const { type, format } = req.query;
   try {
     const report = await Report.findById(reportId);
     if (!report) {
@@ -378,7 +398,7 @@ const reportDownload = async(req, res) => {
       "Content-Disposition",
       `attachment; filename="${type}.${format}"`
     );
-    res.setHeader("Content-Type", `application/${report.fileFormat}`); 
+    res.setHeader("Content-Type", `application/${report.fileFormat}`);
 
     return res.download(filePath, (error) => {
       if (error) {
@@ -390,13 +410,13 @@ const reportDownload = async(req, res) => {
     console.log("Error in downloadReport: ", error.message);
     res.status(500).json({ error: "Internal server error" });
   }
-}
+};
 
-const deleteAllReports = async(req, res) => {
-  try{
+const deleteAllReports = async (req, res) => {
+  try {
     await Report.deleteMany();
 
-    const reportsDir = path.join(process.cwd(), "reports"); 
+    const reportsDir = path.join(process.cwd(), "reports");
 
     if (fs.existsSync(reportsDir)) {
       fs.rmSync(reportsDir, { recursive: true, force: true });
@@ -407,11 +427,12 @@ const deleteAllReports = async(req, res) => {
     res
       .status(200)
       .json({ message: "All reports and files removed successfully" });
-  }catch(error){
+  } catch (error) {
     console.log("Error in deleteAllReports: ", error.message);
     res.status(500).json({ error: "Internal server error" });
   }
-}
+};
+
 
 export default {
   updateRewardPointSetting,

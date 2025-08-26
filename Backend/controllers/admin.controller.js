@@ -788,7 +788,7 @@ const updateBookingStatus = async (req, res) => {
 
 const updateAllPendingBookingStatusToConfirmed =  async (req, res) => {
   try {
-    await Booking.updateMany(
+    const result = await Booking.updateMany(
       { status: "pending"},
       { $set: { status: "confirmed"} }
     )
