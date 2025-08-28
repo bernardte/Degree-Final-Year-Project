@@ -49,7 +49,7 @@ const SignupPagePopUp = () => {
 
     if (!input.email) {
       error.email = "Email is required";
-    } else if (!emailValidation(input.email)) {
+    } else if (emailValidation(input.email)) {
       error.email = "Invalid email format";
     }
 

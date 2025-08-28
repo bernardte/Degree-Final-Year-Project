@@ -1,4 +1,4 @@
-export const sanitizeSensitiveData = (data, ignoredField = ["password", "token", "confirmPassword", "otp", "rewardCode"]) => {
+export const sanitizeSensitiveData = (data, ignoredField = ["password", "token", "confirmPassword", "otp", "rewardCode", "newPassword"]) => {
     if (data === null) return null;
     
     if(!data || typeof data !== "object"){

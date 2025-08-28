@@ -46,6 +46,8 @@ import FAQPage from "./pages/FAQ page/FAQPage";
 import FacilityDetailPage from "./pages/Facilities page/FacilityDetail";
 import AdminSettingPage from "./pages/Admin Setting Page/AdminSettingPage";
 import ReservationCalendarView from "./layout/components/calendar/ReservationCalendarView";
+import ForgetPassword from "./pages/Authentication page/ForgetPassword";
+import ResetPassword from "./pages/Authentication page/resetPassword";
 const App = () => {
   const { user, showLoginPopup, showSignupPopup } = useAuthStore();
 
@@ -62,6 +64,8 @@ const App = () => {
 
         {/* Public routes */}
         <Route path="/filter-room" element={<FilteredRoomsPage />} />
+        <Route path="/forget-password" element={<ForgetPassword />} />
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
         <Route
           path="/booking/confirm/:sessionId"
           element={<BookingCheckOutPage />}

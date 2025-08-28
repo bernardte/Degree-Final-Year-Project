@@ -1,4 +1,4 @@
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import useToast from "@/hooks/useToast";
 import axiosInstance from "@/lib/axios";

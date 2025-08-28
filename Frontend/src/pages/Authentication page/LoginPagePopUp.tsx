@@ -20,7 +20,7 @@ const LoginPagePopUp = () => {
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  const { setIsAuthenticated, login, setOpenSignupPopup, setIsAdmin } =
+  const { setIsAuthenticated, login, setOpenSignupPopup, setIsAdmin, setOpenLoginPopup } =
     useAuthStore();
   const { showToast } = useToast();
   const navigate = useNavigate();
@@ -119,6 +119,7 @@ const LoginPagePopUp = () => {
       className="fixed top-0 left-0 z-50 flex h-full w-full items-center justify-center bg-[rgba(0,0,0,0.5)]"
       onClick={() => setOpenSignupPopup(false)}
     >
+      
       <div
         className="w-full max-w-md rounded-2xl bg-white p-10 shadow-xl/30"
         onClick={(e) => e.stopPropagation()}
@@ -184,6 +185,12 @@ const LoginPagePopUp = () => {
                   {error.password}
                 </span>
               )}
+            </div>
+            <div className="text-right text-xs mt-2">
+              <span onClick={() => {
+                navigate("/forget-password");
+                setOpenLoginPopup(false);
+              }} className="hover:underline hover:decoration-1 hover:underline-offset-4 text-blue-600 cursor-pointer">Forget Password ?</span>
             </div>
           </div>
 
