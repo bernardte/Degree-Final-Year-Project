@@ -11,8 +11,8 @@ from sklearn.preprocessing import LabelEncoder
 from torch.utils.data import DataLoader, Dataset
 from config.mongoDB import db
 
-# Connect to MongoDB
 
+# Connect to MongoDB
 faq_collection = db["faqs"]
 
 # Load data from MongoDB

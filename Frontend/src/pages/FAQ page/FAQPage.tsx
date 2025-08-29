@@ -5,7 +5,6 @@ import {
   ChevronUp,
   Hotel,
   Utensils,
-  MessageSquare,
   Heart,
   Info,
   Loader2,
@@ -32,12 +31,6 @@ const FAQPage = () => {
       count: faqs.length,
     },
     {
-      id: "Chit Chat",
-      name: "Chat",
-      icon: <MessageSquare size={18} />,
-      count: faqs.filter((f) => f.category === "Chit Chat").length,
-    },
-    {
       id: "Cancellation",
       name: "Cancellation",
       icon: <Heart size={18} />,
@@ -48,12 +41,6 @@ const FAQPage = () => {
       name: "Reservations",
       icon: <Hotel size={18} />,
       count: faqs.filter((f) => f.category === "Booking").length,
-    },
-    {
-      id: "Goodbye",
-      name: "Goodbye",
-      icon: <MessageSquare size={18} />,
-      count: faqs.filter((f) => f.category === "Goodbye").length,
     },
     {
       id: "General Info",

@@ -6,5 +6,5 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 root_dir = os.path.abspath(os.path.join(current_dir, "../../"))
 sys.path.append(root_dir)
 
-from models.llm import stream_llm
-from models.intentModel import predict_intent
+from .llm import stream_llm
+from .intentModel import predict_intent

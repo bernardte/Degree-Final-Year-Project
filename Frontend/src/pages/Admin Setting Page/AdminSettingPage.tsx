@@ -191,7 +191,8 @@ const AdminSettingPage = () => {
         error?.response?.data?.error || error?.response?.data?.message;
 
       if (message.includes("Access denied")) {
-        showToast("warn", error?.response?.data?.message);
+        showToast("warn", "Insufficient permissions, unable to operate");
+        setIsSuccess(false);
         return;
       }
 

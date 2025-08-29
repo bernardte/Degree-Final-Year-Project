@@ -77,7 +77,8 @@ const EventCalendarView: React.FC<EventCalendarViewProps> = ({
               Event Booking Calendar
             </h1>
             <p className="mb-5 text-gray-600">
-              {events.length} {events.length === 1 ? "event" : "events"} scheduled
+              {events.length} {events.length === 1 ? "event" : "events"}{" "}
+              scheduled
             </p>
           </div>
         </div>

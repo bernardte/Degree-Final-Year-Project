@@ -37,6 +37,7 @@ def load_faqs_from_mongodb(db_instance):
             return
 
         # Create FAISS index fr
+        print(f"documents: {documents}")
         faiss_index = FAISS.from_documents(documents, embeddings_model)
         # let vector data to store in disk instead of memory, for better persistence, when the system close still available
         faiss_index.save_local(faiss_path)
@@ -45,6 +46,16 @@ def load_faqs_from_mongodb(db_instance):
     except Exception as e:
         print(f"[FAISS] Error loading data: {e}")
         faiss_index = None
+
+
+def reload_faiss_index():
+    global faiss_index
+    try:
+        faiss_index = FAISS.load_local(faiss_path, embeddings_model, allow_dangerous_deserialization=True)
+        print("[FAISS] Reloaded index from disk.")
+    except Exception as e:
+        print(f"[FAISS] Failed to reload: {e}")
+
 
 
 """
@@ -58,10 +69,12 @@ async def find_best_faq(query):
     global faiss_index
     if faiss_index is None:
         print("[FAISS] Index not available.")
+        reload_faiss_index()
         return 0.0, {"question": "", "answer": ""}
 
     try:
         print(f"[FAISS] Query: {query}")
+        print(f"[FAISS] faiss index2: {faiss_index}")
         result, distance = faiss_index.similarity_search_with_score(query, k=1)[0]
 
         if not result:

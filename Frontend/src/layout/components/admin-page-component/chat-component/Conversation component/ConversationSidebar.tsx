@@ -74,7 +74,7 @@ const ConversationSidebar = ({
                 className={`cursor-pointer border-b-1 border-blue-300/50 p-4 transition-colors ${
                   activeConversation?._id === conv._id
                     ? "bg-blue-50"
-                    : "hover:bg-gray-50"
+                    : "hover:bg-gray-50"  
                 }`}
                 onClick={() => setActiveConversation(conv)}
               >

@@ -19,6 +19,7 @@ async def handle_chatbot(payload):
     step = 0
     if not current_state:
         intent = await detect_intent(user_input)
+        print(f"model detected 1: {intent}")
         await redis_client.set(conversationId, intent)
     else:
         if ":" in current_state:
@@ -28,14 +29,16 @@ async def handle_chatbot(payload):
             intent = current_state
             step = 0
 
-    # 检测是否切换意图
+    # Detect whether to switch intent
     new_intent = await detect_intent(user_input=user_input)
+    print(f"model detected 2: {new_intent}")
+
     if new_intent != intent:
         intent = new_intent
         step = 0
         await redis_client.set(conversationId, intent)
 
-    # FSM 逻辑
+    # FSM Logic
     if intent in FSM:
         steps = FSM.get(intent, [])
         if not steps:
@@ -47,17 +50,39 @@ async def handle_chatbot(payload):
 
         if step < len(steps):
             response_key = steps[step]
-            response = TEMPLATES.get(response_key, f"{intent.capitalize()} {response_key.replace('-', ' ')}")
+            template_instruction = TEMPLATES.get(
+                response_key,
+                f"{intent.capitalize()} {response_key.replace('-', ' ')}"
+            )
+
+            # 用 LLM 基于模板生成自然回复
+            prompt = f"""
+    You are Harold, a polite and professional hotel assistant.
+
+    The current conversation intent is: "{intent}".
+    The current step is: "{response_key}".
+
+    Your task:
+    - Follow the instruction: "{template_instruction}".
+    - Generate a polite, natural-sounding response.
+    - Keep the response concise (1-2 sentences).
+    """
+
+            async for token in stream_llm(prompt=prompt):
+                yield token, False
+
             await redis_client.set(conversationId, f"{intent}:{step + 1}")
-            yield response, True
+            yield "", True
             return
         else:
             await redis_client.delete(conversationId)
             yield f"Your request to {intent.replace('_', ' ')} has been completed.", True
             return
 
-    # FAQ 检索
+    # FAQ Search
     score, faq = await find_best_faq(query=user_input)
+    print("FAQ found:", faq)
+    print("Score:", score)
     if faq.get("answer") and score >= 0.5:
         history = "\n".join(
             f"{m['role']}: {m.get('content', '')}"
@@ -65,8 +90,17 @@ async def handle_chatbot(payload):
         )
 
         prompt = f"""
-You are a hotel assistant called Harold. Use the retrieved FAQ answer below to respond politely and make sure when receiving 'hi' keyword must include your name.
+You are Harold, a polite and professional hotel assistant.
 
+Always respond using the most relevant retrieved FAQ answer when available.
+
+If the user greets with "hi" (or similar greetings) in the first message, politely introduce yourself by name ("Harold").
+
+After the introduction, do not repeat your name in subsequent responses unless directly asked.
+
+Keep replies polite, helpful, and concise.
+
+If no relevant FAQ answer is found, provide a helpful general response.
 Relevant FAQ:
 Q: {faq['question']}
 A: {faq['answer']}
@@ -78,11 +112,19 @@ User Question: "{user_input}"
         yield "", True
         return
 
-    # fallback
-    yield {
-        "message": "Sorry, I couldn’t find an exact answer. Let me connect you with a customer service agent.",
-        "handover": True,
-        "suggestions": ["Check-in time", "Room service menu", "Contact reception"]
-    }, True
+    # fallback (streaming text instead of dict)
+    prompt = (
+        "Write a professional and polite fallback response for a chatbot. "
+        "The response should: "
+        "1) Acknowledge that it cannot find an exact answer, "
+        "2) Apologize politely, "
+        "3) Offer to connect the user with a customer service agent for further assistance."
+    )
+
+    async for token in stream_llm(prompt=prompt):
+        yield token, False
+
+    yield "", True
+
 
 

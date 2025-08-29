@@ -8,6 +8,7 @@ from retrieval import load_faqs_from_mongodb
 from classes.interface import RagRequest
 from controllers.chatbot_controller import handle_chatbot
 from models import stream_llm
+from utils import chunkedStream
 # ───────────────────────────────────────────────────────────────
 
 from anyio import to_thread
@@ -43,12 +44,12 @@ async def websocket_endpoint(ws: WebSocket):
             context = payload.get("context", "")
 
             if not question or not conversation_id:
-                await ws.send_json({"error": "question 和 conversationId 必须提供"})
+                await ws.send_json({"error": "question and conversationId Required"})
                 continue
 
-            # 让 handle_chatbot 生成流式响应
+            # Let handle_chatbot generate streaming responses
             async for token, is_final in handle_chatbot(payload):
-                print(f"tokem: {token}, {is_final}")
+                print(f"token: {token}, {is_final}")
                 await ws.send_json({
                     "conversationId": conversation_id,
                     "token": token,

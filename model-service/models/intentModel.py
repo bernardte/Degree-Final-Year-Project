@@ -1,8 +1,11 @@
-# model-service/intent_model.py
 import torch
 import numpy as np
 import pickle
 from torch import nn
+import os
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # directory of intentModel.py
+vectorizer_path = os.path.join(BASE_DIR, "load_dict", "vectorizer.pkl")
 
 # ----- Load encoders -----
 with open("models/load_dict/vectorizer.pkl", "rb") as f:

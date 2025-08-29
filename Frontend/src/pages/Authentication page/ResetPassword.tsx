@@ -142,12 +142,6 @@ const ResetPassword = () => {
                 Your password has been successfully reset. You can now login
                 with your new password.
               </p>
-              <button
-                className="w-full rounded-lg bg-blue-600 px-4 py-3 font-medium text-white transition-colors hover:bg-blue-700"
-                onClick={() => (window.location.href = "/login")}
-              >
-                Continue to Login
-              </button>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-6">

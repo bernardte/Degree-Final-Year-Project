@@ -14,6 +14,8 @@ const ReservationCalendarView = () => {
   const { fetchAllRestaurantReservation, reservations, error, isLoading } =
     useReservationStore((state) => state);
 
+  console.log(reservations.map((times) => times.time));
+  console.log(reservations.map((times) => times.date));
   // Fetch reservations from database
   useEffect(() => {
     fetchAllRestaurantReservation();
@@ -31,7 +33,7 @@ const ReservationCalendarView = () => {
     const res: Reservation = eventInfo.event.extendedProps as Reservation;
     return (
       <motion.div
-        className="h-full rounded-lg border-l-4 p-2 shadow-sm"
+        className="h-full rounded-lg border-l-4 p-2 shadow-sm overflow-hidden"
         style={{ borderLeftColor: "#3b82f6" }}
         initial={{ opacity: 0, y: 5 }}
         animate={{ opacity: 1, y: 0 }}
@@ -47,16 +49,29 @@ const ReservationCalendarView = () => {
     );
   };
 
-  if(error){
-     <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-center">
-       <p className="font-medium text-red-700">Error: {error}</p>
-       <button className="mt-4 rounded-lg bg-red-600 px-4 py-2 text-white transition-colors hover:bg-red-700">
-         Try Again
-       </button>
-     </div>;
+  const conbinationOfDateAndTime = (date: Date, timeString: string): Date => {
+    // Make a copy of date to avoid modifying the original object
+    const newDate = new Date(date);
+
+    // destructure timeString
+    const [hours, minutes] = timeString.split(":").map(Number);
+
+    // Set hours and minutes
+    newDate.setHours(hours, minutes, 0, 0);
+
+    return newDate;
+  };
+
+  if (error) {
+    <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-center">
+      <p className="font-medium text-red-700">Error: {error}</p>
+      <button className="mt-4 rounded-lg bg-red-600 px-4 py-2 text-white transition-colors hover:bg-red-700">
+        Try Again
+      </button>
+    </div>;
   }
 
-  if(isLoading){
+  if (isLoading) {
     <div className="flex h-96 flex-col items-center justify-center space-y-7">
       <div className="h-12 w-12 animate-spin rounded-full border-t-2 border-b-2 border-blue-500" />
       <span className="text-gray-400">Loading Event Calendar...</span>
@@ -86,7 +101,7 @@ const ReservationCalendarView = () => {
         {/* Calendar Component */}
         {!isLoading && (
           <motion.div
-            className="rounded-2xl bg-white shadow-lg"
+            className="rounded-2xl bg-white shadow-lg overflow-hidden"
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5 }}
@@ -110,7 +125,7 @@ const ReservationCalendarView = () => {
               selectable={false}
               events={reservations.map((res) => ({
                 title: res.name,
-                start: res.date,
+                start: conbinationOfDateAndTime(res.date, res.time),
                 extendedProps: res,
               }))}
               eventClick={handleEventClick}
@@ -143,8 +158,8 @@ const ReservationCalendarView = () => {
                 exit={{ scale: 0.9, opacity: 0 }}
                 transition={{ type: "spring", damping: 20 }}
               >
-                <div className="sticky top-0 z-10 flex items-center justify-between border-b bg-white p-6">
-                  <h3 className="text-xl font-semibold text-gray-800">
+                <div className="sticky top-0 z-10 flex items-center justify-between border-b bg-blue-400 p-6">
+                  <h3 className="text-xl font-semibold text-white">
                     Reservation Details
                   </h3>
                   <button
@@ -152,9 +167,9 @@ const ReservationCalendarView = () => {
                       setShowModal(false);
                       setSelectedEvent(null);
                     }}
-                    className="text-gray-400 transition-colors duration-200 hover:text-gray-600"
+                    className="rounded-full p-1 transition-colors hover:bg-white/20"
                   >
-                    <X size={24} />
+                    <X size={24} color="#fff" />
                   </button>
                 </div>
 
@@ -168,18 +183,23 @@ const ReservationCalendarView = () => {
                             {selectedEvent.name}
                           </h4>
                           <p className="mt-1 text-gray-600">
-                            {new Date(selectedEvent.date).toLocaleDateString(
-                              "en-US",
-                              {
-                                month: "long",
-                                day: "numeric",
-                                weekday: "short",
-                              },
-                            )}{" "}
+                            {new Date(
+                              conbinationOfDateAndTime(
+                                selectedEvent.date,
+                                selectedEvent.time,
+                              ),
+                            ).toLocaleDateString("en-US", {
+                              month: "long",
+                              day: "numeric",
+                              weekday: "short",
+                            })}{" "}
                             •{" "}
                             {selectedEvent.time &&
                               new Date(
-                                `1970-01-01T${selectedEvent.time}`,
+                                conbinationOfDateAndTime(
+                                  selectedEvent.date,
+                                  selectedEvent.time,
+                                ),
                               ).toLocaleTimeString("en-US", {
                                 hour: "2-digit",
                                 minute: "2-digit",
@@ -201,11 +221,11 @@ const ReservationCalendarView = () => {
                         </div>
                       </div>
 
-                      {/* Client Information */}
+                      {/* Customer Information */}
                       <div className="border-t pt-4">
                         <h5 className="mb-4 flex items-center font-medium text-gray-700">
                           <User size={18} className="mr-2" />
-                          Client Information
+                          Customer Information
                         </h5>
                         <div className="space-y-3">
                           <div className="flex justify-between">

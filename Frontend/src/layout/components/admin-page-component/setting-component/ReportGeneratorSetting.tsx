@@ -9,6 +9,8 @@ import { formatDateInBookingCheckOut } from "@/utils/formatDate";
 import useSettingStore from "@/stores/useSettingStore";
 import useToast from "@/hooks/useToast";
 import axiosInstance from "@/lib/axios";
+import RequireRole from "@/permission/RequireRole";
+import { ROLE } from "@/constant/roleList";
 
 interface ReportGeneratorSettingProps {
   reports: Reports[];
@@ -235,20 +237,22 @@ const ReportGeneratorSetting = ({
           <Download className="mr-2" size={18} />
           Export as PDF
         </button>
-        <button
-          disabled={isLoading || reports.length <= 0}
-          className={`flex items-center rounded-lg px-4 py-2 text-white transition ${
-            isLoading
-              ? "cursor-not-allowed bg-rose-400"
-              : reports.length <= 0
-                ? "cursor-not-allowed bg-gray-500"
-                : "cursor-pointer bg-rose-600 hover:bg-rose-700"
-          }`}
-          onClick={handleDeleteAllReport}
-        >
-          <Trash2 className="mr-2" size={18} />
-          Delete All Reports
-        </button>
+        <RequireRole allowedRoles={[ROLE.SuperAdmin]}>
+          <button
+            disabled={isLoading || reports.length <= 0}
+            className={`flex items-center rounded-lg px-4 py-2 text-white transition ${
+              isLoading
+                ? "cursor-not-allowed bg-rose-400"
+                : reports.length <= 0
+                  ? "cursor-not-allowed bg-gray-500"
+                  : "cursor-pointer bg-rose-600 hover:bg-rose-700"
+            }`}
+            onClick={handleDeleteAllReport}
+          >
+            <Trash2 className="mr-2" size={18} />
+            Delete All Reports
+          </button>
+        </RequireRole>
       </div>
 
       {isLoading ? (

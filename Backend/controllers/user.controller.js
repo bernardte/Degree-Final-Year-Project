@@ -75,7 +75,7 @@ const forgetPasswordRequest = async (req, res) => {
     const user = await User.findOne({ email });
 
     if (!user) {
-      res.status(404).json({ error: "User not found" });
+      res.status(404).json({ error: "Invalid Email" });
     }
 
     const token = jwt.sign(
@@ -120,7 +120,7 @@ const resetPassword = async (req, res) => {
     try {
       decodedToken = jwt.verify(token, process.env.JWT_RESET_PASSWORD_TOKEN);
     } catch (error) {
-      return res.status(400).json({ error: "Invalid or expired token" });
+      return res.status(400).json({ error: "Invalid or link are expired" });
     }
 
     const user = await User.findOne({
@@ -371,9 +371,10 @@ const verifyOTP = async (req, res) => {
   if (!otp) return res.status(400).json({ error: "OTP are required" });
 
   try {
-    const verifyOTP = OTP.findOne({
+    const verifyOTP = await OTP.findOne({
       otpCode: otp,
     });
+
 
     if (!verifyOTP) {
       return res.status(400).json({ error: "Invalid OTP" });

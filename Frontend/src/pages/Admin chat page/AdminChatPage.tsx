@@ -146,6 +146,17 @@ const AdminChatPage = () => {
     markAsRead();
   }, [activeConversation?._id, activeConversation, messages, senderId, senderType]);
 
+  useEffect(() => {
+    if (!activeConversation) return;
+
+    // 在 store 的 conversations 里找最新的那个
+    const latest = conversations.find((c) => c._id === activeConversation._id);
+
+    if (latest && latest.status !== activeConversation.status) {
+      setActiveConversation(latest);
+    }
+  }, [conversations, activeConversation]);
+
   return (
     <div className="flex h-screen bg-gray-50 p-4">
       {/* Conversations sidebar */}
@@ -175,6 +186,7 @@ const AdminChatPage = () => {
             <MessageInput
               newMessage={newMessage}
               setNewMessage={setNewMessage}
+              activeConversation={activeConversation}
               handleSendMessage={handleSendMessage}
               loading={loading}
               uploadImage={uploadImage}

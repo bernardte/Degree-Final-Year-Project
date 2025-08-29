@@ -13,62 +13,49 @@ export function initAISocket() {
 
   ws.on("open", () => console.log("Connected to AI service"));
 
-    ws.on("message", async (chunk) => {
-    try {
-        buffer += chunk.toString(); // 追加到缓存
+   ws.on("message", async (msg) => {
+     try {
+       const data = JSON.parse(msg.toString());
 
-        // 检查是否是完整 JSON（简单判断方式）
-        // 1. 去掉前后空格
-        // 2. 必须以 "{" 开头 以 "}" 结尾
-        if (buffer.trim().startsWith("{") && buffer.trim().endsWith("}")) {
-            const data = JSON.parse(buffer); // 解析完整 JSON
-            console.log("reached")
-            buffer = ""; // 清空缓存，准备接收下一条
+       if (!conversationTextMap[data.conversationId]) {
+         conversationTextMap[data.conversationId] = "";
+       }
 
-            if(!conversationTextMap[data.conversationId]){
-                conversationTextMap[data.conversationId] = "";
-            }
+       // 累加内容
+       conversationTextMap[data.conversationId] += data.token;
 
-            conversationTextMap[data.conversationId] += data.token
+       const bot = await User.findOne({ name: "AI Chatbot" }).select("_id");
 
-            const bot = await User.findOne({ name: "AI Chatbot" }).select("_id");
+       // 广播给前端
+       getIO().to(data.conversationId).emit("ai-stream", {
+         conversationId: data.conversationId,
+         content: data.token, // 单次token
+         senderType: "bot",
+         senderId: bot._id,
+         isRead: true,
+         image: null,
+         createdAt: new Date().toISOString(),
+         isFinal: data.isFinal,
+       });
 
-            // 处理数据
-            getIO()
-            .to(data.conversationId)
-            .emit("ai-stream", {
-                conversationId: data.conversationId,
-                content: data.token,
-                senderType: "bot",
-                senderId: bot._id, // 可以先随便给个固定 ID
-                isRead: true,
-                image: null,
-                createdAt: new Date().toISOString(),
-                isFinal: data.isFinal,
-            });
+       // 如果是最后一个token → 存数据库
+       if (data.isFinal) {
+         const finalText = conversationTextMap[data.conversationId] || "";
+         await Message.create({
+           conversationId: data.conversationId,
+           content: finalText,
+           senderType: "bot",
+           senderId: bot._id,
+           isRead: true,
+         });
 
-            if (data.isFinal === true) {
+         delete conversationTextMap[data.conversationId]; // 清理缓存
+       }
+     } catch (err) {
+       console.error("AI WebSocket message error:", err);
+     }
+   });
 
-            const finalText = conversationTextMap[data.conversationId] || "";
-            await Message.create({
-                conversationId: data.conversationId,
-                content: finalText,
-                senderType: "bot",
-                senderId: bot._id,
-                isRead: true,
-                });
-                delete conversationTextMap[data.conversationId]; // 清理内存
-            }
-        }
-    } catch (err) {
-        // 如果还没收完整，不解析
-        if (err instanceof SyntaxError) {
-        return;
-        }
-        console.error("AI WebSocket message error:", err);
-        buffer = ""; // 避免缓存脏数据
-    }
-    });
 
 
   ws.on("error", (err) => {
