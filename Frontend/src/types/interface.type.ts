@@ -325,6 +325,7 @@ export interface Settings {
   userRole: string;
   geo: {
     city: string,
+    regionName: string,
     country: string;
   }
   userId: {

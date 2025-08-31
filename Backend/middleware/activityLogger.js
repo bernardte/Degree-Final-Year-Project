@@ -1,10 +1,11 @@
 import ActivityLog from "../models/activityLog.model.js";
 import useragent from "useragent";
-import geoip from "geoip-lite";
+// import geoip from "geoip-lite";
 import { anomalyDetector } from "../utils/anomalyDetector.js";
 import { sanitizeSensitiveData } from "../utils/sanitizeSensitiveData.js";
 import { normalizeAction } from "../utils/normalizeAction.js";
 import { getActionFromMap } from "../utils/mapAction.js";
+import { getUserGeoIp } from "../utils/IP address/getUserIPAddress.js";
 
 export const activityLogger = (req, res, next) => {
   res.on("finish", async () => {
@@ -24,27 +25,26 @@ export const activityLogger = (req, res, next) => {
         req.body?.action ||
         `${req.method} ${req.baseUrl}${req.path}`;
       const errorMessage = res.locals.errorMessage || null;
-      logAction = normalizeAction(logAction)
+      logAction = normalizeAction(logAction);
       logAction = getActionFromMap(req.method, `${req.baseUrl}${req.path}`);
-      console.log("current action: ", logAction)
       // get user agent and geo information
       //? req.headers["x-forwarded-for"], if have nginx or proxy server then will get this header request, if just directly communicate to the browser then just used req.ip to get the ip address
-      let ip =
-        req.ip ||
-        req.connection.remoteAddress ||
-        req.headers["x-forwarded-for"] ||
-        "unknown_ip";
+      // let ip =
+      //   req.ip ||
+      //   req.connection.remoteAddress ||
+      //   req.headers["x-forwarded-for"] ||
+      //   "unknown_ip";
 
-      //! third party(API calling) to take user current IP address 
-      //* This API calling has limit for only 1000 Geo IP request per day. 
-      // const geoRes = await fetch("https://ipapi.co/json/");
-      // const geoData = await geoRes.json();
-      // console.log("current user IP: ", geoData);
+      //! third party(API calling) to take user current IP address
+      //* This API calling has limit for only 1000 Geo IP request per day.
+      const geoData = await getUserGeoIp();
+
+      console.log("your geoData: ", geoData);
 
       //! Normalize localhost IPv6 (::1) to IPv4 (127.0.0.1) (localhost)
-      if (ip === "::1" || ip === "0:0:0:0:0:0:0:1") {
-        ip = "127.0.0.1";
-      }
+      // if (geoData.ip === "::1" || geoData.ip === "0:0:0:0:0:0:0:1") {
+      //   ip = "127.0.0.1";
+      // }
 
       const userAgent = req.headers["user-agent"] || "unknown user agent";
       const agent = useragent.parse(userAgent);
@@ -52,12 +52,12 @@ export const activityLogger = (req, res, next) => {
       // get geo information
       // geoip-lite not support IPv6, so we need to use IPv4 address;
       //! geoip-lite return null, since we are using localhost, so we need to set default value
-      const geo = geoip.lookup(ip) || {
-        country: ip === "127.0.0.1" ? "Malaysia" : "unknown country",
-        city: ip === "127.0.0.1" ? "Local" : "unknown city",
-        //? ll = latitude and longitude
-        ll: [0, 0], // default to [0, 0] if geo lookup fails
-      };
+      // const geo = geoip.lookup(ip) || {
+      //   country: ip === "127.0.0.1" ? "Malaysia" : "unknown country",
+      //   city: ip === "127.0.0.1" ? "Local" : "unknown city",
+      //? ll = latitude and longitude
+      //   ll: [0, 0], // default to [0, 0] if geo lookup fails
+      // };
 
       const device = {
         os: agent.os || "unknown os",
@@ -85,7 +85,6 @@ export const activityLogger = (req, res, next) => {
         }
       }
 
-
       // generate metadata when frontend not passing through
       if (!metadata) {
         const {
@@ -109,20 +108,29 @@ export const activityLogger = (req, res, next) => {
         metadata = { page, actionId, params, extra };
       }
 
-       metadata = sanitizeSensitiveData(metadata);
+      const geoDataWithoutIp = {
+        country: geoData.country,
+        regionName: geoData.regionName,
+        city: geoData.city,
+        longitude: geoData.longitude,
+        latitude: geoData.latitude,
+      };
 
+      metadata = sanitizeSensitiveData(metadata);
+      const userId = req.user.userId || req.user._id || null;
       const activityLog = await ActivityLog.create({
-        userId: req.user ? req.user._id : null, // protectRoute have value or else null
+        userId, // protectRoute or attach user have value or else null
         userRole: req.user ? req.user.role : "guest",
         sessionId,
         type: logType,
         action: logAction,
-        ip,
+        ip: geoData.ip,
         ua: userAgent,
         metadata: metadata,
         device,
-        geo,
-        status: res.statusCode >= 200 && res.statusCode < 400 ? "success" : "failed",
+        geo: geoDataWithoutIp,
+        status:
+          res.statusCode >= 200 && res.statusCode < 400 ? "success" : "failed",
         errorMessage,
       });
 
@@ -132,6 +140,5 @@ export const activityLogger = (req, res, next) => {
       console.error("Logging error:", err);
     }
   });
-
   next();
 };

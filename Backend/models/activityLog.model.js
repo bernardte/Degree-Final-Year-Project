@@ -23,6 +23,7 @@ const ActivityLogSchema = new mongoose.Schema(
       isMobile: Boolean,
     },
     geo: {
+      regionName: String,
       country: String,
       city: String,
       ll: [Number], // [lat, lon]

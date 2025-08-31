@@ -224,16 +224,21 @@ const activityStreamFetching = async (req, res) => {
   //Use MongoDB Change Stream to monitor ActivityLog table changes
   const changeStream = ActivityLog.watch([], { fullDocument: "updateLookup" });
 
-  changeStream.on("change", (change) => {
+  changeStream.on("change", async (change) => {
     if (change.operationType === "insert") {
       const newActivity = change.fullDocument;
 
       //* Determine whether the action is in the actionMap，is in it return to the frontend
       if (
+        actionMap &&
         Object.values(actionMap).includes(newActivity.action) &&
         !sentIds.has(newActivity._id.toString())
       ) {
-        res.write(`data: ${JSON.stringify(newActivity)}\n\n`);
+         let updateActivity = await ActivityLog.findById(newActivity._id)
+        .populate("userId", "username")
+        .lean();
+
+        res.write(`data: ${JSON.stringify(updateActivity)}\n\n`);
         sentIds.add(newActivity._id.toString());
       }
     }
@@ -241,6 +246,7 @@ const activityStreamFetching = async (req, res) => {
 
   req.on("close", () => {
     changeStream.close();
+    res.end();
   });
 };
 
@@ -364,7 +370,7 @@ const generateReport = async (req, res) => {
       report: newReport,
     });
   } catch (error) {
-    console.log("Error in fetching user activity: ", error);
+    console.log("Error in fetching generate report: ", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };

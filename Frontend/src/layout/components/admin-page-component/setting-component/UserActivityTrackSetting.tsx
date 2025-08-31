@@ -16,6 +16,7 @@ import { formatDateWithDayAndTime } from "@/utils/formatDate";
 import { DayPicker } from "react-day-picker";
 import "react-day-picker/dist/style.css";
 import { format } from "date-fns";
+import useToast from "@/hooks/useToast";
 
 const UserActivityTrackSetting = () => {
   const [filters, setFilters] = useState({
@@ -36,6 +37,7 @@ const UserActivityTrackSetting = () => {
     setPage,
   } = useSettingStore((state) => state);
   const [openPicker, setOpenPicker] = useState<"start" | "end" | null>(null);
+  const { showToast } = useToast();
 
   // handle page change
   useEffect(() => {
@@ -49,7 +51,16 @@ const UserActivityTrackSetting = () => {
         limit,
       );
     }
-  }, [page, filters, fetchUsersTrackingData, limit]);
+  }, [
+    page,
+    limit,
+    filters.role,
+    filters.type,
+    filters.startDate,
+    filters.endDate,
+    fetchUsersTrackingData,
+  ]);
+
 
   useEffect(() => {
     const eventSource = new EventSource(
@@ -78,21 +89,27 @@ const UserActivityTrackSetting = () => {
             if (prev.tableData.some((data) => data._id === newActivity._id)) {
               return prev;
             }
-
             return {
-              tableData: [newActivity, ...prev.tableData],
+              tableData: [newActivity, ...prev.tableData].slice(0, prev.limit), // 只保留 limit 条
             };
           });
+
         }
-      } catch (error) {}
+      } catch (error: any) {
+        showToast("error", error?.response?.data?.error || error?.response?.data?.message)
+      }
     };
+
+    return () => {
+      eventSource.close();
+    }
   }, []);
 
   // handle filter change
   const handleFilterChange = (filterType: string, value: string) => {
     setFilters((prev) => {
       const newFilters = { ...prev, [filterType]: value };
-      setPage(1); // ✅ 在这里重置页码
+      setPage(1); // reset page number
       return newFilters;
     });
   };
@@ -258,6 +275,7 @@ const UserActivityTrackSetting = () => {
               const StatusIcon = getStatusIcon(activity.status).icon;
               const statusColor = getStatusIcon(activity.status).color;
 
+              console.table(activity);
               return (
                 <div
                   key={activity._id || index}
@@ -269,9 +287,14 @@ const UserActivityTrackSetting = () => {
                     </div>
                     <div>
                       {activity.userId?.username ? (
-                        <p className="text-sm text-gray-500">
-                          {activity.userId?.username}
-                        </p>
+                        <div className="flex">
+                          <p className="text-sm text-gray-500">
+                            {activity.userId?.username} &nbsp;
+                          </p>
+                          <span className="capitalize text-sm text-gray-500">
+                            ({activity.userRole === "superAdmin" ? "Super Admin" : activity.userRole})
+                          </span>
+                        </div>
                       ) : (
                         <p className="text-sm text-gray-500">Guest</p>
                       )}
@@ -280,7 +303,7 @@ const UserActivityTrackSetting = () => {
                       </p>
                       <div className="mt-1 flex items-center text-sm text-gray-600">
                         <MapPin size={14} className="mr-1" />
-                        {activity.geo?.country}, {activity.geo?.city}
+                        {activity.geo?.country}, {activity.geo?.regionName}, {activity.geo?.city}
                       </div>
                       <div className="mt-1 flex items-center text-sm text-gray-600">
                         <MapPin size={14} className="mr-1" />

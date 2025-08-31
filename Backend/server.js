@@ -29,6 +29,7 @@ import { createServer } from "http"; //http server
 import { initAISocket } from "./websocket/websocket.js";
 import { activityLogger } from "./middleware/activityLogger.js";
 import deleteTempfileScheduler from "./cronjob/deleteTempfileScheduler.js";
+import { attachUser } from "./middleware/attachUser.js";
 
 dotenv.config();
 const app = express();
@@ -60,6 +61,8 @@ app.use(
 
 const httpServer = createServer(app);
 initializeSocket(httpServer)
+
+app.use(attachUser); //* catch login user
 app.use(activityLogger); //* Use activity logger middleware, to keep track of user recent activities
 
 app.use("/api/users", usersRoute);

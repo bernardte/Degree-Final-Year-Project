@@ -1,6 +1,7 @@
 export const actionMap = {
   "GET /api/rooms/most-booking-room": "User view the most frequently booked rooms",
   "GET /api/rooms/get-each-room-type": "User view each room type",
+  "GET /api/rooms/room/:objectId": "User viewing certain room type",
   "GET /api/users/profile": "View Profile",
   "GET /api/bookings/get-booking-session/:uuid": "Get booking session",
   "PATCH /api/bookings/update-breakfast-count/:objectId": "Add breakfast for the room",
@@ -21,7 +22,7 @@ export const actionMap = {
   "POST /api/checkout/payment-gateway": "User successfully pay",
   "GET /api/rooms/filter": "User filtering room type",
   "POST /api/users/login": "User are trying to login",
-  "POST /api/users/verify-otp": "Admin trying to accessing admin features",
+  "POST /api/users/verify-otp": "User accessing to admin verification",
   "PUT /api/users/updateProfile/:objectId": "Users changing their profile",
   "POST /api/event/event-enquiry": "Users are trying to request of host an event in hotel",
   "POST /api/admin/add-room": "Admin add a new room",
