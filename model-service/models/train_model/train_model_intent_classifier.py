@@ -161,10 +161,10 @@ if __name__ == "__main__":
         print(f"{sample} → Intent: {intent}")
 
     
-    torch.save(model.state_dict(), "models/load_dict/intent_classifier.pth")
-    with open("models/load_dict/vectorizer.pkl", "wb") as f:
+    torch.save(model.state_dict(), "models/load_dict/intent-classifier/intent_classifier.pth")
+    with open("models/load_dict/intent-classifier/vectorizer.pkl", "wb") as f:
         pickle.dump(vectorizer, f)
-    with open("models/load_dict/label_encoder.pkl", "wb") as f:
+    with open("models/load_dict/intent-classifier/label_encoder.pkl", "wb") as f:
         pickle.dump(labels_encoder, f)
 
     print("Model, vectorizer, and label encoder saved.")
