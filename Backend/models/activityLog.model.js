@@ -1,10 +1,10 @@
 // models/ActivityLog.js
 import mongoose from "mongoose";
-import { type } from "os";
 
 const ActivityLogSchema = new mongoose.Schema(
   {
     userId: { type: mongoose.Schema.Types.ObjectId, ref: "user", index: true },
+    guestId: { type: String, default: false, index: true },
     userRole: {
       type: String,
       enum: ["admin", "superAdmin", "user", "bot", "guest"],

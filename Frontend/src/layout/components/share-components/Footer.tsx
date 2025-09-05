@@ -29,27 +29,29 @@ const Footer = () => {
               <div className="flex items-center gap-3">
                 <MapPin className="text-blue-200" size={18} />
                 <p className="text-sm text-blue-100">
-                 {hotelInformation?.address}
+                  {hotelInformation?.address}
                 </p>
               </div>
 
               <div className="flex items-center gap-3">
                 <Phone className="text-blue-200" size={18} />
-                <p className="text-sm text-blue-100">{hotelInformation?.phone}</p>
+                <p className="text-sm text-blue-100">
+                  {hotelInformation?.phone}
+                </p>
               </div>
 
               <div className="flex items-center gap-3">
                 <Mail className="text-blue-200" size={18} />
-                <p className="text-sm text-blue-100">{hotelInformation?.email}</p>
+                <p className="text-sm text-blue-100">
+                  {hotelInformation?.email}
+                </p>
               </div>
             </div>
           </div>
 
           {/* Quick Links */}
           <div>
-            <h3 className="mb-4 b-2 text-lg font-semibold">
-              Quick Links
-            </h3>
+            <h3 className="b-2 mb-4 text-lg font-semibold">Quick Links</h3>
             <ul className="space-y-2">
               {list.map((link) => (
                 <li key={link.to}>
@@ -66,9 +68,7 @@ const Footer = () => {
 
           {/* Policies and Social */}
           <div>
-            <h3 className="mb-4 pb-2 text-lg font-semibold">
-              Policies & Info
-            </h3>
+            <h3 className="mb-4 pb-2 text-lg font-semibold">Policies & Info</h3>
 
             <div className="mb-6 space-y-3">
               <Link
@@ -93,9 +93,7 @@ const Footer = () => {
               </Link>
             </div>
 
-            <h3 className="mb-3 pb-2 text-lg font-semibold">
-              Connect With Us
-            </h3>
+            <h3 className="mb-3 pb-2 text-lg font-semibold">Connect With Us</h3>
 
             <div className="flex space-x-4">
               <a
@@ -172,27 +170,21 @@ const Footer = () => {
         <div className="mt-10 border-t border-blue-700 pt-6 text-center text-sm text-blue-200">
           <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
             <div>
-              &copy; {new Date().getFullYear()} {hotelInformation?.name}. All rights
-              reserved.
+              &copy; {new Date().getFullYear()} {hotelInformation?.name}. All
+              rights reserved.
             </div>
             <div className="flex gap-4">
               <Link
-                to="/terms"
+                to="/terms-condition"
                 className="text-sm transition-colors hover:text-white"
               >
                 Terms
               </Link>
               <Link
-                to="/privacy"
+                to="/privacy-policy"
                 className="text-sm transition-colors hover:text-white"
               >
                 Privacy
-              </Link>
-              <Link
-                to="/sitemap"
-                className="text-sm transition-colors hover:text-white"
-              >
-                Sitemap
               </Link>
             </div>
           </div>

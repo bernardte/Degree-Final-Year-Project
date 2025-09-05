@@ -3,7 +3,6 @@ import dotenv from "dotenv"
 
 dotenv.config()
 export const attachUser = async(req, res, next) => {
-    console.log(req)
     const authHeader = req.headers["authorization"];
     const token = authHeader && authHeader.split(" ")[1];
 

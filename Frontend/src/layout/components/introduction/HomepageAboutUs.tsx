@@ -1,6 +1,15 @@
+import useSystemSettingStore from "@/stores/useSystemSettingStore";
+import { useEffect } from "react";
 import { Hotel, MapPin, Wifi, Coffee, Utensils, Star } from "lucide-react";
 
 const HomepageAboutUs = () => {
+  const { fetchAllHotelInformationInCustomerSide, hotelInformation } =
+    useSystemSettingStore();
+
+  useEffect(() => {
+    fetchAllHotelInformationInCustomerSide();
+  }, [fetchAllHotelInformationInCustomerSide]);
+
   return (
     <div className="relative overflow-hidden">
       {/* background decoration */}
@@ -21,7 +30,7 @@ const HomepageAboutUs = () => {
 
             <h1 className="mb-6 text-4xl font-bold md:text-5xl">
               <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
-                The Seraphine Hotel
+                {hotelInformation?.name}
               </span>
             </h1>
 
@@ -46,9 +55,9 @@ const HomepageAboutUs = () => {
               <p className="text-lg leading-relaxed text-gray-600">
                 Located just minutes from popular attractions, shopping areas,
                 and transportation hubs,{" "}
-                <strong className="text-blue-600">Seraphine Hotel</strong> is
+                <strong className="text-blue-600">{hotelInformation?.name}</strong> is
                 the perfect base for exploring everything{" "}
-                <strong className="text-blue-600">George Town</strong> has to
+                <strong className="text-blue-600">{hotelInformation?.address}</strong> has to
                 offer.
               </p>
             </div>
@@ -60,7 +69,7 @@ const HomepageAboutUs = () => {
                   <MapPin className="h-5 w-5 text-blue-600" />
                 </div>
                 <span className="text-gray-700">
-                  Prime location in George Town
+                  Prime location in {hotelInformation?.address}
                 </span>
               </div>
 

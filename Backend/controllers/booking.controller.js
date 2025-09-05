@@ -21,6 +21,8 @@ import { sendInvoiceEmail } from "../utils/invoices/sendInvoiceEmail.js";
 import Reward from "../models/reward.model.js";
 import ClaimedReward from "../models/claimedReward.model.js";
 import SystemSetting from "../models/systemSetting.model.js";
+import { bookingSessionAbnormalDetection } from "../utils/httpRequest/bookingSessionAbnormalDetection.js";
+import SuspiciousEvent from "../models/suspiciousEvent.model.js";
 
 const createBooking = async (req, res) => {
   const { bookingSessionId, specialRequests } = req.body;
@@ -42,6 +44,7 @@ const createBooking = async (req, res) => {
       checkInDate,
       checkOutDate,
       userId,
+      guestId,
       totalGuest,
       totalPrice,
       paymentMethod,
@@ -68,7 +71,7 @@ const createBooking = async (req, res) => {
       return res.status(404).json({ error: "One or more rooms not found" });
 
     const user = userId ? await User.findById(userId) : null;
-    const guestUserId = session.guestDetails?._id;
+    const guestUserId = guestId;
     const bookingReference = uuidv4();
 
     for (let room of rooms) {
@@ -85,7 +88,8 @@ const createBooking = async (req, res) => {
 
     const newBooking = new Booking({
       userEmail: contactEmail || user?.email || null,
-      bookingCreatedByUser: userId || guestUserId,
+      bookingCreatedByUser: userId || null,
+      guestId: guestUserId || null,
       userType: userId ? "user" : "guest",
       room: rooms.map((r) => r._id),
       startDate: checkInDate,
@@ -438,10 +442,25 @@ const createBookingSession = async (req, res) => {
     );
     const actualtotalPrice = rangebetweenCheckInCheckOutDate * totalPrice;
 
+    const passingAbnormallyDatection = {
+      sessionId: sessionId,
+      totalPrice: Number(actualtotalPrice),
+      adults: Number(totalGuest?.adults) || 0,
+      children: Number(totalGuest?.children) || 0,
+      nights: rangebetweenCheckInCheckOutDate,
+    };
+
+    const abnormalDetected = await bookingSessionAbnormalDetection(
+      passingAbnormallyDatection
+    );
+
+    console.log("result: ", abnormalDetected);
+
     // 4) Build the document
     const session = new BookingSession({
       sessionId,
       userId: userId ? userId : undefined, // null for one-time guests
+      guestId: !userId ? req.cookies?.guestId : null, 
       roomId,
       checkInDate,
       checkOutDate,
@@ -461,6 +480,21 @@ const createBookingSession = async (req, res) => {
     });
 
     await session.save();
+
+    if (abnormalDetected.result === "abnormal" || abnormalDetected.anomally === true) {
+      const suspiciousEvent = new SuspiciousEvent({
+        userId: req.user.userId,
+        guestId: req.cookies.guestId,
+        type: "abnormal",
+        reason: "Abnormal Detected on Booking Session",
+        details: session,
+        severity: "medium",
+        handled: false,
+      });
+
+      await suspiciousEvent.save();
+    }
+
 
     res.status(201).json({ sessionId });
   } catch (error) {

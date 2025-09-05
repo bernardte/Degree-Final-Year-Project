@@ -7,12 +7,12 @@ export const getUserGeoIp = async () => {
     //? free geolocation api: https://freegeoip.app/json/ for 15000 per hours request
     const response = await axios.get(`https://ipapi.co/8.8.8.8`);
     const geoData = response.data;
-    console.log("Current user IP info:", geoData);
-    console.log("IP:", geoData.ip);
-    console.log("Country:", geoData.country_name);
-    console.log("City:", geoData.city);
-    console.log("longitude: ", geoData.longitude);
-    console.log("latitude: ", geoData.latitude);
+    // console.log("Current user IP info:", geoData);
+    // console.log("IP:", geoData.ip);
+    // console.log("Country:", geoData.country_name);
+    // console.log("City:", geoData.city);
+    // console.log("longitude: ", geoData.longitude);
+    // console.log("latitude: ", geoData.latitude);
 
     return {
       ip: geoData.ip || "161.142.156.134",

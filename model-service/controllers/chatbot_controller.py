@@ -14,6 +14,27 @@ async def handle_chatbot(payload):
     context = payload.get("context", "")
     chat_context = context
 
+    if any(kw in user_input for kw in ["human", "customer service", "Real people", "agent", "Transfer to manual", "real agent"]):
+        await redis_client.delete(conversationId)
+        prompt = """
+You are Harold, a polite and professional hotel assistant.
+
+The user has requested to speak with a human agent.
+
+Your task:
+- Politely acknowledge the request.
+- Apologize briefly for not being able to fully assist.
+- Clearly inform the user that they are being transferred to a customer service representative.
+- Keep the reply short (1–2 sentences).
+- Do not include extra explanations or unrelated information.
+"""
+
+        async for token in stream_llm(prompt=prompt):
+            yield token, False
+        
+        yield "", True
+        return
+
 
     current_state = await redis_client.get(conversationId)
     step = 0

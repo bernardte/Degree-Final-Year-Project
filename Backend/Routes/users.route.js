@@ -4,6 +4,7 @@ import protectRoute from "../middleware/protectRoute.js";
 
 const router = express.Router();
 
+router.get("/initialize-guest", userControllers.generateGuestId);
 router.get("/getUserProfile", protectRoute, userControllers.getUserProfile);
 router.get("/getCurrentLoginUser", protectRoute, userControllers.getCurrentLoginUser);
 router.get("/getUserRewardPoints", protectRoute, userControllers.getUserRewardPoints);

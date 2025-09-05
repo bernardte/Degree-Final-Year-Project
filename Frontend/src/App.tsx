@@ -47,7 +47,10 @@ import FacilityDetailPage from "./pages/Facilities page/FacilityDetail";
 import AdminSettingPage from "./pages/Admin Setting Page/AdminSettingPage";
 import ReservationCalendarView from "./layout/components/calendar/ReservationCalendarView";
 import ForgetPassword from "./pages/Authentication page/ForgetPassword";
-import ResetPassword from "./pages/Authentication page/resetPassword";
+import ResetPassword from "./pages/Authentication page/ResetPassword";
+import PrivacyPolicyPage from "./pages/Privacy policy page/PrivacyPolicyPage";
+import TermAndConditionPage from "./pages/Term and condition page/TermAndConditionPage";
+
 const App = () => {
   const { user, showLoginPopup, showSignupPopup } = useAuthStore();
 
@@ -91,6 +94,8 @@ const App = () => {
             path="cancelled-booking-policy"
             element={<CancelBookingPage />}
           />
+          <Route path="privacy-policy" element={<PrivacyPolicyPage />} />
+          <Route path="terms-condition" element={<TermAndConditionPage />} />
           <Route path="image-gallery" element={<ImageGalleryPage />} />
           <Route path="faq" element={<FAQPage />} />
           <Route path="profile" element={<ProfilePage />} />
@@ -158,7 +163,7 @@ const App = () => {
               element={<AdminNotificationPage />}
             />
             <Route path="/admin-setting" element={<AdminSettingPage />} />
-           </Route>
+          </Route>
         </Route>
 
         {/* Catch-all route */}

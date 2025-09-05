@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState, useRef } from "r
 import useAuthStore from "@/stores/useAuthStore";
 import io, { Socket } from "socket.io-client";
 import { generateSessionId } from "@/utils/generateSessionId";
-
+import { getGuestId } from "@/utils/getGuestId";
 const SocketContext = createContext<Socket | null>(null);
 
 // Custom hook to use socket anywhere
@@ -19,14 +19,12 @@ export const SocketContextProvider = ({
   const adminReceipentRef = useRef(adminReceipentId);
   useEffect(() => {
     // Guest ID fallback
-    let guestId = localStorage.getItem("guestId");
-    console.log(guestId);
-    if (!guestId) {
-      guestId = `guest_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
-      localStorage.setItem("guestId", guestId);
+    const guestId = async () => {
+      await getGuestId();
       generateSessionId(); //* To ensure non login user has sessionId for backend to track their activity log
     }
 
+    guestId();
     // 1. Connect to socket only once
     const newSocket = io("http://localhost:5000", {
       withCredentials: true,

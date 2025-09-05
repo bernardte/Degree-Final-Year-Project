@@ -29,7 +29,7 @@ const LeftSidebar = ({
   onFilterChange: (filters: any) => void;
   selectedRoom: Room[];
 }) => {
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 10000]);
   const [date, setDate] = useState<DateRange | undefined>(undefined);
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
   const [roomType, setRoomType] = useState("all");
@@ -145,7 +145,7 @@ const LeftSidebar = ({
 
   const handleResetButton = () => {
     setRoomType("all");
-    setPriceRange([0, 1000]);
+    setPriceRange([0, 10000]);
     setSelectedAmenities([]);
     setDate(undefined);
     setCheckInDate("");
@@ -158,7 +158,7 @@ const LeftSidebar = ({
       const filters = {
         roomType: "",
         minPrice: 0,
-        maxPrice: 1000,
+        maxPrice: 10000,
         amenities: [],
         checkInDate: "",
         checkOutDate: "",
@@ -287,7 +287,7 @@ const LeftSidebar = ({
           </label>
           <Slider
             value={priceRange}
-            max={1000}
+            max={10000}
             min={0}
             step={1}
             onValueChange={(value) =>

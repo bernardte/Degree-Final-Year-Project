@@ -6,9 +6,12 @@ import json
 from config.mongoDB import db, mongo_client
 from retrieval import load_faqs_from_mongodb
 from classes.interface import RagRequest
+from classes.interface import BookingSession
 from controllers.chatbot_controller import handle_chatbot
+from controllers.anomaly_detection_controller import anomaly_detection_booking_session
 from models import stream_llm
 from utils import chunkedStream
+
 # ───────────────────────────────────────────────────────────────
 
 from anyio import to_thread
@@ -57,6 +60,18 @@ async def websocket_endpoint(ws: WebSocket):
                 })
     except WebSocketDisconnect:
         print("customer sider disconnect")
+
+@app.post("/predict")
+def predict_booking_session_anomaly(session: BookingSession):
+    print(f"your session: {session}")
+    prediction, score = anomaly_detection_booking_session(session=session)
+
+    return {
+        "anomaly": bool(prediction == -1),
+        "raw_prediction": int(prediction),
+        "score": float(score),
+        "result": "abnormal" if prediction == -1 else "normal",
+    }
 # ---------------- Running locally ----------------------------- #
 # Save this file as app.py, then:
 #   uvicorn app:app --host 0.0.0.0 --port 5001 --reload

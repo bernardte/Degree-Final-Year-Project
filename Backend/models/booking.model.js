@@ -12,7 +12,15 @@ const bookingSchema = mongoose.Schema(
     bookingCreatedByUser: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "user",
-      required: true,
+      required: function () {
+        return this.userType === "user";
+      },
+    },
+    guestId: {
+      type: String,
+      required: function () {
+        return this.userType === "guest"; // guest 必须要有
+      },
     },
     userType: {
       type: String,
@@ -52,7 +60,7 @@ const bookingSchema = mongoose.Schema(
     },
     breakfastIncluded: {
       type: Number,
-      default: 0
+      default: 0,
     },
     paymentStatus: {
       type: String,
@@ -120,7 +128,7 @@ const bookingSchema = mongoose.Schema(
     rewardCode: {
       type: String,
       default: "",
-    }
+    },
   },
   { timestamps: true }
 );

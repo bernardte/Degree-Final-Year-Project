@@ -9,7 +9,7 @@ if (!fs.existsSync(path.join(process.cwd(), "temp"))) {
   fs.mkdirSync(path.join(process.cwd(), "temp"));
 }
 
-const deleteTempfileScheduler = cron.schedule("* * * * * *", () => {
+const deleteTempfileScheduler = cron.schedule("* */30 * * * *", () => {
   if (fs.existsSync(tempFileDir)) {
     fs.readdir(tempFileDir, (error, files) => {
       if (error) {

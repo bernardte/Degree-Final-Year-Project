@@ -9,6 +9,8 @@ import dotenv from "dotenv";
 import SystemSetting from "../models/systemSetting.model.js";
 import { sendResetPasswordEmail } from "../utils/reset-password/resetPassword.js";
 import jwt from "jsonwebtoken";
+import { v4 as uuidv4 } from "uuid";
+
 
 dotenv.config();
 
@@ -418,6 +420,25 @@ const getUserProfile = async (req, res) => {
   });
 };
 
+const generateGuestId = async (req, res) => {
+  let guestId = req.cookies.guestId;
+  try {
+      if (!guestId) {
+        guestId = uuidv4();
+        res.cookie("guestId", guestId, {
+          httpOnly: false,
+          maxAge: 7 * 24 * 60 * 60 * 1000,
+          sameSite: "lax",
+          secure: process.env.NODE_ENV === "production",
+        });
+      }
+      res.json(guestId);
+  } catch (error) {
+    console.log("Error in generateGuestId: ", error.message);
+    res.status(500).json({ error: "Internal Server Error" })
+  }
+}
+
 export default {
   getUserProfile,
   getUserRewardPoints,
@@ -429,4 +450,5 @@ export default {
   updateUserProfile,
   verifyOTP,
   getCurrentLoginUser,
+  generateGuestId,
 };

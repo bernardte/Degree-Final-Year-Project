@@ -351,8 +351,8 @@ export interface Reports {
 export interface HotelInfo {
   _id: string,
   name: string,
-  checkInDate: Date,
-  checkOutDate: Date,
+  checkInTime: string,
+  checkOutTime: string,
   address: string,
   logo: string,
   email: string,
