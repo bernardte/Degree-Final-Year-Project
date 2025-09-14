@@ -20,6 +20,20 @@ const faqList = [
     question_embedding: [],
   },
   {
+    question: "I'd like to create a booking",
+    answer: "Sure! Please provide your preferred dates and room type.",
+    intent: "booking",
+    category: "Booking",
+    question_embedding: [],
+  },
+  {
+    question: "I'd like to make a booking",
+    answer: "Sure! Please provide your preferred dates and room type.",
+    intent: "booking",
+    category: "Booking",
+    question_embedding: [],
+  },
+  {
     question: "Can I cancel my reservation?",
     answer:
       "Yes, please let us know your booking details to proceed with cancellation.",

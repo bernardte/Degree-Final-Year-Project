@@ -1,4 +1,3 @@
-// models/SuspiciousEvent.js
 import mongoose from "mongoose";
 
 const SuspiciousEventSchema = new mongoose.Schema(

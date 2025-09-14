@@ -1,4 +1,4 @@
-from fastapi.responses import JSONResponse  #customize json response
+from fastapi.responses import JSONResponse  # customize json response
 import asyncio
 # own modules
 from config.redis import redis_client
@@ -6,15 +6,25 @@ from utils.intent_detector import detect_intent
 from constants.FSM_constant import FSM, TEMPLATES, NO_SUGGESTION_INTENTS
 from models import stream_llm
 from retrieval import find_best_faq
+from utils.entity_extractor import extract_entities
+from utils.extract_entities_for_booking_session import extract_entities_for_booking_session
+from typing import Dict
+from datetime import datetime
+import json
+from utils.bookings import add_booking
+
 
 async def handle_chatbot(payload):
     conversationId = payload.get("conversationId")
     question = payload.get("question")
     user_input = question.strip()
     context = payload.get("context", "")
+    senderId = payload.get("senderId")
+    senderType = payload.get("senderType")  # guest 或 member
     chat_context = context
 
-    if any(kw in user_input for kw in ["human", "customer service", "Real people", "agent", "Transfer to manual", "real agent"]):
+    # --- 用户要求转人工客服 ---
+    if any(kw in user_input.lower() for kw in ["human", "customer service", "real people", "agent", "transfer to manual", "real agent"]):
         await redis_client.delete(conversationId)
         prompt = """
 You are Harold, a polite and professional hotel assistant.
@@ -26,22 +36,53 @@ Your task:
 - Apologize briefly for not being able to fully assist.
 - Clearly inform the user that they are being transferred to a customer service representative.
 - Keep the reply short (1–2 sentences).
-- Do not include extra explanations or unrelated information.
 """
-
         async for token in stream_llm(prompt=prompt):
             yield token, False
-        
         yield "", True
         return
 
-
+    # --- 检查当前对话状态 ---
     current_state = await redis_client.get(conversationId)
     step = 0
+
+    # --- 新会话 ---
     if not current_state:
         intent = await detect_intent(user_input)
-        print(f"model detected 1: {intent}")
-        await redis_client.set(conversationId, intent)
+        print(f"intent detected: {intent}")
+
+        if intent == "change_booking":
+            entities = extract_entities(user_input=user_input)
+            if any(entities.values()):
+                await redis_client.hset(f"{conversationId}:entities", mapping=entities)  # type: ignore
+                print(f"extracted entities: {entities}")
+            await redis_client.set(conversationId, intent)
+
+        if intent == "booking":
+            # 尝试一次性解析所有字段
+            booking_result = await extract_entities_for_booking_session(
+                user_input=user_input,
+                userType=senderType,
+                conversationId=conversationId,
+                senderId=senderId
+            )
+            if booking_result:  # 如果一次性信息齐全 → 直接建单
+                confirm_link, error = booking_result
+                if error:
+                    async for token in stream_llm(prompt=f"Sorry, {error}"):
+                        yield token, False
+                    yield "", True
+                else:
+                    async for token in stream_llm(prompt=f"Your booking session is created. Please confirm here: {confirm_link}"):
+                        yield token, False
+                    yield "", True
+                    await redis_client.delete(conversationId)
+                return
+            else:
+                # 不完整 → 进入 FSM
+                await redis_client.set(conversationId, intent)
+
+    # --- 已有会话 ---
     else:
         if ":" in current_state:
             intent, step = current_state.split(":")
@@ -50,57 +91,89 @@ Your task:
             intent = current_state
             step = 0
 
-    # Detect whether to switch intent
-    new_intent = await detect_intent(user_input=user_input)
-    print(f"model detected 2: {new_intent}")
+    # --- Booking FSM ---
+    if intent == "booking":
 
-    if new_intent != intent:
-        intent = new_intent
-        step = 0
-        await redis_client.set(conversationId, intent)
+        print(f"reached here {step}")
+        # 必填字段（所有用户）
+        required_steps = ["checkInDate", "checkOutDate", "roomType"]
 
-    # FSM Logic
-    if intent in FSM:
-        steps = FSM.get(intent, [])
-        if not steps:
-            prompt = f"You are a helpful assistant. The user said: '{user_input}'. Reply politely."
-            async for token in stream_llm(prompt=prompt):
-                yield token, False
-            yield "", True
-            return
+        # guest 用户需要额外提供联系人信息
+        if senderType == "guest":
+            required_steps += ["contactName", "contactEmail", "contactNumber"]
 
-        if step < len(steps):
-            response_key = steps[step]
+        # 获取 Redis 里的已有信息
+        saved_entities: Dict[str, str] = await redis_client.hgetall(f"{conversationId}:entities")  # type: ignore
+
+        # 找出下一个缺少的字段
+        next_step = None
+        for s in required_steps:
+            if not saved_entities.get(s):
+                next_step = s
+                print(f"next step: {next_step}")
+                break
+
+        if next_step:
+            # 还缺少字段 → 问用户
             template_instruction = TEMPLATES.get(
-                response_key,
-                f"{intent.capitalize()} {response_key.replace('-', ' ')}"
+                next_step,
+                f"Please provide your {next_step.replace('-', ' ')}"
             )
 
-            # 用 LLM 基于模板生成自然回复
+            extra_info = ""
+            result = saved_entities
+            print(f"Your entities: {result}")
+            if saved_entities.get("checkInDate"):
+                extra_info += f"\nKnown user's check-in Date: {saved_entities['checkInDate']}"
+            if saved_entities.get("checkOutDate"):
+                extra_info += f"\nKnown user's check-out Date: {saved_entities['checkOutDate']}"
+            if saved_entities.get("roomType"):
+                extra_info += f"\nKnown user room type: {saved_entities['roomType']}"
+            if saved_entities.get("contactName"):
+                extra_info += f"\nKnown user contact name: {saved_entities['contactName']}"
+            if saved_entities.get("contactEmail"):
+                extra_info += f"\nKnown user contact email: {saved_entities['contactEmail']}"
+            if saved_entities.get("contactNumber"):
+                extra_info += f"\nKnown user contact number: {saved_entities['contactNumber']}"
+
             prompt = f"""
-    You are Harold, a polite and professional hotel assistant.
+You are Harold, a polite and professional hotel assistant.
 
-    The current conversation intent is: "{intent}".
-    The current step is: "{response_key}".
-
-    Your task:
-    - Follow the instruction: "{template_instruction}".
-    - Generate a polite, natural-sounding response.
-    - Keep the response concise (1-2 sentences).
-    """
-
+The user is making a booking.
+Your task:
+- Ask the user for their "{next_step}".
+- next instruction is this "{template_instruction}"
+- Keep response short and polite.
+{extra_info}
+"""
             async for token in stream_llm(prompt=prompt):
                 yield token, False
-
-            await redis_client.set(conversationId, f"{intent}:{step + 1}")
             yield "", True
             return
+
         else:
+            # 所有必填字段齐全 → 创建 booking
+            booking_result = await extract_entities_for_booking_session(
+                user_input=user_input,
+                userType=senderType,
+                conversationId=conversationId,
+                senderId=senderId
+            )
+            if booking_result:
+                confirm_link, error = booking_result
+                if error:
+                    async for token in stream_llm(prompt=f"Sorry, {error}"):
+                        yield token, False
+                    yield "", True
+                else:
+                    async for token in stream_llm(prompt=f"Your booking session is created. Please confirm here: {confirm_link}"):
+                        yield token, False
+                    yield "", True
+
             await redis_client.delete(conversationId)
-            yield f"Your request to {intent.replace('_', ' ')} has been completed.", True
             return
 
-    # FAQ Search
+    # --- FAQ ---
     score, faq = await find_best_faq(query=user_input)
     print("FAQ found:", faq)
     print("Score:", score)
@@ -109,7 +182,6 @@ Your task:
             f"{m['role']}: {m.get('content', '')}"
             for m in chat_context if "role" in m
         )
-
         prompt = f"""
 You are Harold, a polite and professional hotel assistant.
 
@@ -133,7 +205,7 @@ User Question: "{user_input}"
         yield "", True
         return
 
-    # fallback (streaming text instead of dict)
+    # --- Fallback ---
     prompt = (
         "Write a professional and polite fallback response for a chatbot. "
         "The response should: "
@@ -141,11 +213,6 @@ User Question: "{user_input}"
         "2) Apologize politely, "
         "3) Offer to connect the user with a customer service agent for further assistance."
     )
-
     async for token in stream_llm(prompt=prompt):
         yield token, False
-
     yield "", True
-
-
-

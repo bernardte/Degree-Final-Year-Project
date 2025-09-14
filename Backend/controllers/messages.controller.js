@@ -75,7 +75,7 @@ const sendMessage = async (req, res) => {
 
         console.log(typeof conversationId, newMessage);
 
-        sendToAI(conversationId, newMessage, currentUserMessage.map(m => ({
+        sendToAI(conversationId, newMessage, senderId, senderType, currentUserMessage.map(m => ({
           role: m.senderType,
           content: m.content
         })));

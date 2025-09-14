@@ -50,6 +50,7 @@ import ForgetPassword from "./pages/Authentication page/ForgetPassword";
 import ResetPassword from "./pages/Authentication page/ResetPassword";
 import PrivacyPolicyPage from "./pages/Privacy policy page/PrivacyPolicyPage";
 import TermAndConditionPage from "./pages/Term and condition page/TermAndConditionPage";
+import AdminSuspeciousDashboardPage from "./pages/Admin suspecious detect page/AdminSuspeciousDashboardPage";
 
 const App = () => {
   const { user, showLoginPopup, showSignupPopup } = useAuthStore();
@@ -162,6 +163,7 @@ const App = () => {
               path="/admin-notification"
               element={<AdminNotificationPage />}
             />
+            <Route path="/admin-suspicious-event" element={<AdminSuspeciousDashboardPage />} />
             <Route path="/admin-setting" element={<AdminSettingPage />} />
           </Route>
         </Route>

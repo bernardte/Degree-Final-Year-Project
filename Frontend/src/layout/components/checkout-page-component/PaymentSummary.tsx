@@ -20,34 +20,38 @@ const PaymentSummary = ({
   roomId,
   appliedReward,
 }: PaymentSummaryProps) => {
-  const breakfastPrice = 30;
   
-  // Calculate the number of nights
-  const nights = differenceInCalendarDays(
-    new Date(checkOutDate),
-    new Date(checkInDate),
-  );
-  
-  // Access rooms from store
-  const { rooms } = useRoomStore();
-  const breakfastCount = useBookingSessionStore((state) => state.breakfastCount);
-  const additionalInfo = useBookingSessionStore((state) => state.additionalInfo);
-  const bookedRooms = rooms.filter((room) =>
-    (roomId as string[])?.includes(room._id),
-  );
+    const breakfastPrice = 30;
+    
+    // Calculate the number of nights
+    const nights = differenceInCalendarDays(
+      new Date(checkOutDate),
+      new Date(checkInDate),
+    );
+    
+    // Access rooms from store
+    const { rooms } = useRoomStore();
+    const breakfastCount = useBookingSessionStore((state) => state.breakfastCount);
+    const additionalInfo = useBookingSessionStore((state) => state.additionalInfo);
+    const bookedRooms = rooms.filter((room) =>
+      (roomId as string[])?.includes(room._id),
+    );
 
-  // 3) compute each room’s line-item and the base total
-  const lineItems = bookedRooms.map((room) => ({
-    roomName: room.roomName,
-    pricePerNight: room.pricePerNight,
-    lineTotal: room.pricePerNight * nights,
-  }));
-  const basePrice = lineItems.reduce((sum, li) => sum + li.lineTotal, 0);
-  const roomPrices = lineItems.map((li) => li.pricePerNight);
+    // 3) compute each room’s line-item and the base total
+    const lineItems = bookedRooms.map((room) => ({
+      roomName: room.roomName,
+      pricePerNight: room.pricePerNight,
+      lineTotal: room.pricePerNight * nights,
+    }));
+    const basePrice = lineItems.reduce((sum, li) => sum + li.lineTotal, 0);
+    const roomPrices = lineItems.map((li) => li.pricePerNight);
 
-    console.log(breakfastCount)
+    const breakfastRooms = bookedRooms.filter((room) => room.breakfastIncluded);
+    const breakfastCounts = breakfastRooms.length;
+
+    // 再算 breakfastTotal
     const breakfastTotal =
-      breakfastCount > 0 ? breakfastCount * breakfastPrice * nights : 0;
+      breakfastCount > 0 ? breakfastCounts * breakfastPrice * nights : 0;
     const rewardDiscount = appliedReward?.discount ?? 0;
     const rewardMultiplier = 1 - rewardDiscount / 100;
 
@@ -129,7 +133,7 @@ const PaymentSummary = ({
             </div>
           ))}
 
-          {breakfastCount > 0 && (
+          {breakfastCounts > 0 && (
             <div className="flex justify-between text-sm text-green-200 italic">
               <span>
                 Breakfast for {breakfastCount} room

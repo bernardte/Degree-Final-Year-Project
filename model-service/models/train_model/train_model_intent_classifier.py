@@ -15,10 +15,16 @@ from config.mongoDB import db
 # Connect to MongoDB
 faq_collection = db["faqs"]
 
+import asyncio
+
+async def load_data():
+    cursor = faq_collection.find({"intent": {"$exists": True}})
+    data = await cursor.to_list(length=None)
+    return data
+
+
 # Load data from MongoDB
-data = list(faq_collection.find({"intent": {"$exists": True}}))  # 确保intent存在
-
-
+data = asyncio.run(load_data())
 texts = [item["question"] for item in data]
 labels = [item["intent"] for item in data]
 

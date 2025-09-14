@@ -371,3 +371,16 @@ export interface Reservation {
   createdAt: Date,
   updatedAt: Date,
 }
+
+export interface SuspiciousEvent {
+  _id: string;
+  userId?: string | null; // 可能为空
+  guestId?: string;
+  type?: string;
+  reason: string; // required
+  details?: Record<string, any>; // Mixed 类型
+  severity: "low" | "medium" | "high"; // enum
+  handled: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+};

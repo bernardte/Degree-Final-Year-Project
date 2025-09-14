@@ -12,7 +12,7 @@ faiss_path = "./faiss_store"
 embeddings_model = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
 
 # Load FAQ data and store it into a vector database (such as FAISS).
-def load_faqs_from_mongodb(db_instance):
+async def load_faqs_from_mongodb(db_instance):
     """
     Load FAQ documents from MongoDB and embed only the question.
     """
@@ -21,7 +21,8 @@ def load_faqs_from_mongodb(db_instance):
 
     try:
         faqs_collection = db_instance["faqs"]
-        docs = faqs_collection.find({})
+        cursor = faqs_collection.find({})
+        docs = await cursor.to_list(length=None)   # M)
         documents = []
 
         for doc in docs:

@@ -105,6 +105,10 @@ const policies = {
   },
   reservation: {
     view: isSuperAdminOrAdmin,
+  },
+  suspiciousEvent: {
+    view: isSuperAdmin,
+    update: isSuperAdmin,
   }
 };
 

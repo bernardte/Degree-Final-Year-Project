@@ -58,7 +58,7 @@ export const anomalyDetector = async (activityLog) => {
     })
 
     if(recentLogs > RATE_LIMIT_COUNT){
-      await createSuspiciousEvent({
+     const rateLimit = await createSuspiciousEvent({
         userId,
         guestId,
         reason: "Rate Limit Exceeded",
@@ -69,8 +69,10 @@ export const anomalyDetector = async (activityLog) => {
         metadata,
         device,
         count: recentLogs,
-        severity: "medium",
+        severity: "high",
       });
+
+      console.log("rate limit exceed", rateLimit);
     }
 
     // login failed attempts

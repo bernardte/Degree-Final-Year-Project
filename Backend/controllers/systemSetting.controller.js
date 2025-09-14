@@ -17,6 +17,7 @@ import {
   generatePDF,
 } from "../utils/report/Generate File/generateFile.js";
 import { uploadToCloudinary } from "../utils/uploadToCloudinary.js";
+import SuspiciousEvent from "../models/suspiciousEvent.model.js";
 
 const updateRewardPointSetting = async (req, res) => {
   const { settings } = req.body;
@@ -157,8 +158,8 @@ const updateSettings = async (req, res) => {
 
     const mergeValue = {
       ...(typeof settings === "string" ? JSON.parse(settings) : settings),
-      ...(imageURL && { logo: imageURL })
-    }
+      ...(imageURL && { logo: imageURL }),
+    };
 
     const updatedSetting = await SystemSetting.findOneAndUpdate(
       { key }, // filter by key
@@ -234,9 +235,9 @@ const activityStreamFetching = async (req, res) => {
         Object.values(actionMap).includes(newActivity.action) &&
         !sentIds.has(newActivity._id.toString())
       ) {
-         let updateActivity = await ActivityLog.findById(newActivity._id)
-        .populate("userId", "username")
-        .lean();
+        let updateActivity = await ActivityLog.findById(newActivity._id)
+          .populate("userId", "username")
+          .lean();
 
         res.write(`data: ${JSON.stringify(updateActivity)}\n\n`);
         sentIds.add(newActivity._id.toString());
@@ -439,6 +440,90 @@ const deleteAllReports = async (req, res) => {
   }
 };
 
+const fetchAllSuspiciousEvent = async (req, res) => {
+    try {
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 10;
+      const skip = (page - 1) * limit;
+
+      // Build filter object based on query parameters
+      const filter = {};
+
+      if (req.query.severity && req.query.severity !== "all") {
+        filter.severity = req.query.severity;
+      }
+
+      if (req.query.status && req.query.status !== "all") {
+        if (req.query.status === "handled") {
+          filter.handled = true;
+        } else if (req.query.status === "unhandled") {
+          filter.handled = false;
+        }
+      }
+
+      if (req.query.search) {
+        filter.$or = [
+          { reason: { $regex: req.query.search, $options: "i" } },
+          { type: { $regex: req.query.search, $options: "i" } },
+        ];
+      }
+
+      // Determine sort order
+      let sort = { createdAt: -1 }; // Default sort by date descending
+
+       if (req.query.sortBy === "severity") {
+         sort = {
+           severity: req.query.sortOrder === "asc" ? 1 : -1,
+           createdAt: -1, 
+         };
+       } else if (req.query.sortBy === "date") {
+         sort = { createdAt: req.query.sortOrder === "asc" ? 1 : -1 };
+       }
+
+      // Query database with pagination
+      const events = await SuspiciousEvent.find(filter)
+        .sort(sort)
+        .skip(skip)
+        .limit(limit);
+
+      // Get total count for pagination
+      const total = await SuspiciousEvent.countDocuments(filter);
+
+      res.json({
+        events,
+        currentPage: page,
+        totalPages: Math.ceil(total / limit),
+        totalEvents: total,
+      });
+    } catch (error) {
+      console.error("Error fetching suspicious events:", error);
+      res.status(500).json({ error: "Internal Server error" });
+    }
+};
+
+const updateMarkAsSolved = async(req, res) => {
+  const suspiciousEventId = req.params.suspiciousEventId;
+  const markAsSolved = req.body.handled;
+
+  try {
+    const updateSuspiciousEvent = await SuspiciousEvent.findOneAndUpdate(
+      { _id: suspiciousEventId },
+      { handled: markAsSolved },
+      { new: true, select: "handled" }
+    )
+
+    if(!updateSuspiciousEvent){
+      return res.status(404).json({ error: "No result found" });
+    }
+
+    console.log("updated: ", updateSuspiciousEvent);
+
+    return res.status(200).json(updateSuspiciousEvent);
+  } catch (error) {
+    console.log("Error in updateMarkAsSolved: ", error.message);
+    res.status(500).json({ error: "Internal Server error" });
+  }
+}
 
 export default {
   updateRewardPointSetting,
@@ -454,4 +539,6 @@ export default {
   getAllReportHistory,
   reportDownload,
   deleteAllReports,
+  fetchAllSuspiciousEvent,
+  updateMarkAsSolved,
 };

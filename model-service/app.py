@@ -22,7 +22,7 @@ async def lifespan(app: FastAPI):
     print("[INIT] Initializing FAQ vector store …")
     # load_faqs_from_mongodb is sync; run in threadpool so it
     # doesn’t block the event loop.
-    await to_thread.run_sync(load_faqs_from_mongodb, db) #Because loading function is synchronous and will block the main thread, it is put into the thread pool for execution.
+    await load_faqs_from_mongodb(db) #Because loading function is synchronous and will block the main thread, it is put into the thread pool for execution.
     yield #yield pauses the function's execution and returns a value to the caller
     mongo_client.close()
     print("[SHUTDOWN] MongoDB connection closed.")
@@ -45,6 +45,8 @@ async def websocket_endpoint(ws: WebSocket):
             conversation_id = payload.get("conversationId")
             question = payload.get("question")
             context = payload.get("context", "")
+            senderId = payload.get("senderId")
+            senderType = payload.get("senderType")
 
             if not question or not conversation_id:
                 await ws.send_json({"error": "question and conversationId Required"})

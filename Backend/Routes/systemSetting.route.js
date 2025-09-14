@@ -6,7 +6,10 @@ import accessControl from "../middleware/accessControl.js";
 
 const router = express.Router();
 
-router.get("/get-all-hotel-information", systemSettingController.getHotelInformation);
+router.get(
+  "/get-all-hotel-information",
+  systemSettingController.getHotelInformation
+);
 
 //update reward point
 router.use(protectRoute, verifyRoles);
@@ -79,6 +82,18 @@ router.get(
   "/download-report/:reportId",
   accessControl("reports", "download"),
   systemSettingController.reportDownload
+);
+
+router.get(
+  "/suspicious-event",
+  accessControl("suspiciousEvent", "view"),
+  systemSettingController.fetchAllSuspiciousEvent
+);
+
+router.patch(
+  "/suspicious-event-mark-as-solved/:suspiciousEventId",
+  accessControl("suspiciousEvent", "update"),
+  systemSettingController.updateMarkAsSolved
 );
 
 export default router;

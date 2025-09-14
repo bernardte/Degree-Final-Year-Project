@@ -24,8 +24,9 @@ export const generateBookingEmailHTML = ({
     (new Date(checkOutDate) - new Date(checkInDate)) / (1000 * 3600 * 24)
   );
   const totalBreakfastPrice = breakfastIncluded * 30.0;
-  const subtotal =
+  const totalRoomPrice =
     roomDetail.reduce((acc, rm) => acc + rm.pricePerNight, 0) || 0;
+  const subtotal = totalRoomPrice * nights
 
   return `
 <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc; margin: 0; padding: 20px;">

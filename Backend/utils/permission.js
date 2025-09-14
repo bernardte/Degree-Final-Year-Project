@@ -41,7 +41,8 @@ const permissions = {
     rateAndReview: ["create"],
     rewardPoints: ["update", "create", "delete"],
     settings: ["update", "view", "view_user_activity_tracking"],
-    reservation: ["view"]
+    reservation: ["view"],
+    suspiciousEvent: ["view", "update"]
   },
 
   user: {

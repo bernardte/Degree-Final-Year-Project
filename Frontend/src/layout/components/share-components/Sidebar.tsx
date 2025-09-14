@@ -10,6 +10,7 @@ import {
   CalendarRange,
   MessageCircleMore,
   Settings2,
+  Radar,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -17,6 +18,8 @@ import useHandleLogout from "@/hooks/useHandleLogout";
 import { Link, useNavigate } from "react-router-dom";
 import useAuthStore from "@/stores/useAuthStore";
 import useNotificationStore from "@/stores/useNotificationStore";
+import RequireRole from "@/permission/RequireRole";
+import { ROLE } from "@/constant/roleList";
 
 const Sidebar = () => {
   const [open, setOpen] = useState<boolean>(() => {
@@ -153,6 +156,19 @@ const Sidebar = () => {
           open={open}
           notify={unreadNotification}
         />
+        <RequireRole allowedRoles={[ROLE.SuperAdmin]}>
+          <Option
+            Icon={Radar}
+            title="Monitoring"
+            selected={selected}
+            titleColor="text-stone-400"
+            IconColor="text-stone-400"
+            setSelected={setSelected}
+            link={() => navigate("/admin-suspicious-event")}
+            open={open}
+            notify={unreadNotification}
+          />
+        </RequireRole>
         <Option
           Icon={Settings2}
           title="Setting"
@@ -168,8 +184,8 @@ const Sidebar = () => {
           title="Logout"
           selected={selected}
           setSelected={setSelected}
-          titleColor="text-rose-500"
-          IconColor="text-rose-500"
+          titleColor="text-rose-700"
+          IconColor="text-rose-700"
           link={handleLogout}
           open={open}
         />

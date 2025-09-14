@@ -652,13 +652,18 @@ const handleUpdateBreakfastCount = async (req, res) => {
 
   try {
     const session = await BookingSession.findById(sessionId);
+    
     if (!session) {
       return res.status(404).json({ error: "Booking session not found!" });
     }
 
     await BookingSession.updateOne(
       { _id: sessionId },
-      { $set: { breakfastIncluded: breakfastCount } }
+      {
+        $set: {
+          breakfastIncluded: breakfastCount,
+        },
+      }
     );
 
     return res.status(200).json(breakfastCount);

@@ -73,12 +73,14 @@ export function initAISocket() {
   });
 }
 
-export const sendToAI = (conversationId, newMessage, context) => {
+export const sendToAI = (conversationId, newMessage, senderId, senderType, context) => {
   console.log(conversationId, newMessage);
   console.log(ws?.readyState === WebSocket.OPEN);
   if (ws?.readyState === WebSocket.OPEN) {
     ws.send(
       JSON.stringify({
+        senderId: senderId,
+        senderType: senderType,
         conversationId: conversationId,
         question: newMessage,
         context: context,
