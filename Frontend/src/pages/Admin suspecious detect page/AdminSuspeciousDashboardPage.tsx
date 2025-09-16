@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
-import FiltersAndSearch from "@/layout/components/admin-page-component/suspecious dashboard component/FiltersAndSearch";
+import FiltersAndSearch from "@/layout/components/admin-page-component/suspicious-dashboard-component/FiltersAndSearch";
 import { SuspiciousEvent } from "@/types/interface.type";
-import NoEventFount from "@/layout/components/admin-page-component/suspecious dashboard component/NoEventFount";
-import EventList from "@/layout/components/admin-page-component/suspecious dashboard component/EventList";
+import NoEventFount from "@/layout/components/admin-page-component/suspicious-dashboard-component/NoEventFount";
+import EventList from "@/layout/components/admin-page-component/suspicious-dashboard-component/EventList";
 import useSystemSettingStore from "@/stores/useSystemSettingStore";
 import { ChevronLeft, ChevronRight, Loader, AlertCircle } from "lucide-react";
 import { debounce } from "lodash";

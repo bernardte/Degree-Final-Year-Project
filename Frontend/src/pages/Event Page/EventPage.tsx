@@ -14,18 +14,7 @@ const EventPage = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50">
       {/* Hero Carousel */}
       <div className="relative">
-        <Carousel images={EventRoomList.map((event) => event.img)} />
-        <div className="absolute inset-0 flex items-end bg-gradient-to-t from-blue-900/80 to-transparent">
-          <div className="mx-auto w-full max-w-7xl px-4 py-12">
-            <h1 className="mb-4 text-4xl font-bold text-white md:text-5xl">
-              Host Your Dream Event
-            </h1>
-            <p className="max-w-2xl text-xl text-blue-100">
-              Elegant venues and exceptional service for unforgettable
-              experiences
-            </p>
-          </div>
-        </div>
+        <Carousel category="event" />
       </div>
 
       {/* Event Highlights */}

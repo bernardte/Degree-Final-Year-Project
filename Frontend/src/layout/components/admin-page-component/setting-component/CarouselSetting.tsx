@@ -1,11 +1,15 @@
-import React, { useState } from "react";
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  Dispatch,
+  SetStateAction,
+} from "react";
 import {
   Plus,
   Trash2,
   Edit,
-  Image,
-  Save,
-  X,
+  Image as ImageIcon,
   Calendar,
   Building,
   Bed,
@@ -13,90 +17,161 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
+import { Carousel } from "@/types/interface.type";
+import useSystemSettingStore from "@/stores/useSystemSettingStore";
+import useToast from "@/hooks/useToast";
+import AddNewCarousel from "../dialog-component/AddNewCarouselDialog";
+import EditCarouselDialog from "../dialog-component/EditCarouselDialog";
+import { useNavigate } from "react-router-dom";
 
-// Type definitions
-export interface CarouselItem {
-  id: string;
-  title: string;
-  description: string;
-  imageUrl: string;
-  link?: string;
-  category: CarouselCategory;
-  order: number;
-}
+type CarouselCategory = "event" | "facility" | "room" | "homepage";
+type EditCarousel = Omit<Carousel, "imageUrl"> & {
+  image?: File | null;
+  imageUrl?: string;
+};
 
-export type CarouselCategory = "event" | "facility" | "room" | "homepage";
+type EditCarouselOptional = Partial<EditCarousel>;
 
-interface CarouselSettingProps {
-  carouselItems: CarouselItem[];
-  onItemsUpdate: (items: CarouselItem[]) => void;
-}
-
-const CarouselSetting: React.FC<CarouselSettingProps> = ({
-  carouselItems,
-  onItemsUpdate,
-}) => {
+const CarouselSetting = () => {
   const [activeCategory, setActiveCategory] =
     useState<CarouselCategory>("homepage");
   const [isEditing, setIsEditing] = useState(false);
-  const [editingItem, setEditingItem] = useState<CarouselItem | null>(null);
+  const [editingItem, setEditingItem] = useState<EditCarouselOptional | null>(
+    null,
+  );
   const [isAdding, setIsAdding] = useState(false);
-  const [newItem, setNewItem] = useState<Partial<CarouselItem>>({
+  const [newItem, setNewItem] = useState<Partial<Carousel>>({
     title: "",
     description: "",
     imageUrl: "",
+    image: null,
     link: "",
     category: "homepage",
+    order: 0,
   });
   const [currentSlide, setCurrentSlide] = useState(0);
+  const editFileInputRef = useRef<HTMLInputElement>(null);
+  const {
+    fetchAllCarousel,
+    createNewCarousel,
+    updateCertainCarousel,
+    deleteCertainCarousel,
+    carousel,
+    carouselError,
+    carouselIsLoading,
+    carouselErrorType,
+  } = useSystemSettingStore((state) => state);
+  const { showToast } = useToast();
+
+  useEffect(() => {
+    fetchAllCarousel(activeCategory);
+  }, [fetchAllCarousel, activeCategory]);
 
   // Filter items by active category
-  const categoryItems = carouselItems
+  const categoryItems = carousel
     .filter((item) => item.category === activeCategory)
     .sort((a, b) => a.order - b.order);
 
+  // Handle file selection for new item
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && file.type.startsWith("image/")) {
+      const imageUrl = URL.createObjectURL(file);
+      setNewItem({
+        ...newItem,
+        image: file,
+        imageUrl,
+      });
+    }
+  };
+
+  // Handle file selection for editing item
+  const handleEditFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && file.type.startsWith("image/") && editingItem) {
+      const imageUrl = URL.createObjectURL(file);
+      setEditingItem({
+        ...editingItem,
+        image: file,
+        imageUrl,
+      });
+    }
+  };
+
   // Handle adding a new carousel item
-  const handleAddItem = () => {
-    if (!newItem.title || !newItem.imageUrl) return;
+  const handleAddItem = async () => {
+    if (
+      !newItem.title ||
+      !newItem.image ||
+      !newItem.description ||
+      !newItem.category ||
+      !newItem.order
+    )
+      return;
+    const response = await createNewCarousel(
+      newItem.title,
+      newItem.description,
+      newItem.image,
+      newItem.category,
+      newItem.order,
+      newItem.link,
+    );
 
-    const item: CarouselItem = {
-      id: Date.now().toString(),
-      title: newItem.title || "",
-      description: newItem.description || "",
-      imageUrl: newItem.imageUrl || "",
-      link: newItem.link,
-      category: newItem.category || "homepage",
-      order: categoryItems.length,
-    };
+    if (response) {
+      showToast("success", "Successfully added new slide");
 
-    onItemsUpdate([...carouselItems, item]);
-    setIsAdding(false);
-    setNewItem({
-      title: "",
-      description: "",
-      imageUrl: "",
-      link: "",
-      category: "homepage",
-    });
+      setNewItem({
+        title: "",
+        description: "",
+        image: null,
+        category: "homepage",
+        order: 1,
+        link: "",
+      });
+    }
+
+    return;
   };
 
   // Handle editing an existing carousel item
-  const handleEditItem = () => {
-    if (!editingItem) return;
+  const handleEditItem = async () => {
+    if (!editingItem || !editingItem._id) return;
 
-    const updatedItems = carouselItems.map((item) =>
-      item.id === editingItem.id ? editingItem : item,
-    );
+    const response = await updateCertainCarousel(editingItem._id, {
+      title: editingItem.title,
+      description: editingItem.description,
+      link: editingItem.link,
+      category: editingItem.category,
+      order: editingItem.order,
+      imageFile:
+        editingItem.image instanceof File ? editingItem.image : undefined,
+    });
 
-    onItemsUpdate(updatedItems);
+    if (response) {
+      showToast(
+        "success",
+        `Carousel ${response.category} updated successfully`,
+      );
+    }
+
     setIsEditing(false);
     setEditingItem(null);
+
+    // Reset file input
+    if (editFileInputRef.current) {
+      editFileInputRef.current.value = "";
+    }
   };
 
-  // Handle deleting a carousel item
-  const handleDeleteItem = (id: string) => {
-    const updatedItems = carouselItems.filter((item) => item.id !== id);
-    onItemsUpdate(updatedItems);
+  //handle delete of existing carousel item
+  const handleDeleteItem = async (carouselId: string) => {
+    const response = await deleteCertainCarousel(carouselId);
+
+    if (response) {
+      showToast("success", "Carousel item delete successfully");
+    }
+
+    prevSlide();
   };
 
   // Navigation between slides
@@ -123,6 +198,16 @@ const CarouselSetting: React.FC<CarouselSettingProps> = ({
     { id: "facility", label: "Facilities", icon: <Building size={18} /> },
     { id: "room", label: "Rooms & Suites", icon: <Bed size={18} /> },
   ];
+
+  useEffect(() => {
+    if (!carouselError) return;
+
+    if (carouselErrorType === "accessDenied") {
+      showToast("warn", carouselError);
+    } else if (carouselErrorType === "serverError") {
+      showToast("error", carouselError);
+    }
+  }, [carouselError, carouselErrorType, showToast]);
 
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
@@ -164,78 +249,13 @@ const CarouselSetting: React.FC<CarouselSettingProps> = ({
       </div>
 
       {/* Carousel Preview */}
-      <div className="mb-8 rounded-xl border border-gray-200 p-4">
-        <h3 className="mb-4 text-lg font-medium text-gray-900">Preview</h3>
-
-        {categoryItems.length === 0 ? (
-          <div className="flex h-40 items-center justify-center rounded-lg bg-gray-100 text-gray-500">
-            <div className="text-center">
-              <Image size={32} className="mx-auto mb-2 text-gray-400" />
-              <p>No slides available for this category</p>
-            </div>
-          </div>
-        ) : (
-          <div className="relative overflow-hidden rounded-lg bg-gray-100">
-            <div className="relative h-60">
-              {categoryItems.map((item, index) => (
-                <div
-                  key={item.id}
-                  className={`absolute inset-0 transition-transform duration-500 ${
-                    index === currentSlide
-                      ? "translate-x-0"
-                      : index < currentSlide
-                        ? "-translate-x-full"
-                        : "translate-x-full"
-                  }`}
-                >
-                  <img
-                    src={item.imageUrl}
-                    alt={item.title}
-                    className="h-full w-full object-cover"
-                  />
-                  <div className="absolute right-0 bottom-0 left-0 bg-gradient-to-t from-black/70 to-transparent p-4 text-white">
-                    <h4 className="text-lg font-semibold">{item.title}</h4>
-                    <p className="text-sm">{item.description}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Navigation Arrows */}
-            {categoryItems.length > 1 && (
-              <>
-                <button
-                  onClick={prevSlide}
-                  className="absolute top-1/2 left-2 -translate-y-1/2 rounded-full bg-black/30 p-2 text-white hover:bg-black/50"
-                >
-                  <ChevronLeft size={20} />
-                </button>
-                <button
-                  onClick={nextSlide}
-                  className="absolute top-1/2 right-2 -translate-y-1/2 rounded-full bg-black/30 p-2 text-white hover:bg-black/50"
-                >
-                  <ChevronRight size={20} />
-                </button>
-              </>
-            )}
-
-            {/* Slide Indicators */}
-            {categoryItems.length > 1 && (
-              <div className="absolute bottom-2 left-1/2 flex -translate-x-1/2 space-x-2">
-                {categoryItems.map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setCurrentSlide(index)}
-                    className={`h-2 w-2 rounded-full ${
-                      index === currentSlide ? "bg-white" : "bg-white/50"
-                    }`}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+      <CarouselPreview
+        categoryItems={categoryItems}
+        currentSlide={currentSlide}
+        prevSlide={prevSlide}
+        nextSlide={nextSlide}
+        setCurrentSlide={setCurrentSlide}
+      />
 
       {/* Carousel Items List */}
       <div>
@@ -243,7 +263,7 @@ const CarouselSetting: React.FC<CarouselSettingProps> = ({
 
         {categoryItems.length === 0 ? (
           <div className="rounded-lg border border-dashed border-gray-300 p-8 text-center">
-            <Image className="mx-auto mb-3 text-gray-400" size={32} />
+            <ImageIcon className="mx-auto mb-3 text-gray-400" size={32} />
             <p className="text-gray-500">No slides in this category yet</p>
             <button
               onClick={() => setIsAdding(true)}
@@ -256,7 +276,7 @@ const CarouselSetting: React.FC<CarouselSettingProps> = ({
           <div className="grid gap-4 md:grid-cols-2">
             {categoryItems.map((item) => (
               <div
-                key={item.id}
+                key={item._id}
                 className="rounded-lg border border-gray-200 p-4"
               >
                 <div className="mb-3 h-40 overflow-hidden rounded-md">
@@ -280,7 +300,7 @@ const CarouselSetting: React.FC<CarouselSettingProps> = ({
                     Edit
                   </button>
                   <button
-                    onClick={() => handleDeleteItem(item.id)}
+                    onClick={() => handleDeleteItem(item._id)}
                     className="flex items-center rounded-md bg-red-100 px-3 py-1.5 text-sm text-red-700 hover:bg-red-200"
                   >
                     <Trash2 size={16} className="mr-1" />
@@ -295,234 +315,149 @@ const CarouselSetting: React.FC<CarouselSettingProps> = ({
 
       {/* Add Modal */}
       {isAdding && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Add New Slide</h3>
-              <button
-                onClick={() => setIsAdding(false)}
-                className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">
-                  Category
-                </label>
-                <select
-                  value={newItem.category}
-                  onChange={(e) =>
-                    setNewItem({
-                      ...newItem,
-                      category: e.target.value as CarouselCategory,
-                    })
-                  }
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-blue-500"
-                >
-                  {categories.map((category) => (
-                    <option key={category.id} value={category.id}>
-                      {category.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">
-                  Title
-                </label>
-                <input
-                  type="text"
-                  value={newItem.title}
-                  onChange={(e) =>
-                    setNewItem({ ...newItem, title: e.target.value })
-                  }
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">
-                  Description
-                </label>
-                <textarea
-                  value={newItem.description}
-                  onChange={(e) =>
-                    setNewItem({ ...newItem, description: e.target.value })
-                  }
-                  rows={3}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">
-                  Image URL
-                </label>
-                <input
-                  type="text"
-                  value={newItem.imageUrl}
-                  onChange={(e) =>
-                    setNewItem({ ...newItem, imageUrl: e.target.value })
-                  }
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">
-                  Link URL (optional)
-                </label>
-                <input
-                  type="text"
-                  value={newItem.link}
-                  onChange={(e) =>
-                    setNewItem({ ...newItem, link: e.target.value })
-                  }
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-blue-500"
-                />
-              </div>
-            </div>
-
-            <div className="mt-6 flex justify-end space-x-3">
-              <button
-                onClick={() => setIsAdding(false)}
-                className="rounded-lg border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-100"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleAddItem}
-                className="flex items-center rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
-              >
-                <Save size={18} className="mr-2" />
-                Add Slide
-              </button>
-            </div>
-          </div>
-        </div>
+        <AddNewCarousel
+          setIsAdding={setIsAdding}
+          newItem={newItem}
+          setNewItem={setNewItem}
+          categories={categories}
+          handleFileSelect={handleFileSelect}
+          handleAddItem={handleAddItem}
+          carouselIsLoading={carouselIsLoading}
+        />
       )}
 
       {/* Edit Modal */}
       {isEditing && editingItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Edit Slide</h3>
-              <button
-                onClick={() => setIsEditing(false)}
-                className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">
-                  Category
-                </label>
-                <select
-                  value={editingItem.category}
-                  onChange={(e) =>
-                    setEditingItem({
-                      ...editingItem,
-                      category: e.target.value as CarouselCategory,
-                    })
-                  }
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-blue-500"
-                >
-                  {categories.map((category) => (
-                    <option key={category.id} value={category.id}>
-                      {category.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">
-                  Title
-                </label>
-                <input
-                  type="text"
-                  value={editingItem.title}
-                  onChange={(e) =>
-                    setEditingItem({ ...editingItem, title: e.target.value })
-                  }
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">
-                  Description
-                </label>
-                <textarea
-                  value={editingItem.description}
-                  onChange={(e) =>
-                    setEditingItem({
-                      ...editingItem,
-                      description: e.target.value,
-                    })
-                  }
-                  rows={3}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">
-                  Image URL
-                </label>
-                <input
-                  type="text"
-                  value={editingItem.imageUrl}
-                  onChange={(e) =>
-                    setEditingItem({ ...editingItem, imageUrl: e.target.value })
-                  }
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">
-                  Link URL (optional)
-                </label>
-                <input
-                  type="text"
-                  value={editingItem.link || ""}
-                  onChange={(e) =>
-                    setEditingItem({ ...editingItem, link: e.target.value })
-                  }
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-blue-500"
-                />
-              </div>
-            </div>
-
-            <div className="mt-6 flex justify-end space-x-3">
-              <button
-                onClick={() => setIsEditing(false)}
-                className="rounded-lg border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-100"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleEditItem}
-                className="flex items-center rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
-              >
-                <Save size={18} className="mr-2" />
-                Save Changes
-              </button>
-            </div>
-          </div>
-        </div>
+        <EditCarouselDialog
+          setIsEditing={setIsEditing}
+          setEditingItem={setEditingItem}
+          editingItem={editingItem}
+          categories={categories}
+          handleEditFileSelect={handleEditFileSelect}
+          handleEditItem={handleEditItem}
+          carouselIsLoading={carouselIsLoading}
+          editFileInputRef={editFileInputRef}
+        />
       )}
     </div>
   );
 };
 
 export default CarouselSetting;
+
+const CarouselPreview = ({
+  categoryItems,
+  currentSlide,
+  prevSlide,
+  nextSlide,
+  setCurrentSlide,
+}: {
+  categoryItems: Carousel[];
+  currentSlide: number;
+  prevSlide: () => void;
+  nextSlide: () => void;
+  setCurrentSlide: Dispatch<SetStateAction<number>>;
+}) => {
+  const navigate = useNavigate();
+
+  const handleButtonClick = (link: string | undefined, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!link) return;
+
+    navigate(link);
+  };
+
+  return (
+    <div className="mb-8 rounded-xl border border-gray-200 p-4">
+      <h3 className="mb-4 text-lg font-medium text-gray-900">Preview</h3>
+
+      {categoryItems.length === 0 ? (
+        <div className="flex h-40 items-center justify-center rounded-lg bg-gray-100 text-gray-500">
+          <div className="text-center">
+            <ImageIcon size={32} className="mx-auto mb-2 text-gray-400" />
+            <p>No slides available for this category</p>
+          </div>
+        </div>
+      ) : (
+        <div className="relative overflow-hidden rounded-lg bg-gray-100">
+          <div className="relative h-80">
+            {categoryItems.map((item, index) => (
+              <div
+                key={item._id}
+                className={`absolute inset-0 transition-transform duration-500 ${
+                  index === currentSlide
+                    ? "translate-x-0"
+                    : index < currentSlide
+                      ? "-translate-x-full"
+                      : "translate-x-full"
+                }`}
+              >
+                <img
+                  src={item.imageUrl}
+                  alt={item.title}
+                  className="h-full w-full object-cover"
+                />
+                <div className="absolute inset-0 flex items-end bg-gradient-to-t from-blue-900/80 to-transparent">
+                  <div className="relative left-10 mx-auto w-full max-w-7xl px-6 py-16 text-center md:text-left">
+                    {/* header */}
+                    <h1 className="mb-4 text-4xl font-extrabold text-white drop-shadow-lg md:text-5xl">
+                      {item.title}
+                    </h1>
+                    {/* description */}
+                    <p className="mb-6 max-w-3xl text-lg text-blue-100 drop-shadow-md md:text-xl">
+                      {item.description}
+                    </p>
+                    {/* button */}
+                    {item.link && (
+                      <button
+                        onClick={(e) => handleButtonClick(item.link, e)}
+                        className="group hover:shadow-3xl relative inline-flex items-center justify-center overflow-hidden rounded-xl bg-gradient-to-r from-blue-600 to-indigo-700 px-8 py-4 font-semibold text-white shadow-2xl transition-all duration-300 hover:from-blue-700 hover:to-indigo-800"
+                      >
+                        <span className="relative">Explore More</span>
+                        <ChevronRight className="ml-2 h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" />
+                        <div className="absolute inset-0 h-full w-full -translate-x-full transform bg-white/10 transition-transform duration-1000 group-hover:translate-x-full"></div>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Navigation Arrows */}
+          {categoryItems.length > 1 && (
+            <>
+              <button
+                onClick={prevSlide}
+                className="absolute top-1/2 left-2 -translate-y-1/2 rounded-full bg-black/30 p-2 text-white hover:bg-black/50"
+              >
+                <ChevronLeft size={20} />
+              </button>
+              <button
+                onClick={nextSlide}
+                className="absolute top-1/2 right-2 -translate-y-1/2 rounded-full bg-black/30 p-2 text-white hover:bg-black/50"
+              >
+                <ChevronRight size={20} />
+              </button>
+            </>
+          )}
+
+          {/* Slide Indicators */}
+          {categoryItems.length > 1 && (
+            <div className="absolute bottom-2 left-1/2 flex -translate-x-1/2 space-x-2">
+              {categoryItems.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentSlide(index)}
+                  className={`h-2 w-2 rounded-full ${
+                    index === currentSlide ? "bg-white" : "bg-white/50"
+                  }`}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};

@@ -384,3 +384,14 @@ export interface SuspiciousEvent {
   createdAt: Date;
   updatedAt: Date;
 };
+
+export interface Carousel {
+  _id: string;
+  title: string;
+  description: string;
+  image: File | null;
+  imageUrl: string;
+  link?: string;
+  category: "event" | "facility" | "room" | "homepage";
+  order: number;
+}

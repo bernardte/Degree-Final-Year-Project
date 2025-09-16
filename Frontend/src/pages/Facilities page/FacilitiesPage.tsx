@@ -67,22 +67,7 @@ const FacilitiesPage = () => {
     <div className="min-h-screen bg-gradient-to-b from-white via-blue-50 to-cyan-100">
       {/* carousel */}
       <div className="relative">
-        <Carousel
-          images={facilities
-            .map((facility) => getImageSrc(facility.image) ?? "")
-            .filter((src) => src)}
-        />
-        <div className="absolute inset-0 flex items-end bg-gradient-to-t from-blue-900/70 to-transparent">
-          <div className="mx-auto w-full max-w-7xl px-4 pb-16 text-center">
-            <h1 className="mb-4 text-4xl font-bold text-white md:text-5xl">
-              Luxury Facilities & Amenities
-            </h1>
-            <p className="mx-auto max-w-3xl text-xl text-blue-100">
-              Discover our exceptional amenities designed for your comfort and
-              enjoyment
-            </p>
-          </div>
-        </div>
+        <Carousel category="facility"/>
       </div>
 
       {/* Selected facilities display */}

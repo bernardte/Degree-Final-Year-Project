@@ -4,17 +4,22 @@ import {
   RewardSettings,
   HotelInfo,
   SuspiciousEvent,
+  Carousel,
 } from "@/types/interface.type";
 import axiosInstance from "@/lib/axios";
-import axios from "axios";
+import useErrorHandling from "@/hooks/useErrorHandling";
 
 interface useSystemSettingStore {
   systemSetting: RewardSettings;
   rewardPointsHistory: RewardHistories[];
   suspeciousEvents: SuspiciousEvent[];
+  carousel: Carousel[];
   hotelInformation: HotelInfo | null;
   error: null | string;
   isLoading: boolean;
+  carouselError: null | string;
+  carouselErrorType: string;
+  carouselIsLoading: boolean;
   suspeciousEventsError: null | string;
   suspeciousEventsIsLoading: boolean;
   suspeciousEventsTotalPage: number;
@@ -34,13 +39,41 @@ interface useSystemSettingStore {
     sortOrder: "asc" | "desc",
   ) => Promise<void>;
   setSuspiciousCurrentPage: (currentPage: number) => void;
-  updateMarkAsSolved: (suspiciousEventId: string, markAsSolved: boolean) => Promise<void>;
+  updateMarkAsSolved: (
+    suspiciousEventId: string,
+    markAsSolved: boolean,
+  ) => Promise<void>;
+  fetchAllCarousel: (activeCategory: string) => Promise<void>;
+  createNewCarousel: (
+    title: string,
+    description: string,
+    imageFile: File,
+    category: "event" | "facility" | "room" | "homepage",
+    order: number,
+    link?: string,
+  ) => Promise<any | null>;
+  updateCertainCarousel: (
+    carouselId: string,
+    updates: {
+      title?: string;
+      description?: string;
+      imageFile?: File;
+      link?: string;
+      category?: "event" | "homepage" | "room" | "facility";
+      order?: number;
+    },
+  ) => Promise<any | null>;
+  deleteCertainCarousel: (arouselId: string) => Promise<any | null>;
+  getAllCarousel: (category: string) => Promise<void>;
 }
 
-let controller: AbortController | null = null;
+let eventSource: EventSource | null = null;
 
 const useSystemSettingStore = create<useSystemSettingStore>()((set) => ({
   error: null,
+  carouselError: null,
+  carouselIsLoading: false,
+  carouselErrorType: "",
   suspeciousEventsError: null,
   suspeciousEventsIsLoading: false,
   suspeciousEventsTotalPage: 0,
@@ -49,6 +82,7 @@ const useSystemSettingStore = create<useSystemSettingStore>()((set) => ({
   isLoading: false,
   rewardPointsHistory: [],
   suspeciousEvents: [],
+  carousel: [],
   hotelInformation: null,
   logo: "",
   systemSetting: {
@@ -111,45 +145,61 @@ const useSystemSettingStore = create<useSystemSettingStore>()((set) => ({
     sortOrder: "asc" | "desc" = "desc",
   ) => {
     try {
-      // If there is a previous request -> cancel
-      if (controller) {
-        controller.abort();
+      // If there is an SSE connection -> Close
+      if (eventSource) {
+        eventSource.close();
       }
-      controller = new AbortController();
-      set({ suspeciousEventsIsLoading: true });
-      const response = await axiosInstance.get(
-        "/api/systemSetting/suspicious-event",
-        {
-          params: {
-            page,
-            limit,
-            search: searchTerm || "",
-            severity: severity && severity !== "all" ? severity : undefined,
-            status: status && status !== "all" ? status : undefined,
-            sortBy,
-            sortOrder,
-          },
-          signal: controller.signal,
-        },
-      );
 
-      set({
-        suspeciousEvents: response?.data?.events || [],
-        suspeciousEventsTotalPage: response?.data?.totalPages || 0,
-        suspeciousEventsCurrentPage: page,
-        suspeciousEventsTotalItems: response?.data?.totalEvents || 0,
-      });
-    } catch (error: any) {
-      if (axios.isCancel(error)) {
-        console.log("request cancelled");
-      } else {
+      set({ suspeciousEventsIsLoading: true, suspeciousEventsError: null });
+
+      // Concatenating SSE URLs
+      //* to called .env file variable on vite.
+      const baseUrl = import.meta.env.VITE_BACKEND_API_URL;
+      const url = new URL(
+        `${baseUrl}/api/systemSetting/suspicious-event/stream`,
+      );
+      url.searchParams.append("page", String(page));
+      url.searchParams.append("limit", String(limit));
+      if (searchTerm) url.searchParams.append("search", searchTerm);
+      if (severity && severity !== "all")
+        url.searchParams.append("severity", severity);
+      if (status && status !== "all") url.searchParams.append("status", status);
+      url.searchParams.append("sortBy", sortBy);
+      url.searchParams.append("sortOrder", sortOrder);
+
+      // constuct SSE connection
+      eventSource = new EventSource(url, { withCredentials: true });
+
+      eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+
+          set({
+            suspeciousEvents: data.events || [],
+            suspeciousEventsTotalPage: data.totalPages || 0,
+            suspeciousEventsCurrentPage: page,
+            suspeciousEventsTotalItems: data.totalEvents || 0,
+            suspeciousEventsIsLoading: false,
+          });
+        } catch (err) {
+          console.error("Failed to parse SSE data:", err);
+        }
+      };
+
+      eventSource.onerror = (err) => {
+        console.error("SSE connection error:", err);
         set({
-          suspeciousEventsError:
-            error?.response?.data?.error || error?.response?.data?.message,
+          suspeciousEventsError: "SSE connection error",
+          suspeciousEventsIsLoading: false,
         });
-      }
+        eventSource?.close();
+      };
+    } catch (error: any) {
+      set({
+        suspeciousEventsError: error?.message || "unknown error",
+        suspeciousEventsIsLoading: false,
+      });
     } finally {
-      set({ suspeciousEventsIsLoading: false });
     }
   },
   setSuspiciousCurrentPage: (currentPage: number) => {
@@ -178,7 +228,174 @@ const useSystemSettingStore = create<useSystemSettingStore>()((set) => ({
           suspeciousEventsError:
             error?.response?.data?.error || error?.response?.data?.message,
         }),
+      );
+  },
+  fetchAllCarousel: async (activeCategory: string) => {
+    set({ carouselIsLoading: true, carouselError: null });
+    axiosInstance
+      .get("/api/systemSetting/carousel", {
+        params: {
+          category: activeCategory,
+        },
+      })
+      .then((response) => set({ carousel: response.data }))
+      .catch((error) =>
+        set({
+          carouselError:
+            error?.response?.data?.error || error?.response?.data?.message,
+        }),
       )
+      .finally(() => set({ carouselIsLoading: false }));
+  },
+  createNewCarousel: async (
+    title: string,
+    description: string,
+    imageFile: File,
+    category: "event" | "facility" | "room" | "homepage",
+    order: number,
+    link?: string,
+  ) => {
+    try {
+      set({ carouselIsLoading: true });
+      const formData = new FormData();
+      formData.append("title", title);
+      formData.append("description", description);
+      formData.append("category", category);
+      formData.append("order", String(order));
+
+      if (link) {
+        formData.append("link", link);
+      }
+
+      if (imageFile) {
+        console.log("imageFile: ", imageFile);
+        formData.append("image", imageFile);
+      }
+      const response = await axiosInstance.post(
+        "/api/systemSetting/carousel",
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        },
+      );
+
+      set((state) => ({
+        carousel: [response.data, ...state.carousel],
+      }));
+
+      return response.data;
+    } catch (error: any) {
+      const { message, type } = useErrorHandling(error);
+
+      set({
+        carouselError: message,
+        carouselErrorType: type,
+      });
+
+      return null;
+    } finally {
+      set({ carouselIsLoading: false });
+    }
+  },
+  updateCertainCarousel: async (
+    carouselId: string,
+    updates: {
+      title?: string;
+      description?: string;
+      imageFile?: File;
+      link?: string;
+      category?: "event" | "homepage" | "room" | "facility";
+      order?: number;
+    },
+  ) => {
+    set({ carouselError: null, carouselIsLoading: true });
+
+    try {
+      const formData = new FormData();
+      Object.entries(updates).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          if (key === "imageFile" && value instanceof File) {
+            formData.append("image", value);
+          } else {
+            formData.append(key, String(value));
+          }
+        }
+      });
+      const response = await axiosInstance.patch(
+        `/api/systemSetting/carousel/${carouselId}`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        },
+      );
+
+      const updatedCarousel = response.data;
+
+      set((state) => ({
+        carousel: state.carousel.map((c) =>
+          c._id === carouselId ? updatedCarousel : c,
+        ),
+      }));
+
+      return updatedCarousel;
+    } catch (error: any) {
+      const { message, type } = useErrorHandling(error);
+
+      set({
+        carouselError: message,
+        carouselErrorType: type,
+      });
+
+      return null;
+    } finally {
+      set({ carouselIsLoading: false });
+    }
+  },
+  deleteCertainCarousel: async (carouselId: string) => {
+    set({ carouselError: null, carouselIsLoading: true });
+    try {
+      const response = await axiosInstance.delete(
+        `/api/systemSetting/carousel/${carouselId}`,
+      );
+      set((prev) => ({
+        carousel: prev.carousel.filter((item) => item._id !== carouselId),
+      }));
+      return response.data.message;
+    } catch (error: any) {
+      const { message, type } = useErrorHandling(error);
+
+      set({
+        carouselError: message,
+        carouselErrorType: type,
+      });
+    } finally {
+      set({ carouselIsLoading: false });
+    }
+  },
+  getAllCarousel: async (category: string) => {
+    try {
+      const response = await axiosInstance.get(
+        "/api/systemSetting/get-all-carousel",
+        {
+          params: { category },
+        },
+      );
+
+      set({ carousel: response.data });
+    } catch (error: any) {
+      const { message, type } = useErrorHandling(error);
+
+      set({
+        carouselError: message,
+        carouselErrorType: type,
+      });
+    } finally {
+      set({ carouselIsLoading: false });
+    }
   },
 }));
 

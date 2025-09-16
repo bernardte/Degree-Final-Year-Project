@@ -10,7 +10,7 @@ import {
   User,
   UserCheck,
 } from "lucide-react";
-import { formatDate } from "@/utils/formatDate"
+import { formatTime } from "@/utils/formatTime";
 
 type EventListProps = {
   event: SuspiciousEvent;
@@ -55,7 +55,7 @@ const EventList = ({
               <span>{event.type}</span>
               <span className="mx-2">•</span>
               <Clock className="mr-1.5 h-4 w-4 flex-shrink-0 text-gray-400" />
-              <span>{formatDate(event.createdAt)}</span>
+              <span>{formatTime(event.createdAt)}</span>
             </div>
           </div>
         </div>
