@@ -40,9 +40,15 @@ const permissions = {
     OTP: ["view", "update", "create"],
     rateAndReview: ["create"],
     rewardPoints: ["update", "create", "delete"],
-    settings: ["update", "view", "view_user_activity_tracking"],
+    settings: [
+      "update",
+      "view",
+      "view_user_activity_tracking",
+      "delete",
+      "create_carousel",
+    ],
     reservation: ["view"],
-    suspiciousEvent: ["view", "update"]
+    suspiciousEvent: ["view", "update"],
   },
 
   user: {

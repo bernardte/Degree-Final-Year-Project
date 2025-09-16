@@ -11,6 +11,11 @@ router.get(
   systemSettingController.getHotelInformation
 );
 
+router.get(
+  "/get-all-carousel",
+  systemSettingController.getAllCarousel
+);
+
 //update reward point
 router.use(protectRoute, verifyRoles);
 router
@@ -85,7 +90,7 @@ router.get(
 );
 
 router.get(
-  "/suspicious-event",
+  "/suspicious-event/stream",
   accessControl("suspiciousEvent", "view"),
   systemSettingController.fetchAllSuspiciousEvent
 );
@@ -95,5 +100,25 @@ router.patch(
   accessControl("suspiciousEvent", "update"),
   systemSettingController.updateMarkAsSolved
 );
+
+// carousel
+router
+  .route("/carousel")
+  .get(accessControl("settings", "view"), systemSettingController.fetchCarousel)
+  .post(
+    accessControl("settings", "create_carousel"),
+    systemSettingController.createCarousel
+  );
+
+router
+  .route("/carousel/:carouselId")
+  .patch(
+    accessControl("settings", "update"),
+    systemSettingController.updateCarousel
+  )
+  .delete(
+    accessControl("settings", "delete"),
+    systemSettingController.deleteCarousel
+  );
 
 export default router;

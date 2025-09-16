@@ -102,6 +102,8 @@ const policies = {
     update: isSuperAdmin,
     view_user_activity_tracking: isSuperAdmin,
     view: isSuperAdminOrAdmin,
+    create_carousel: isSuperAdmin,
+    delete: isSuperAdmin
   },
   reservation: {
     view: isSuperAdminOrAdmin,

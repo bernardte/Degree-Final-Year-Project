@@ -18,6 +18,8 @@ import {
 } from "../utils/report/Generate File/generateFile.js";
 import { uploadToCloudinary } from "../utils/uploadToCloudinary.js";
 import SuspiciousEvent from "../models/suspiciousEvent.model.js";
+import Carousel from "../models/carousel.model.js";
+import cloudinary from "../config/cloudinary.js";
 
 const updateRewardPointSetting = async (req, res) => {
   const { settings } = req.body;
@@ -441,67 +443,101 @@ const deleteAllReports = async (req, res) => {
 };
 
 const fetchAllSuspiciousEvent = async (req, res) => {
-    try {
-      const page = parseInt(req.query.page) || 1;
-      const limit = parseInt(req.query.limit) || 10;
-      const skip = (page - 1) * limit;
+  try {
+    //! SSE response header
+    res.setHeader("content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+    res.flushHeaders();
 
-      // Build filter object based on query parameters
-      const filter = {};
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
 
-      if (req.query.severity && req.query.severity !== "all") {
-        filter.severity = req.query.severity;
+    // Build filter object based on query parameters
+    const filter = {};
+
+    if (req.query.severity && req.query.severity !== "all") {
+      filter.severity = req.query.severity;
+    }
+
+    if (req.query.status && req.query.status !== "all") {
+      if (req.query.status === "handled") {
+        filter.handled = true;
+      } else if (req.query.status === "unhandled") {
+        filter.handled = false;
       }
+    }
 
-      if (req.query.status && req.query.status !== "all") {
-        if (req.query.status === "handled") {
-          filter.handled = true;
-        } else if (req.query.status === "unhandled") {
-          filter.handled = false;
-        }
-      }
+    if (req.query.search) {
+      filter.$or = [
+        { reason: { $regex: req.query.search, $options: "i" } },
+        { type: { $regex: req.query.search, $options: "i" } },
+      ];
+    }
 
-      if (req.query.search) {
-        filter.$or = [
-          { reason: { $regex: req.query.search, $options: "i" } },
-          { type: { $regex: req.query.search, $options: "i" } },
-        ];
-      }
+    // Determine sort order
+    let sort = { createdAt: -1 }; // Default sort by date descending
 
-      // Determine sort order
-      let sort = { createdAt: -1 }; // Default sort by date descending
+    if (req.query.sortBy === "severity") {
+      sort = {
+        severity: req.query.sortOrder === "asc" ? 1 : -1,
+        createdAt: -1,
+      };
+    } else if (req.query.sortBy === "date") {
+      sort = { createdAt: req.query.sortOrder === "asc" ? 1 : -1 };
+    }
 
-       if (req.query.sortBy === "severity") {
-         sort = {
-           severity: req.query.sortOrder === "asc" ? 1 : -1,
-           createdAt: -1, 
-         };
-       } else if (req.query.sortBy === "date") {
-         sort = { createdAt: req.query.sortOrder === "asc" ? 1 : -1 };
-       }
+    // Query database with pagination
+    const events = await SuspiciousEvent.find(filter)
+      .sort(sort)
+      .skip(skip)
+      .limit(limit);
 
-      // Query database with pagination
-      const events = await SuspiciousEvent.find(filter)
-        .sort(sort)
-        .skip(skip)
-        .limit(limit);
+    // Get total count for pagination
+    const total = await SuspiciousEvent.countDocuments(filter);
 
-      // Get total count for pagination
-      const total = await SuspiciousEvent.countDocuments(filter);
-
-      res.json({
+    res.write(
+      `data: ${JSON.stringify({
         events,
         currentPage: page,
         totalPages: Math.ceil(total / limit),
         totalEvents: total,
-      });
-    } catch (error) {
-      console.error("Error fetching suspicious events:", error);
-      res.status(500).json({ error: "Internal Server error" });
-    }
+      })}\n\n`
+    );
+
+    const changeStream = SuspiciousEvent.watch();
+
+    changeStream.on("change", async () => {
+      const updatedEvents = await SuspiciousEvent.find(filter)
+        .sort(sort)
+        .skip(skip)
+        .limit(limit);
+
+      const updatedTotal = await SuspiciousEvent.countDocuments(filter);
+
+      res.write(
+        `data: ${JSON.stringify({
+          events: updatedEvents,
+          currentPage: page,
+          totalPages: Math.ceil(updatedTotal / limit),
+          totalEvents: updatedTotal,
+        })}\n\n`
+      );
+    });
+
+    req.on("close", () => {
+      console.log("The client disconnects from the SSE connection");
+      changeStream.close();
+      res.end();
+    });
+  } catch (error) {
+    console.error("Error fetching suspicious events:", error);
+    res.status(500).json({ error: "Internal Server error" });
+  }
 };
 
-const updateMarkAsSolved = async(req, res) => {
+const updateMarkAsSolved = async (req, res) => {
   const suspiciousEventId = req.params.suspiciousEventId;
   const markAsSolved = req.body.handled;
 
@@ -510,9 +546,9 @@ const updateMarkAsSolved = async(req, res) => {
       { _id: suspiciousEventId },
       { handled: markAsSolved },
       { new: true, select: "handled" }
-    )
+    );
 
-    if(!updateSuspiciousEvent){
+    if (!updateSuspiciousEvent) {
       return res.status(404).json({ error: "No result found" });
     }
 
@@ -523,7 +559,158 @@ const updateMarkAsSolved = async(req, res) => {
     console.log("Error in updateMarkAsSolved: ", error.message);
     res.status(500).json({ error: "Internal Server error" });
   }
-}
+};
+
+const fetchCarousel = async (req, res) => {
+  const { category } = req.query;
+
+  try {
+    const filter = category ? { category } : {};
+    const carousels = await Carousel.find(filter).sort({ order: 1 });
+    res.status(200).json(carousels);
+  } catch (error) {
+    console.log("Error in fetchCarousel: ", error.message);
+    res.status(500).json({ error: "Internal Server error" });
+  }
+};
+
+const createCarousel = async (req, res) => {
+  const { title, description, link, category, order } = req.body;
+  const image = req.files.image;
+
+  if (!title || !description || !image || !category || order == undefined) {
+    return res.status(400).json({ error: "All field are required" });
+  }
+
+  try {
+    const existing = await Carousel.findOne({ order: Number(order), category });
+
+    if (existing) {
+      return res
+        .status(400)
+        .json({ error: `Order ${order} already exist in the ${category}` });
+    }
+
+    const imageUrl = await uploadToCloudinary(image);
+
+    const newSlide = new Carousel({
+      title,
+      description,
+      imageUrl,
+      link,
+      category,
+      order: Number(order),
+    });
+
+    await newSlide.save();
+    res.status(200).json(newSlide);
+  } catch (error) {
+    console.log("Error in createCarousel: ", error.message);
+    res.status(500).json({ error: "Internal Server error" });
+  }
+};
+
+const updateCarousel = async (req, res) => {
+  try {
+    const { carouselId } = req.params;
+    const { title, description, link, category, order } = req.body;
+    const numericOrder =
+      order !== undefined && order !== null ? Number(order) : null;
+    const image = req.files?.image || null;
+    const carousel = await Carousel.findById({ _id: carouselId });
+
+    let imageUrl = null;
+
+    if (!carousel) {
+      return res.status(404).json({ error: "Carousel not found" });
+    }
+
+    //convert order to number and make sure order is unique
+    if (numericOrder !== null) {
+      const conflict = await Carousel.findOne({
+        order: numericOrder,
+        category,
+        _id: { $ne: carouselId },
+      });
+
+      if (conflict) {
+        return res.status(400).json({
+          error: `Order ${numericOrder} is already used by another carousel in a same ${category}.`,
+        });
+      }
+    }
+
+    imageUrl = carousel.imageUrl;
+    if (image) {
+      imageUrl = await uploadToCloudinary(image);
+    }
+
+    carousel.title = title || carousel.title;
+    carousel.description = description || carousel.description;
+    carousel.imageUrl = imageUrl;
+    carousel.link = link || carousel.link;
+    carousel.category = category || carousel.category;
+    carousel.order = numericOrder || carousel.order;
+
+    await carousel.save();
+
+    res.status(200).json(carousel);
+  } catch (error) {
+    console.log("Error in updateCarousel: ", error.message);
+    res.status(500).json({ error: "Internal Server error" });
+  }
+};
+const deleteCarousel = async (req, res) => {
+  try {
+    const { carouselId } = req.params;
+
+    // Find the slide you want to delete
+    const slide = await Carousel.findById(carouselId);
+    if (!slide) {
+      return res.status(404).json({ message: "Slide not found" });
+    }
+
+    const { imageUrl, order, category } = slide;
+
+    // Delete Cloudinary images
+    try {
+      const publicId = imageUrl.split("/").pop().split(".")[0];
+      await cloudinary.uploader.destroy(publicId);
+    } catch (err) {
+      console.log("Cloudinary delete failed, but will continue:", err.message);
+      // Continue deleting the database even if Cloudinary fails to delete
+    }
+
+    // delete carousel
+    await Carousel.findByIdAndDelete(carouselId);
+
+    // Re-adjust the order within the same category
+    await Carousel.updateMany(
+      { category, order: { $gt: order } }, // Greater than the order to be deleted
+      { $inc: { order: -1 } } // Move all forward 1
+    );
+
+    res.status(200).json({ message: "Slide deleted and order adjusted" });
+  } catch (error) {
+    console.log("Error in deleteCarousel: ", error.message);
+    res.status(500).json({ error: "Internal Server error" });
+  }
+};
+
+const getAllCarousel = async (req, res) => {
+  const category = req.query.category;
+  if (!category){
+    return res.status(400).json({ error: "Category is required" });
+  }  
+
+  try {
+    const carousel = await Carousel.find({ category });
+    res.status(200).json(carousel);
+  } catch (error) {
+    console.log("Error in deleteCarousel: ", error.message);
+    res.status(500).json({ error: "Internal Server error" });
+  }
+};
 
 export default {
   updateRewardPointSetting,
@@ -541,4 +728,9 @@ export default {
   deleteAllReports,
   fetchAllSuspiciousEvent,
   updateMarkAsSolved,
+  fetchCarousel,
+  createCarousel,
+  updateCarousel,
+  deleteCarousel,
+  getAllCarousel,
 };
