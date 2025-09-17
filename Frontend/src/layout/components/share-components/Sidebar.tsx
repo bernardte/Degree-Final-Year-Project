@@ -166,7 +166,6 @@ const Sidebar = () => {
             setSelected={setSelected}
             link={() => navigate("/admin-suspicious-event")}
             open={open}
-            notify={unreadNotification}
           />
         </RequireRole>
         <Option

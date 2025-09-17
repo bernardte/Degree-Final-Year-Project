@@ -22,7 +22,6 @@ import useSystemSettingStore from "@/stores/useSystemSettingStore";
 import useToast from "@/hooks/useToast";
 import AddNewCarousel from "../dialog-component/AddNewCarouselDialog";
 import EditCarouselDialog from "../dialog-component/EditCarouselDialog";
-import { useNavigate } from "react-router-dom";
 
 type CarouselCategory = "event" | "facility" | "room" | "homepage";
 type EditCarousel = Omit<Carousel, "imageUrl"> & {
@@ -62,6 +61,7 @@ const CarouselSetting = () => {
     carouselErrorType,
   } = useSystemSettingStore((state) => state);
   const { showToast } = useToast();
+  const lastErrorRef = useRef<string | null>(null);
 
   useEffect(() => {
     fetchAllCarousel(activeCategory);
@@ -194,19 +194,21 @@ const CarouselSetting = () => {
     icon: React.ReactNode;
   }[] = [
     { id: "homepage", label: "Homepage", icon: <Home size={18} /> },
-    { id: "event", label: "Events", icon: <Calendar size={18} /> },
-    { id: "facility", label: "Facilities", icon: <Building size={18} /> },
     { id: "room", label: "Rooms & Suites", icon: <Bed size={18} /> },
+    { id: "facility", label: "Facilities", icon: <Building size={18} /> },
+    { id: "event", label: "Events", icon: <Calendar size={18} /> },
   ];
 
   useEffect(() => {
-    if (!carouselError) return;
+    if (!carouselError || lastErrorRef.current === carouselError) return;
 
     if (carouselErrorType === "accessDenied") {
       showToast("warn", carouselError);
     } else if (carouselErrorType === "serverError") {
       showToast("error", carouselError);
     }
+
+    lastErrorRef.current = carouselError
   }, [carouselError, carouselErrorType, showToast]);
 
   return (
@@ -358,13 +360,17 @@ const CarouselPreview = ({
   nextSlide: () => void;
   setCurrentSlide: Dispatch<SetStateAction<number>>;
 }) => {
-  const navigate = useNavigate();
-
   const handleButtonClick = (link: string | undefined, e: React.MouseEvent) => {
     e.stopPropagation();
     if (!link) return;
 
-    navigate(link);
+    if (link.startsWith("http://") || link.startsWith("https://")) {
+      // External links
+      window.open(link);
+    } else {
+      // Internal routing, automatically fill in "/"
+      window.location.href = link.startsWith("/") ? link : `/${link}`;
+    }
   };
 
   return (

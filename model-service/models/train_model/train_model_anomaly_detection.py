@@ -1,127 +1,200 @@
-import torch
+import torch 
 import torch.nn as nn
 import torch.optim as optim
+from torch.utils.data import Dataset, DataLoader
 import numpy as np
 import pandas as pd
 from tqdm.auto import tqdm
-from sklearn.preprocessing import MinMaxScaler, OneHotEncoder
-from pymongo import MongoClient
+from sklearn.preprocessing import MinMaxScaler, LabelEncoder 
+import joblib
+import asyncio
 from config.mongoDB import db
 
 # Connect to MongoDB
 booking_collection = db["bookings"]
+SEQ_LEN = 5
 
-cursor = booking_collection.find({}, {
+async def load_booking():
+  cursor =  booking_collection.find({}, {
+    "bookingReference": 1,
+    "userEmail": 1,
+    "guestId": 1,
+    "userType": 1,
+    "bookingDate": 1,
     "totalPrice": 1,
-    "totalGuests.adults": 1,
-    "totalGuests.children": 1,
-    "breakfastIncluded": 1,
     "refundAmount": 1,
     "rewardDiscount": 1,
     "paymentMethod": 1,
-    "status": 1
-})
+    "status": 1,
+    "bookingCreatedByUser": 1,
+    "totalGuests": 1,
+    "room": 1,
+  })
 
-data = list(cursor)
-df = pd.DataFrame(data)
+  docs = []
+  async for doc in cursor:
+    docs.append(doc)
+  return pd.DataFrame(docs)
 
-print("original dataset: ")
-print(df.head())
+df = asyncio.run(load_booking())
+df = df[df["status"] != "cancelled"]
 
-device = "cuda" if torch.cuda.is_available() else "cpu"
-print(f"Using device: {device}")
-
-# missing value inserting 0
-df = df.fillna(0)
-
-# calculate total guest
-df["guests"] = df["totalGuests"].apply(lambda x: (x.get("adults",0) + x.get("children",0)) if isinstance(x,dict) else 0)
-
-# feature selection
-numerical = df[["totalPrice", "guests", "breakfastIncluded", "refundAmount", "rewardDiscount"]].values
-
-categorical = df[["paymentMethod", "status"]].astype(str).values
-
-# one-hot encoder
-encoder = OneHotEncoder(sparse_output=False, handle_unknown="ignore")
-categorical_encoded = encoder.fit_transform(categorical)
-
-# Merge
-x = np.hstack([numerical, categorical_encoded])
-
-# Normalization
 scaler = MinMaxScaler()
-X_scaler = scaler.fit_transform(x)
 
-X_tensor = torch.tensor(X_scaler, dtype=torch.float32).to(device)
-categorical_encoded_tensor = torch.tensor(categorical_encoded, dtype=torch.float32).to(device)
+df["bookingDate"] = pd.to_datetime(df["bookingDate"])
 
-class Autoencoder(nn.Module):
-  def __init__(self, input_shape, output_shape, hidden_units):
-    super(Autoencoder, self).__init__()
-    self.encoder = nn.Sequential(
-        nn.Linear(input_shape, hidden_units),
-        nn.ReLU(),
-        nn.Linear(hidden_units, output_shape),
-        nn.ReLU()
+# Generate a unified userId
+df["userId"] = df.apply(
+  lambda row: row["bookingCreatedByUser"] if row["userType"] == "user" else row["guestId"], axis=1
+)
+
+df = df.sort_values(["userId", "bookingDate"])
+df = df.groupby("userId").filter(lambda x: len(x) > 1)
+
+df["adults"] = df["totalGuests"].apply(lambda x: x.get("adults", 0) if isinstance(x, dict) else 0)
+df["children"] = df["totalGuests"].apply(lambda x: x.get("children", 0) if isinstance(x, dict) else 0)
+df["totalGuestsNum"] = df["adults"] + df["children"]
+
+df["bookingInterval"] = df.groupby("userId")["bookingDate"].diff().dt.total_seconds()
+df["bookingInterval"] = df["bookingInterval"].fillna(0)
+
+le = LabelEncoder()
+df["roomEncoded"] = le.fit_transform(df["room"].astype(str))
+features = ["totalPrice", "totalGuestsNum", "bookingInterval", "refundAmount", "rewardDiscount", "roomEncoded"]
+
+scaled_features = scaler.fit_transform(df[features])
+df_scaled = df.copy()
+
+for i, f in enumerate(features):
+  df_scaled[f] = scaled_features[:, i]
+
+df_scaled["features"] = df_scaled[features].values.tolist()
+
+def create_Sequence(user_df, seq_len=SEQ_LEN):
+  values = user_df["features"].values
+  sequences = []
+
+  for i in range(len(values) - seq_len):
+    sequences.append(values[i: i+seq_len])
+  
+  return np.array(sequences, dtype=np.float32)
+
+def build_sequences(df, seq_len=SEQ_LEN):
+  all_sequences = []
+  indices = []
+  for userId, group in df.groupby("userId"):
+    values = group["features"].tolist()
+    for i in range(len(values) - seq_len):
+      all_sequences.append(values[i:i+seq_len])
+      indices.append(group.index[i + seq_len])
+
+  return np.array(all_sequences, dtype=np.float32), indices
+
+x_train_seq, train_indices = build_sequences(df_scaled)
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu") 
+
+class BookingDataset(Dataset):
+  def __init__(self, sequences):
+    self.sequences = sequences
+
+  def __len__(self):
+    return len(self.sequences)
+
+  def __getitem__(self, index) -> torch.Tensor:
+    return torch.tensor(self.sequences[index], dtype=torch.float32)
+
+  # Returns a descriptive string containing information such as the length of the dataset
+  def __repr__(self) -> str:
+    return f"BookingDataset with {self.__len__()} sequences"
+
+dataset = BookingDataset(x_train_seq)
+dataloader = DataLoader(dataset=dataset, batch_size=20, shuffle=True)
+
+class LSTMAutoencoder(nn.Module):
+  def __init__(self, n_features, hidden_size, seq_len):
+    super().__init__()
+    self.seq_len = seq_len
+    self.hidden_size = hidden_size
+    self.encoder = nn.LSTM(
+      input_size=n_features, hidden_size=hidden_size,
+      batch_first=True
     )
-    self.decoder = nn.Sequential(
-      nn.Linear(output_shape, hidden_units),
-      nn.ReLU(),
-      nn.Linear(hidden_units, output_shape),
-      nn.Sigmoid()
+
+    self.decoder = nn.LSTM(
+      input_size=hidden_size, hidden_size=hidden_size,
+      batch_first=True
     )
+    self.output_layer = nn.Linear(
+      in_features=hidden_size, out_features=n_features
+    )
+    nn.ReLU()
 
   def forward(self, x):
-    return self.decoder(self.encoder(x))
+    # Encode
+    _, (hidden, _) = self.encoder(x)
+    # repeat hidden across time dimension
+    hidden_repeated = hidden.repeat(self.seq_len, 1, 1).transpose(0, 1)
+    # Decode
+    decoded, _ = self.decoder(hidden_repeated)
+    out = self.output_layer(decoded)
+    return out
   
-input_shape = X_tensor.shape[1]
-output_shape = X_tensor.shape[1]
-hidden_units = 16
+LSTMAutoencoderModel = LSTMAutoencoder(n_features=len(features), hidden_size=32, seq_len=5)
+LSTMAutoencoderModel.to(device=device)
 
-model = Autoencoder(input_shape, output_shape, hidden_units)
-model.to(device)
+loss_fn = nn.MSELoss(reduction="mean")
+optimizer = torch.optim.Adam(params=LSTMAutoencoderModel.parameters(), lr=0.01)
 
+EPOCHS = 150
+train_losses = []
+for epoch in tqdm(range(EPOCHS)):
+  LSTMAutoencoderModel.train()
+  losses = []
+  train_loss = []
+  for batch in dataloader:
+    batch = batch.to(device)
+    output = LSTMAutoencoderModel(batch)
+    loss = loss_fn(output, batch)
+    optimizer.zero_grad()
+    loss.backward()
+    optimizer.step()
+    train_loss.append(loss.item())
+  train_losses.append(np.mean(train_loss))
 
-loss_fn = nn.MSELoss()
-optimizer = optim.Adam(model.parameters(), lr=0.01)
+  if epoch % 5 == 0:
+    print(f"Epoch {epoch}, loss: {train_losses[-1]:.4f}")
 
-NUM_EPOCHS  = 100
-total_acc = 0
-total_loss = 0
-
-for epoch in tqdm (range(NUM_EPOCHS)):
-
-  output = model(X_tensor)
-
-  loss = loss_fn(output, X_tensor)
-
-  optimizer.zero_grad()
-
-  loss.backward()
-
-  optimizer.step()
-
-  total_loss += loss.item()
-
-  if (epoch + 1) % 20 == 0:
-    print(f"Epoch: {epoch}, Loss: {loss.item():.4f}")
-
-torch.save(model.state_dict(), "models/load_dict/anomaly-detection/bookings_anomaly_detection.pth")
-
-# Save the scaler and encoder (for new data detection)
-import joblib
-joblib.dump(scaler, "models/load_dict/anomaly-detection/scaler.pkl")
-joblib.dump(encoder, "models/load_dict/anomaly-detection/categorical_encoder.pkl")
-
-# evaluation model
-model.eval()
+LSTMAutoencoderModel.eval()
 with torch.inference_mode():
-  reconstructed = model(X_tensor)
-  mse = torch.mean((X_tensor - reconstructed) ** 2, dim=1).cpu()
+  X_tensor = torch.tensor(x_train_seq, dtype=torch.float32).to(device)
+  reconstructions = LSTMAutoencoderModel(X_tensor)
+  mse = torch.mean((X_tensor - reconstructions) ** 2, dim=(1,2)).detach().cpu().numpy()
 
-threshold = (mse.mean() + 2 * mse.std()).item()
-df["mse"] = mse.numpy()
-df["is_anomaly"] = df["mse"] > threshold
+torch.save(LSTMAutoencoderModel.state_dict(), "models/load_dict/anomaly-detection/bookings_anomaly_detection.pth")
+threshold = np.mean(mse) + 2*np.std(mse)
+anomalies_index = np.where(mse > threshold)[0]
+print(f"anomaly: {len(anomalies_index)}")
 
-print(df[["totalPrice", "guests", "paymentMethod", "status", "mse", "is_anomaly"]].head())
+for i in anomalies_index:
+  row_index = train_indices[i]
+  row = df.loc[row_index]
+  print(
+          f"Index: {row.name}\t"
+          f"bookingReference: {row['bookingReference']}\t"
+          f"userId: {row['userId']}\t"
+          f"userEmail: {row.get('userEmail','')}\t"
+          f"guestId: {row.get('guestId','')}\t"
+          f"userType: {row['userType']}\t"
+          f"totalGuests: {row['totalGuests']}\t"
+          f"totalPrice: {row['totalPrice']}\t"
+          f"status: {row['status']}\t"
+          f"paymentMethod: {row['paymentMethod']}\t"
+          f"refundAmount: {row['refundAmount']}\t"
+          f"rewardDiscount: {row['rewardDiscount']}\t"
+          f"bookingDate: {row['bookingDate']}\t"
+          f"bookingCreatedByUser: {row.get('bookingCreatedByUser','')}"
+      )
+joblib.dump(threshold, "models/load_dict/anomaly-detection/threshold.pkl")
+joblib.dump(scaler, "models/load_dict/anomaly-detection/scaler.pkl")
+joblib.dump(le, "models/load_dict/anomaly-detection/label_encoder.pkl")

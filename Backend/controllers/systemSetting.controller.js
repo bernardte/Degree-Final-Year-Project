@@ -577,6 +577,7 @@ const fetchCarousel = async (req, res) => {
 const createCarousel = async (req, res) => {
   const { title, description, link, category, order } = req.body;
   const image = req.files.image;
+  const user = req.user;
 
   if (!title || !description || !image || !category || order == undefined) {
     return res.status(400).json({ error: "All field are required" });
@@ -603,6 +604,17 @@ const createCarousel = async (req, res) => {
     });
 
     await newSlide.save();
+    //* notify all admin
+    const allAdmins = await User.find({
+      role: { $in: ["admin", "superAdmin"] },
+    });
+    const adminIds = allAdmins.map((admin) => admin._id);
+    console.log("Your Admin: ", adminIds);
+    await notifyUsers(
+      adminIds,
+      `Carousel setting "${newSlide.title}" have been created by ${user.name}`,
+      "system"
+    );
     res.status(200).json(newSlide);
   } catch (error) {
     console.log("Error in createCarousel: ", error.message);
@@ -613,6 +625,7 @@ const createCarousel = async (req, res) => {
 const updateCarousel = async (req, res) => {
   try {
     const { carouselId } = req.params;
+    const user = req.user;
     const { title, description, link, category, order } = req.body;
     const numericOrder =
       order !== undefined && order !== null ? Number(order) : null;
@@ -648,11 +661,28 @@ const updateCarousel = async (req, res) => {
     carousel.title = title || carousel.title;
     carousel.description = description || carousel.description;
     carousel.imageUrl = imageUrl;
+    // If a link is passed, use the new value (including an empty string), otherwise keep the original value
+    if (link !== undefined) {
+      carousel.link = link;
+    }
+
     carousel.link = link || carousel.link;
     carousel.category = category || carousel.category;
     carousel.order = numericOrder || carousel.order;
 
     await carousel.save();
+
+    //* notify all admin
+    const allAdmins = await User.find({
+      role: { $in: ["admin", "superAdmin"] },
+    });
+    const adminIds = allAdmins.map((admin) => admin._id);
+    console.log("Your Admin: ", adminIds);
+    await notifyUsers(
+      adminIds,
+      `Carousel setting "${carousel.title}" have been updated by ${user.name}`,
+      "system"
+    );
 
     res.status(200).json(carousel);
   } catch (error) {
@@ -660,9 +690,11 @@ const updateCarousel = async (req, res) => {
     res.status(500).json({ error: "Internal Server error" });
   }
 };
+
 const deleteCarousel = async (req, res) => {
   try {
     const { carouselId } = req.params;
+    const user = req.user;
 
     // Find the slide you want to delete
     const slide = await Carousel.findById(carouselId);
@@ -690,6 +722,18 @@ const deleteCarousel = async (req, res) => {
       { $inc: { order: -1 } } // Move all forward 1
     );
 
+    //* notify all admin
+    const allAdmins = await User.find({
+      role: { $in: ["admin", "superAdmin"] },
+    });
+    const adminIds = allAdmins.map((admin) => admin._id);
+    console.log("Your Admin: ", adminIds);
+    await notifyUsers(
+      adminIds,
+      `Carousel setting "${slide.title}" have been deleted by ${user.name}`,
+      "system"
+    );
+
     res.status(200).json({ message: "Slide deleted and order adjusted" });
   } catch (error) {
     console.log("Error in deleteCarousel: ", error.message);
@@ -699,9 +743,9 @@ const deleteCarousel = async (req, res) => {
 
 const getAllCarousel = async (req, res) => {
   const category = req.query.category;
-  if (!category){
+  if (!category) {
     return res.status(400).json({ error: "Category is required" });
-  }  
+  }
 
   try {
     const carousel = await Carousel.find({ category });
