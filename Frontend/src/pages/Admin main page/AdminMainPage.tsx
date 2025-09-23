@@ -14,7 +14,7 @@ import {
   LayoutDashboard,
   ShieldAlert,
   ShieldCheck,
-} from "lucide-react"; 
+} from "lucide-react";
 import AcceptCancellationBookingTable from "@/layout/components/cancel-booking-page-component/Accepted Cancellation Booking/AcceptCancellationBookingTable";
 import RequireRole from "@/permission/RequireRole";
 import { ROLE } from "@/constant/roleList";
@@ -22,11 +22,15 @@ import { Button } from "@/components/ui/button";
 import BookingTrendRealtimeChart from "@/layout/components/chart/BookingTrendRealTimeChart";
 import BookingRoomTypeRealTimeChart from "@/layout/components/chart/BookingRoomTypeRealTimeChart";
 import PieChartDistribution from "@/layout/components/chart/PieChartDistribution";
+import BookingSessionTable from "@/layout/components/admin-page-component/booking-component/BookingSessionTable";
+import useBookingSessionStore from "@/stores/useBookingSessionStore";
 
 const UserManagePage = () => {
   // State management hooks
   const { fetchUser } = useUserStore();
   const fetchAllBooking = useBookingStore((state) => state.fetchAllBooking);
+  const { fetchBookingSessionInAdmin, isBookingSessionLoading } =
+    useBookingSessionStore((state) => state);
 
   const { fetchAllStatisticCardData } = useStatisticStore();
   const {
@@ -43,6 +47,7 @@ const UserManagePage = () => {
         fetchUser(1),
         fetchAllBooking(1),
         fetchAllStatisticCardData(),
+        fetchBookingSessionInAdmin(),
       ]);
       setIsLoading(false);
     };
@@ -50,20 +55,18 @@ const UserManagePage = () => {
   }, []);
 
   // Loading state display with spinner icon
-  if (isLoading) {
+  if (isLoading || isBookingSessionLoading) {
     return (
       <div className="flex h-screen flex-col items-center justify-center overflow-hidden">
         <div className="h-12 w-12 animate-spin rounded-full border-t-2 border-b-2 border-blue-500" />
-        <p className="mt-4 text-md text-gray-600">
-          Loading Admin Dashboard...
-        </p>
+        <p className="text-md mt-4 text-gray-600">Loading Admin Dashboard...</p>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-blue-50/50 px-4 py-8">
-      <div className="mx-auto max-w-7xl overflow-hidden relative">
+      <div className="relative mx-auto max-w-7xl overflow-hidden">
         {/* HEADER SECTION WITH TITLE AND DESCRIPTION */}
         <div className="mb-8 flex items-start">
           <div className="mr-4 rounded-lg bg-blue-100 p-3">
@@ -91,13 +94,15 @@ const UserManagePage = () => {
         </div>
 
         {/* BOOKING TREND CHART */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch mb-10">
-            <PieChartDistribution />
-            <BookingTrendRealtimeChart />
+        <div className="mb-10 grid grid-cols-1 items-stretch gap-6 lg:grid-cols-2">
+          <PieChartDistribution />
+          <BookingTrendRealtimeChart />
         </div>
-        
-        <div className="mb-8 rounded-xl border border-blue-200 shadow-sm">
+        <div className="grid grid-row-1 gap-6 md:grid-cols-2">
             <BookingRoomTypeRealTimeChart />
+          <div className="mb-8 rounded-xl border border-blue-200 shadow-sm">
+            <BookingSessionTable />
+          </div>
         </div>
 
         {/* CANCEL REQUESTS SECTION */}
@@ -181,7 +186,7 @@ const UserManagePage = () => {
         {[...Array(10)].map((_, i) => (
           <div
             key={i}
-            className="pointer-events-none h-5 w-5 rounded-full bg-blue-400/30 absolute z-100"
+            className="pointer-events-none absolute z-100 h-5 w-5 rounded-full bg-blue-400/30"
             style={{
               top: `${Math.random() * 100}%`,
               left: `${Math.random() * 100}%`,

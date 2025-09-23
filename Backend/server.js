@@ -30,6 +30,8 @@ import { initAISocket } from "./websocket/websocket.js";
 import { activityLogger } from "./middleware/activityLogger.js";
 import deleteTempfileScheduler from "./cronjob/deleteTempfileScheduler.js";
 import { attachUser } from "./middleware/attachUser.js";
+import bookingAnomalyDetectorScheduler from "./cronjob/bookingAnomalyDetectorScheduler.js"
+import { nosqlDetectionMiddleware } from "./utils/Nosql injection detection/injectionDetection.js";
 
 dotenv.config();
 const app = express();
@@ -62,6 +64,31 @@ app.use(
 const httpServer = createServer(app);
 initializeSocket(httpServer)
 
+app.use(
+  nosqlDetectionMiddleware({
+    sensitiveRoutes: [
+      /^\/login$/, // Exact match /login
+      /^\/signup$/, // Exact match /signup
+      /^\/admin(\/.*)?$/, // matches /admin and /admin/anything
+      /^\/bookings\/.+$/, // Matches all /bookings/... subroutes
+    ],
+    fieldExpectations: {
+      "^/signup$": { username: "string", email: "string", password: "string" },
+      "^/login$": { email: "string", password: "string" },
+      "^/bookings/create-booking$": {
+        totalPrice: "number",
+        startDate: "Date",
+        endDate: "Date",
+        totalGuests: "object",
+        breakfastIncluded : "number",
+        "totalGuests.adults": "number",
+        "totalGuests.children": "number",
+      },
+    },
+  })
+);
+
+
 app.use(attachUser); //* catch login user
 app.use(activityLogger); //* Use activity logger middleware, to keep track of user recent activities
 
@@ -89,5 +116,6 @@ httpServer.listen(PORT, async () => {
     deleteTempfileScheduler.start();
     bookingStatusUpdater.start();
     roomStatusScheduler.start();
+    bookingAnomalyDetectorScheduler.start();
     initAISocket();
 })

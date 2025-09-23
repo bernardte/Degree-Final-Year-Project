@@ -16,3 +16,16 @@ export const bookingSessionAbnormalDetection = async (bookingSession) => {
         console.log("Error in bookingSessionAbnormalDetection: ", error.message);
     }
 }
+
+export const bookingAbnormalDetection = async () => {
+    try {
+        const response = await axiosInstance.post(
+          `${process.env.PYTHON_BACKEND_URL_API_REQUEST}/predict-booking-anomaly`,
+        );
+
+        console.log("your booking abnormal: ", response.data);
+        return response.data
+    } catch (error) {
+        console.log("Error in bookingAbnormalDetection: ", error.message);
+    }
+}

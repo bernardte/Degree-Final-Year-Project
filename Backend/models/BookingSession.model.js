@@ -10,7 +10,7 @@ const bookingSessionSchema = new mongoose.Schema(
     // ← if logged-in: populated; if guest: null
     userId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: "user",
       required: false,
     },
     guestId: {

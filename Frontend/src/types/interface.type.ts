@@ -153,7 +153,8 @@ export interface BookingSession {
   _id: string;
   sessionId: string;
   userId: User;
-  roomId: string[];
+  guestId: string;
+  roomId: Room[] | string [];
   checkInDate: Date;
   checkOutDate: Date;
   customerName: string;
@@ -167,11 +168,15 @@ export interface BookingSession {
   paymentStatus: string;
   totalPrice: number;
   userType: "user" | "guest";
-  contactName: string;
-  contactEmail: string;
-  contactNumber: number;
+  guestDetails: {
+    contactName: string;
+    contactEmail: string;
+    contactNumber: number;
+  }
   additionalDetails: string;
   roomName: string;
+  rewardCode: string;
+  rewardDiscount: number;
   createdAt: Date;
 }
 
@@ -395,3 +400,4 @@ export interface Carousel {
   category: "event" | "facility" | "room" | "homepage";
   order: number;
 }
+

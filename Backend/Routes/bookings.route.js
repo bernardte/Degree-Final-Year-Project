@@ -10,6 +10,7 @@ router.post("/create-booking-session", bookingControllers.createBookingSession);
 router.post("/cancel-booking", bookingControllers.cancelBooking); // Cancel a booking
 router.get("/get-booking-session/:sessionId", bookingControllers.getBookingSession); // Create a new booking
 router.get("/get-booking-session-by-user", protectRoute, bookingControllers.getBookingSessionByUser); // Get booking session by user
+router.get("/fetch-booking-session", protectRoute, verifyRoles, bookingControllers.getBookingSessionInAdmin)
 router.delete("/delete-booking-session/:sessionId", bookingControllers.deleteBookingSession);//delete booking session
 router.delete(
   "/:sessionId/remove-room/:roomId", 

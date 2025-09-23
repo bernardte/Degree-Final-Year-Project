@@ -8,7 +8,6 @@ import CancellationRequest from "../models/cancellationRequest.model.js";
 import Event from "../models/event.model.js";
 import User from "../models/user.model.js";
 import sendEventResponseEmail from "../utils/sendEventResponseEmail.js";
-import OTP from "../models/adminOTP.model.js";
 import stripe from "../config/stripe.js";
 import { normalizeToArray } from "../logic function/normalizeToArray.js";
 import { emitBookingStatusUpdate, emitToSpecificUser } from "../socket/socketUtils.js";
@@ -793,6 +792,7 @@ const updateAllPendingBookingStatusToConfirmed =  async (req, res) => {
       { $set: { status: "confirmed"} }
     )
 
+    emitBookingStatusUpdate();
     res.status(201).json({
       message: `${result.modifiedCount} pending bookings updated to confirmed`,
       newStatus: "confirmed",

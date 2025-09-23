@@ -35,20 +35,6 @@ router.get(
   systemSettingController.getHotelInformation
 );
 
-//get admin access OTP
-router.get(
-  "/get-admin-access-otp",
-  accessControl("OTP", "view"),
-  systemSettingController.getAdminAccessOTP
-);
-
-// changeOTP
-router.post(
-  "/change-otp",
-  accessControl("OTP", "update"),
-  systemSettingController.changeOTPVerificationCode
-);
-
 router.patch(
   "/save-all-settings",
   accessControl("settings", "update"),

@@ -100,10 +100,10 @@ export const generateBookingEmailHTML = ({
                       } • ${adults} Adults • ${children} Children
                     </div>
                     <div style="color: ${
-                      breakfastIncluded.length > 0 ? "#38a169" : "#e53e3e"
+                      breakfastIncluded > 0 ? "#38a169" : "#e53e3e"
                     }; font-size: 14px;">
                       ${
-                        breakfastIncluded.length > 0
+                        breakfastIncluded > 0
                           ? "✓ Breakfast included"
                           : "No breakfast included"
                       }

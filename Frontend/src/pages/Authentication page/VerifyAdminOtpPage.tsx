@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import useToast from "@/hooks/useToast";
 import axiosInstance from "@/lib/axios";
 import {
@@ -16,6 +16,30 @@ const VerifyAdminOtpPage = () => {
   const [otp, setOtp] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const { setIsAdminVerified } = useAuthStore();
+  // avoid multiple sent otp
+  const hasSentRef = useRef(false);
+
+
+  useEffect(() => {
+    const sendOTPToEmail = async () => {
+      if(hasSentRef.current){
+        return
+      }
+        hasSentRef.current = true;
+
+      try {
+        const response = await axiosInstance.post("/api/users/send-otp-to-email");
+
+        if(response.data){
+          showToast("info", response.data.message)
+        }
+      } catch (error: any) {
+        console.log("Error in send OTP to email: ", error?.response?.data?.error)
+      }
+    }
+
+    sendOTPToEmail()
+  }, [])
 
   const handleVerify = async () => {
     if (!otp || otp.length < 6) {
@@ -41,8 +65,13 @@ const VerifyAdminOtpPage = () => {
     } catch (err: any) {
       showToast(
         "error",
-        err?.response?.data?.message || "OTP verification failed",
+        `Invalid access code, your remain attempts ${err.response.data?.remainingAttempts || 0}`,
       );
+
+      if (err.response.data.remainingAttempts === undefined){
+        
+        setTimeout(() => navigate("/"), 1000);
+      } 
       setIsAdminVerified(false);
     } finally {
       setIsLoading(false);
@@ -65,12 +94,13 @@ const VerifyAdminOtpPage = () => {
           </p>
 
           <div className="align-center flex justify-center">
-            <InputOTP value={otp} onChange={setOtp} maxLength={6} autoFocus>
+            <InputOTP value={otp} onChange={setOtp} maxLength={6}>
               <InputOTPGroup>
                 {[...Array(6)].map((_, index) => (
                   <InputOTPSlot
                     key={index}
                     index={index}
+                    autoFocus={index === 0}
                     className="m-1 h-12 w-12 rounded-md border border-gray-700 text-2xl"
                   />
                 ))}
@@ -85,7 +115,8 @@ const VerifyAdminOtpPage = () => {
             >
               {isLoading ? (
                 <span className="flex items-center justify-center">
-                  Verify&nbsp;<Loader2 className="animate-spin text-blue-500"/>
+                  Verify&nbsp;
+                  <Loader2 className="animate-spin text-blue-500" />
                 </span>
               ) : (
                 "Verify OTP"

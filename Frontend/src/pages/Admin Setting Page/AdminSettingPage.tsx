@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import {
-  Key,
   FileText,
   Hotel,
   Download,
@@ -9,7 +8,6 @@ import {
   UserCog2,
   Settings,
 } from "lucide-react";
-import AdminPortalAccessSettingTab from "@/layout/components/admin-page-component/setting-component/AdminPortalAccessSettingTab";
 import HotelInformationSetting from "@/layout/components/admin-page-component/setting-component/HotelInformationSetting";
 import ReportGeneratorSetting from "@/layout/components/admin-page-component/setting-component/ReportGeneratorSetting";
 import UserActivityTrackSetting from "@/layout/components/admin-page-component/setting-component/UserActivityTrackSetting";
@@ -20,6 +18,7 @@ import useToast from "@/hooks/useToast";
 import useSettingStore from "@/stores/useSettingStore";
 import { Reports } from "@/types/interface.type";
 import CarouselSetting from "@/layout/components/admin-page-component/setting-component/CarouselSetting";
+import { ROLE } from "@/constant/roleList";
 
 type hotelInfo = {
   name: string;
@@ -33,9 +32,6 @@ type hotelInfo = {
 
 const AdminSettingPage = () => {
   // status manage
-  const [adminCode, setAdminCode] = useState("");
-  const [newAdminCode, setNewAdminCode] = useState("");
-  const [confirmAdminCode, setConfirmAdminCode] = useState("");
   const [reportType, setReportType] = useState("occupancy");
   const [reportDate, setReportDate] = useState("");
   const [hotelInfo, setHotelInfo] = useState<hotelInfo>({
@@ -47,14 +43,13 @@ const AdminSettingPage = () => {
     checkInTime: "",
     checkOutTime: "",
   });
-  const [activeTab, setActiveTab] = useState("access");
+  const [activeTab, setActiveTab] = useState("hotel");
   const [isSaved, setIsSaved] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [isSuccess, setIsSuccess] = useState<boolean>(false);
   const [newReport, setNewReport] = useState<Reports | null>(null);
-  const [carouselItems, setCarouselItems] = useState<any[]>([]);
   const user = useAuthStore();
   const { showToast } = useToast();
   const {
@@ -68,73 +63,6 @@ const AdminSettingPage = () => {
   useEffect(() => {
     fetchAllReportData();
   }, [fetchAllReportData]);
-
-  const handleUpdateAccessCode = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (newAdminCode === "" || confirmAdminCode === "") {
-      return;
-    }
-
-    if (newAdminCode.length !== 6 || confirmAdminCode.length !== 6) {
-      setErrorMessage("New access code required at least 6 digits");
-      setTimeout(() => setErrorMessage(""), 3000);
-      return;
-    }
-
-    if (newAdminCode !== confirmAdminCode) {
-      setErrorMessage("New access code and confirmation do not match.");
-      setTimeout(() => setErrorMessage(""), 3000);
-      return;
-    }
-
-    try {
-      const response = await axiosInstance.post(
-        "/api/systemSetting/change-otp",
-        {
-          newOTP: newAdminCode,
-        },
-      );
-
-      if (response?.data?.message) {
-        setIsSaved(true);
-        setSuccessMessage(response.data.message);
-        setAdminCode(response?.data?.updatedOTP.otpCode);
-        setNewAdminCode("");
-        setConfirmAdminCode("");
-        setTimeout(() => {
-          setIsSaved(false);
-          setSuccessMessage("");
-          setErrorMessage("");
-        }, 3000);
-      }
-    } catch (error: any) {
-      const messgae =
-        error?.response?.data?.message || "Failed to update access code.";
-      setErrorMessage(messgae);
-      setTimeout(() => setErrorMessage(""), 3000);
-    }
-  };
-
-  useEffect(() => {
-    const fetchAdminAccessCode = async () => {
-      try {
-        const response = await axiosInstance.get(
-          "/api/systemSetting/get-admin-access-otp",
-        );
-        if (response?.data?.success === true) {
-          setAdminCode(response.data.accessCode);
-        }
-      } catch (error: any) {
-        console.log(
-          "Error fetching admin access code:",
-          error?.response?.data?.message ||
-            "Failed to fetch admin access code.",
-        );
-      }
-    };
-    fetchAdminAccessCode();
-  }, []);
 
   // generate report
   const handleGenerateReport = async (
@@ -321,10 +249,10 @@ const AdminSettingPage = () => {
         {/* tab option */}
         <div className="mb-6 flex flex-wrap border-b border-gray-200">
           {[
-            { _id: "access", label: "Access Code", icon: Key },
-            { _id: "reports", label: "Reports", icon: FileText },
+            // { _id: "access", label: "Access Code", icon: Key },
             { _id: "hotel", label: "Hotel Info", icon: Hotel },
             { _id: "carousel", label: "Carousel Setting", icon: Settings },
+            { _id: "reports", label: "Reports", icon: FileText },
             { _id: "activity", label: "Activity", icon: UserCog2 },
           ].map((tab) => {
             if (tab._id === "activity" && user.roles === "admin") return;
@@ -345,18 +273,6 @@ const AdminSettingPage = () => {
             );
           })}
         </div>
-
-        {/* admin access code */}
-        {activeTab === "access" && (
-          <AdminPortalAccessSettingTab
-            handleUpdateAccessCode={handleUpdateAccessCode}
-            adminCode={adminCode}
-            newAdminCode={newAdminCode}
-            confirmAdminCode={confirmAdminCode}
-            setNewAdminCode={setNewAdminCode}
-            setConfirmAdminCode={setConfirmAdminCode}
-          />
-        )}
 
         {/* report generate */}
         {activeTab === "reports" && (
@@ -383,14 +299,11 @@ const AdminSettingPage = () => {
 
         {/* Carousel Setting */}
         {activeTab === "carousel" && (
-          <CarouselSetting
-            carouselItems={carouselItems}
-            onItemsUpdate={setCarouselItems}
-          />
+          <CarouselSetting />
         )}
 
         {/* user tracking */}
-        <RequireRole allowedRoles={["superAdmin"]}>
+        <RequireRole allowedRoles={[ROLE.SuperAdmin]}>
           {activeTab === "activity" && <UserActivityTrackSetting />}
         </RequireRole>
       </div>

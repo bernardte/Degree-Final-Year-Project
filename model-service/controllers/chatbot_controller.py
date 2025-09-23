@@ -1,5 +1,4 @@
 from fastapi.responses import JSONResponse  # customize json response
-import asyncio
 # own modules
 from config.redis import redis_client
 from utils.intent_detector import detect_intent
@@ -12,9 +11,11 @@ from typing import Dict
 from datetime import datetime
 import json
 from utils.bookings import add_booking
+from typing import AsyncGenerator, Any
+from typing_extensions import Literal
 
 
-async def handle_chatbot(payload):
+async def handle_chatbot(payload: dict) -> AsyncGenerator[tuple[Any, bool], None]:
     conversationId = payload.get("conversationId")
     question = payload.get("question")
     user_input = question.strip()

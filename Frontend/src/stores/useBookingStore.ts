@@ -40,6 +40,7 @@ const useBookingStore = create<BookingStore>((set) => ({
   bookings: [],
   cancelledBookings: [],
   acceptCancelledBookingsRequest: [],
+  bookingSessions: [],
   totalPages: 1,
   currentPage: 1,
   isLoading: false,
@@ -223,6 +224,8 @@ const useBookingStore = create<BookingStore>((set) => ({
       set({ isAcceptCancelledBookingsRequestLoading: false });
     }
   },
+
+ 
 }));
 
 export default useBookingStore;

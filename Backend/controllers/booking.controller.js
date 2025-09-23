@@ -10,9 +10,10 @@ import { differenceInCalendarDays } from "date-fns";
 import mongoose from "mongoose";
 import { handleRewardPoints } from "../logic function/handleRewardPoints.js";
 import {
-  emitBookingStatusUpdate,
+  emitBookingSessionUpdate,
   emitBookingTrendsUpdate,
   emitRoomTypeUpdate,
+  emitBookingStatusUpdate,
 } from "../socket/socketUtils.js";
 import notifyUsers from "../utils/notificationSender.js";
 import Invoice from "../models/invoice.model.js";
@@ -22,7 +23,9 @@ import Reward from "../models/reward.model.js";
 import ClaimedReward from "../models/claimedReward.model.js";
 import SystemSetting from "../models/systemSetting.model.js";
 import { bookingSessionAbnormalDetection } from "../utils/httpRequest/bookingSessionAbnormalDetection.js";
+import { bookingAbnormalDetection } from "../utils/httpRequest/bookingSessionAbnormalDetection.js";
 import SuspiciousEvent from "../models/suspiciousEvent.model.js";
+import { bookingSessionUpdate } from "../utils/bookingStats.js";
 
 const createBooking = async (req, res) => {
   const { bookingSessionId, specialRequests } = req.body;
@@ -432,8 +435,8 @@ const createBookingSession = async (req, res) => {
   try {
     const sessionId = uuidv4();
 
-    const userId = await User.findOne({ email: userEmail })
-      .select("_id")
+    const user = await User.findOne({ email: userEmail })
+      .select("_id username")
       .lean(); //convert to object instead of mongodb docs
 
     const rangebetweenCheckInCheckOutDate = differenceInCalendarDays(
@@ -459,15 +462,15 @@ const createBookingSession = async (req, res) => {
     // 4) Build the document
     const session = new BookingSession({
       sessionId,
-      userId: userId ? userId : undefined, // null for one-time guests
-      guestId: !userId ? req.cookies?.guestId : null, 
+      userId: user ? user._id : undefined, // null for one-time guests
+      guestId: !user ? req.cookies?.guestId : null, 
       roomId,
       checkInDate,
       checkOutDate,
       totalGuest,
       totalPrice: actualtotalPrice,
       // only include guestDetails when userId is null
-      ...(userId
+      ...(user
         ? {}
         : {
             guestDetails: {
@@ -481,12 +484,17 @@ const createBookingSession = async (req, res) => {
 
     await session.save();
 
-    if (abnormalDetected.result === "abnormal" || abnormalDetected.anomally === true) {
+    if (
+      abnormalDetected.result === "abnormal" ||
+      abnormalDetected.anomaly === true
+    ) {
       const suspiciousEvent = new SuspiciousEvent({
-        userId: req.user.userId,
-        guestId: req.cookies.guestId,
+        userId: user ? user._id : null,
+        guestId: !user ? req.cookies.guestId : null,
         type: "abnormal",
-        reason: "Abnormal Detected on Booking Session",
+        reason: `Abnormal Detected on Booking Session with ${sessionId} on ${
+          user ? user.username : contactName
+        }`,
         details: session,
         severity: "medium",
         handled: false,
@@ -495,7 +503,7 @@ const createBookingSession = async (req, res) => {
       await suspiciousEvent.save();
     }
 
-
+    await emitBookingSessionUpdate();
     res.status(201).json({ sessionId });
   } catch (error) {
     console.error("Error in createBookingSession:", error);
@@ -538,6 +546,21 @@ const getBookingSession = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+const getBookingSessionInAdmin = async(req, res) => {
+  try {
+    const bookingSession = await bookingSessionUpdate();
+
+    if(!bookingSession){
+      return res.status(404).json({ error: "No Booking Session found!" });
+    }
+
+    res.status(200).json(bookingSession);
+  } catch (error) {
+    console.error("Error in getBookingSessionInAdmin: ", error.message);
+    res.status(500).json({ error: error.message });
+  }
+}
 
 const getBookingSessionByUser = async (req, res) => {
   const userId = req.user._id;
@@ -679,6 +702,7 @@ export default {
   createBookingSession,
   getBookingSession,
   getBookingByUser,
+  getBookingSessionInAdmin,
   getBookingSessionByUser,
   deleteBookingSession,
   removeRoomFromBookingSession,

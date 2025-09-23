@@ -580,7 +580,7 @@ const FacilityDetailPage = () => {
                         Saturday
                       </span>
                       <span className="text-lg font-medium text-blue-900 dark:text-white">
-                        9:00 - 22:00
+                        9:00 AM - 10.00 PM
                       </span>
                     </div>
 
@@ -589,7 +589,7 @@ const FacilityDetailPage = () => {
                         Sunday
                       </span>
                       <span className="text-lg font-medium text-blue-900 dark:text-white">
-                        9:00 - 20:00
+                        9:00 AM - 10:00 PM
                       </span>
                     </div>
 
@@ -598,7 +598,7 @@ const FacilityDetailPage = () => {
                         Holidays
                       </span>
                       <span className="text-lg font-medium text-blue-900 dark:text-white">
-                        10:00 - 18:00
+                        10:00 AM - 6:00 PM
                       </span>
                     </div>
                   </div>

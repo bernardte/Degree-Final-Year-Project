@@ -10,7 +10,9 @@ import SystemSetting from "../models/systemSetting.model.js";
 import { sendResetPasswordEmail } from "../utils/reset-password/resetPassword.js";
 import jwt from "jsonwebtoken";
 import { v4 as uuidv4 } from "uuid";
-
+import { generateOTP } from "../utils/generateAdminOTP.js";
+import { sendAdminAccessCode } from "../utils/admin access Code/adminAccessCode.js";
+import SuspiciousEvent from "../models/suspiciousEvent.model.js";
 
 dotenv.config();
 
@@ -89,7 +91,7 @@ const forgetPasswordRequest = async (req, res) => {
     );
 
     user.resetToken = token;
-    user.resetTokenExpiry = Date.now() + ( 15 * 60 * 1000); // 15 minute
+    user.resetTokenExpiry = Date.now() + 15 * 60 * 1000; // 15 minute
     await user.save();
 
     const hotelInfoDoc = await SystemSetting.findOne({
@@ -142,7 +144,7 @@ const resetPassword = async (req, res) => {
     //! reset after successful update password
     user.resetToken = "";
     user.resetTokenExpiry = undefined;
-    await user.save()
+    await user.save();
 
     res.json({ message: "Password has been reset successfully" });
   } catch (error) {
@@ -156,6 +158,7 @@ const loginUser = async (req, res) => {
   if (!email || !password) {
     return res.status(400).json({ error: "email and password are required" });
   }
+
   try {
     const user = await User.findOne({ email });
 
@@ -164,8 +167,9 @@ const loginUser = async (req, res) => {
       return res.status(400).json({ error: "User not found" });
     }
 
-    const isAdmin = user.role === "admin" && user.isOTPVerified === true;
-
+    const isAdmin =
+      (user.role === "admin" || user.role === "superAdmin") &&
+      user.isOTPVerified === true;
     const isPasswordCorrect = await bcrypt.compare(
       password,
       user?.password || ""
@@ -243,7 +247,7 @@ const logoutUser = (req, res) => {
       maxAge: 1,
     });
 
-    res.status(200).json({ message: "User logged out successfully" });
+    res.status(200).json({ message: "Logged out successfully" });
   } catch (error) {
     res.status(500).json({ error: error.message });
     console.log("Error in logout: ", error.message);
@@ -365,6 +369,42 @@ const getCurrentLoginUser = async (req, res) => {
   }
 };
 
+const sendOTPToEmail = async (req, res) => {
+  const adminUser = req.user;
+
+  try {
+    const otp = generateOTP();
+    const salt = await bcrypt.genSalt(10);
+    const hashedOTP = await bcrypt.hash(otp, salt);
+
+    //delete old otp, make sure the otp always latest
+    // await OTP.deleteMany({ userId: adminUser._id });
+    await OTP.create({
+      userId: adminUser._id,
+      otpCode: hashedOTP,
+      expiresAt: new Date(Date.now() + 5 * 60 * 1000),
+      attempts: 0,
+      maxAttempts: 3,
+    });
+
+    const hotelInfo = await SystemSetting.findOne({
+      key: "Hotel Information",
+    }).select("value");
+
+    if (!hotelInfo) {
+      return res.status(404).json({ error: "Hotel information not found" });
+    }
+
+    await sendAdminAccessCode(adminUser.email, otp, hotelInfo.value.name);
+    res
+      .status(200)
+      .json({ message: "OTP has send to your email please check." });
+  } catch (error) {
+    console.log("Error in sendOTPToEmail: ", error.message);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
 const verifyOTP = async (req, res) => {
   const { otp } = req.body;
   const loginUserId = req.user._id;
@@ -373,14 +413,60 @@ const verifyOTP = async (req, res) => {
   if (!otp) return res.status(400).json({ error: "OTP are required" });
 
   try {
-    const verifyOTP = await OTP.findOne({
-      otpCode: otp,
-    });
+    const accessCode = await OTP.findOne({
+      userId: loginUserId,
+    }).sort({ createdAt: -1 });
 
-
-    if (!verifyOTP) {
-      return res.status(400).json({ error: "Invalid OTP" });
+    if (!accessCode) {
+      return res.status(400).json({ error: "No OTP found" });
     }
+
+    if (new Date() > accessCode.expiresAt) {
+      return res.status(400).json({ error: "Access Code expired" });
+    }
+
+    if (accessCode.attempts >= accessCode.maxAttempts) {
+      return res.status(400).json({
+        error: "Too many failed attempts. Please request a new Access Code.",
+      });
+    }
+
+    const isOTPCorrect = await bcrypt.compare(otp, accessCode.otpCode || "");
+
+    if (!isOTPCorrect) {
+      accessCode.attempts += 1;
+      await accessCode.save()
+
+      if (accessCode.attempts >= accessCode.maxAttempts) {
+        await OTP.deleteMany({ userId: loginUserId });
+        await SuspiciousEvent.create({
+          userId: loginUserId,
+          guestId: "",
+          type: "failed multiple attempt time",
+          reason: "Admin Access to admin portal with failed multiple time.",
+          details: `${req.user.name} failed multiple access time.`,
+          severity: low,
+          handled: false,
+        });
+        res.locals.errorMessage = "Failed multiple access time on admin portal.";
+
+        // const activityLog = await 
+        return res.status(400).json({
+          error:
+            "Too many failed attempts. Access Code deleted. Please request a new one.",
+        });
+
+
+      }
+
+      return res.status(400).json({
+        error: "Invalid Access Code",
+        remainingAttempts: accessCode.maxAttempts - accessCode.attempts,
+      });
+    }
+
+    accessCode.attempts = 0;
+    await accessCode.save();
 
     const user = await User.findById({ _id: loginUserId });
 
@@ -391,8 +477,9 @@ const verifyOTP = async (req, res) => {
     user.isOTPVerified = true;
     await user.save();
 
+    await OTP.deleteMany({ userId: loginUserId });
     res.status(200).json({
-      message: "OTP verified Role updated.",
+      message: "Access Code verified. Welcome to Admin Portal.",
       role: user.role,
     });
   } catch (error) {
@@ -423,21 +510,21 @@ const getUserProfile = async (req, res) => {
 const generateGuestId = async (req, res) => {
   let guestId = req.cookies.guestId;
   try {
-      if (!guestId) {
-        guestId = uuidv4();
-        res.cookie("guestId", guestId, {
-          httpOnly: false,
-          maxAge: 7 * 24 * 60 * 60 * 1000,
-          sameSite: "lax",
-          secure: process.env.NODE_ENV === "production",
-        });
-      }
-      res.json(guestId);
+    if (!guestId) {
+      guestId = uuidv4();
+      res.cookie("guestId", guestId, {
+        httpOnly: false,
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+      });
+    }
+    res.json(guestId);
   } catch (error) {
     console.log("Error in generateGuestId: ", error.message);
-    res.status(500).json({ error: "Internal Server Error" })
+    res.status(500).json({ error: "Internal Server Error" });
   }
-}
+};
 
 export default {
   getUserProfile,
@@ -448,6 +535,7 @@ export default {
   loginUser,
   logoutUser,
   updateUserProfile,
+  sendOTPToEmail,
   verifyOTP,
   getCurrentLoginUser,
   generateGuestId,

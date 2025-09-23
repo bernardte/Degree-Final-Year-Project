@@ -33,6 +33,7 @@ export const resetPasswordEmailTemplate = (resetLink, hotelDetail) => `
             padding: 40px;
         }
         .button {
+            color: white;
             display: block;
             width: 250px;
             margin: 30px auto;
@@ -48,6 +49,9 @@ export const resetPasswordEmailTemplate = (resetLink, hotelDetail) => `
         }
         .button:hover {
             background-color: #0f6dd1;
+        }
+        .button-text {
+            color: white;
         }
         .footer {
             padding: 20px;
@@ -89,7 +93,9 @@ export const resetPasswordEmailTemplate = (resetLink, hotelDetail) => `
                 <h2>Hi!</h2>
                 <p>We have received your request to reset your password. Please click the button below to reset your password:</p>
                 
-                <a href="${resetLink}" class="button">Reset Password</a>
+                <a href="${resetLink}" class="button">
+                    <span class="button-text">Reset Password</span>
+                </a>
                 
                 <p>Or copy the following link and open it in your browser:</p>
                 <p>${resetLink}</p>

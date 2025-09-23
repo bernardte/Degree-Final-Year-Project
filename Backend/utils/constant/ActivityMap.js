@@ -35,7 +35,7 @@ export const actionMap = {
   "DELETE /api/facilities/delete-facility/:objectId": "Admin deleted current existing facility",
   "PUT /api/facilities/update-facility/:objectId": "Admin edit current existing facility",
   "GET /api/facilities/facility/:objectId": "Users entering each facility",
-  "DELETE /api/admin/delete-room/683c9c7c018c0d9c29094e57": "Admin has deleted a current existing room",
+  "DELETE /api/admin/delete-room/:objectId": "Admin has deleted a current existing room",
   "POST /api/systemSetting/report": "Admin generate a new report",
   "GET /api/systemSetting/report": "Admin view a current existing report",
   "GET /api/systemSetting/download-report/:objectId/": "Admin download an existing report",

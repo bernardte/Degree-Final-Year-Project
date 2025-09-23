@@ -29,6 +29,8 @@ async def load_booking():
     "bookingCreatedByUser": 1,
     "totalGuests": 1,
     "room": 1,
+    "startDate": 1,
+    "endDate": 1,
   })
 
   docs = []
@@ -42,11 +44,18 @@ df = df[df["status"] != "cancelled"]
 scaler = MinMaxScaler()
 
 df["bookingDate"] = pd.to_datetime(df["bookingDate"])
+df["checkInDate"] = pd.to_datetime(df["startDate"])
+df["checkOutDate"] = pd.to_datetime(df["endDate"])
 
 # Generate a unified userId
 df["userId"] = df.apply(
   lambda row: row["bookingCreatedByUser"] if row["userType"] == "user" else row["guestId"], axis=1
 )
+
+df["nights"] = (df["checkOutDate"] - df["checkInDate"]).dt.days
+df["nights"] = df["nights"].fillna(0).clip(lower=0)
+df["advanceBookingDays"] = (df["checkInDate"] - df["bookingDate"]).dt.days
+df["advanceBookingDays"] = df["advanceBookingDays"].fillna(0).clip(lower=0)
 
 df = df.sort_values(["userId", "bookingDate"])
 df = df.groupby("userId").filter(lambda x: len(x) > 1)
@@ -60,7 +69,16 @@ df["bookingInterval"] = df["bookingInterval"].fillna(0)
 
 le = LabelEncoder()
 df["roomEncoded"] = le.fit_transform(df["room"].astype(str))
-features = ["totalPrice", "totalGuestsNum", "bookingInterval", "refundAmount", "rewardDiscount", "roomEncoded"]
+features = [
+             "totalPrice",
+             "totalGuestsNum",
+             "bookingInterval",
+             "refundAmount",
+             "rewardDiscount", 
+             "roomEncoded", 
+             "advanceBookingDays",
+             "nights"
+            ]
 
 scaled_features = scaler.fit_transform(df[features])
 df_scaled = df.copy()
@@ -146,7 +164,7 @@ LSTMAutoencoderModel.to(device=device)
 loss_fn = nn.MSELoss(reduction="mean")
 optimizer = torch.optim.Adam(params=LSTMAutoencoderModel.parameters(), lr=0.01)
 
-EPOCHS = 150
+EPOCHS = 170
 train_losses = []
 for epoch in tqdm(range(EPOCHS)):
   LSTMAutoencoderModel.train()
@@ -174,6 +192,7 @@ with torch.inference_mode():
 torch.save(LSTMAutoencoderModel.state_dict(), "models/load_dict/anomaly-detection/bookings_anomaly_detection.pth")
 threshold = np.mean(mse) + 2*np.std(mse)
 anomalies_index = np.where(mse > threshold)[0]
+print(f"threshold: {threshold}")
 print(f"anomaly: {len(anomalies_index)}")
 
 for i in anomalies_index:
@@ -193,7 +212,10 @@ for i in anomalies_index:
           f"refundAmount: {row['refundAmount']}\t"
           f"rewardDiscount: {row['rewardDiscount']}\t"
           f"bookingDate: {row['bookingDate']}\t"
-          f"bookingCreatedByUser: {row.get('bookingCreatedByUser','')}"
+          f"bookingCreatedByUser: {row.get('bookingCreatedByUser','')}\t"
+          f"advanceBookingDays: {row['advanceBookingDays']}\t"
+          f"checkInDate: {row['checkInDate']}\t"
+          f"checkOutDate: {row['checkOutDate']}"
       )
 joblib.dump(threshold, "models/load_dict/anomaly-detection/threshold.pkl")
 joblib.dump(scaler, "models/load_dict/anomaly-detection/scaler.pkl")

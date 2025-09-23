@@ -1,10 +1,12 @@
 import { create } from "zustand";
-import { BookingSession } from "@/types/interface.type";
+import { BookingSession, Room } from "@/types/interface.type";
 import axiosInstance from "@/lib/axios";
 interface BookingSessionStore {
   bookingSession: BookingSession;
   userBookingSession: BookingSession[];
+  bookingSessions: BookingSession[];
   isLoading: boolean;
+  isBookingSessionLoading: boolean;
   error: string | null;
   additionalInfo: string;
   breakfastCount: number;
@@ -15,13 +17,16 @@ interface BookingSessionStore {
   fetchBookingSession: (sessionId: string) => Promise<void>;
   fetchBookingSessionPaymentDetail: (sessionId: string) => Promise<void>;
   fetchBookingSessionByUser: () => Promise<void>;
+  fetchBookingSessionInAdmin: () => Promise<void>;
 }
 
 const useBookingSessionStore = create<BookingSessionStore>((set, get) => ({
   bookingSession: {} as BookingSession,
   breakfastCount: 0,
   userBookingSession: [],
+  bookingSessions: [],
   isLoading: false,
+  isBookingSessionLoading: false,
   error: null,
   additionalInfo: "",
   setAdditionalInfo: (info: string) => {
@@ -68,8 +73,7 @@ const useBookingSessionStore = create<BookingSessionStore>((set, get) => ({
       })
       .finally(() => set({ isLoading: false }));
   },
-
-  removeBookingSessionRoom: async (roomId: string) => {
+  removeBookingSessionRoom: async (roomIdToRemove: string) => {
     const sessionId = get().bookingSession.sessionId;
 
     if (!sessionId) {
@@ -80,19 +84,35 @@ const useBookingSessionStore = create<BookingSessionStore>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       await axiosInstance.delete(
-        `/api/bookings/${sessionId}/remove-room/${roomId}`,
+        `/api/bookings/${sessionId}/remove-room/${roomIdToRemove}`,
       );
 
-      set((prevState) => ({
-        bookingSession: {
-          ...prevState.bookingSession,
-          roomId: Array.isArray(prevState.bookingSession.roomId)
-            ? prevState.bookingSession.roomId.filter(
-                (id: string) => id !== roomId,
-              )
-            : [],
-        },
-      }));
+      set((prevState) => {
+        const currentRooms = prevState.bookingSession.roomId;
+
+        let updatedRooms: Room[] | string[] = [];
+
+        if (Array.isArray(currentRooms)) {
+          if (typeof currentRooms[0] === "string") {
+            // 🔹 string[] circumstances
+            updatedRooms = (currentRooms as string[]).filter(
+              (id) => id !== roomIdToRemove,
+            );
+          } else {
+            // 🔹 Room[] circumstances
+            updatedRooms = (currentRooms as Room[]).filter(
+              (room) => room._id !== roomIdToRemove,
+            );
+          }
+        }
+
+        return {
+          bookingSession: {
+            ...prevState.bookingSession,
+            roomId: updatedRooms,
+          },
+        };
+      });
     } catch (error: any) {
       console.log(
         "Error in remove BookingSession Room: ",
@@ -103,6 +123,7 @@ const useBookingSessionStore = create<BookingSessionStore>((set, get) => ({
       set({ isLoading: false, error: null });
     }
   },
+
   removeBookingSession: (sessionId: string) => {
     set((prevState) => {
       const isCurrentSession = prevState.bookingSession._id === sessionId;
@@ -135,6 +156,22 @@ const useBookingSessionStore = create<BookingSessionStore>((set, get) => ({
       set({ error: error.message });
     } finally {
       set({ isLoading: false });
+    }
+  },
+  fetchBookingSessionInAdmin: async () => {
+    set({ isBookingSessionLoading: true });
+    try {
+      const response = await axiosInstance.get(
+        "/api/bookings/fetch-booking-session",
+      );
+
+      set({ bookingSessions: response.data });
+    } catch (error: any) {
+      set({
+        error: error?.response?.data?.error || error?.response?.data?.message,
+      });
+    } finally {
+      set({ isBookingSessionLoading: false });
     }
   },
 }));

@@ -8,6 +8,7 @@ router.get("/initialize-guest", userControllers.generateGuestId);
 router.get("/getUserProfile", protectRoute, userControllers.getUserProfile);
 router.get("/getCurrentLoginUser", protectRoute, userControllers.getCurrentLoginUser);
 router.get("/getUserRewardPoints", protectRoute, userControllers.getUserRewardPoints);
+router.post("/send-otp-to-email", protectRoute, userControllers.sendOTPToEmail);
 router.post("/signup", userControllers.signupUser);
 router.post("/forget-password-request", userControllers.forgetPasswordRequest);
 router.post("/reset-password", userControllers.resetPassword);
