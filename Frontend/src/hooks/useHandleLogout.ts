@@ -3,12 +3,14 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import useToast from "./useToast";
 import useAuthStore from "@/stores/useAuthStore";
+import { useSocket } from "@/context/SocketContext";
 
 const useHandleLogout = () => {
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const logout = useAuthStore((state) => state.logout); 
     const { showToast } = useToast();
     const navigate = useNavigate();
+    const { socket } = useSocket();
 
     const handleLogout = async () => {
         setIsLoading(true);
@@ -18,7 +20,13 @@ const useHandleLogout = () => {
             showToast("error", data.error.message);
         } else {
             logout();
+
+            if (socket && socket.connected) {
+                socket.disconnect();
+            }
+            
             localStorage.removeItem("user");
+
             showToast("success", data.message);
             navigate("/");
         }

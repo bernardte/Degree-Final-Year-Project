@@ -167,6 +167,11 @@ const loginUser = async (req, res) => {
       return res.status(400).json({ error: "User not found" });
     }
 
+    if(user.suspended === true){
+      res.locals.errorMessage = "Your account has been suspended. Please contact support.";
+      return res.status(403).json({ error: "Your account has been suspended."})
+    }
+
     const isAdmin =
       (user.role === "admin" || user.role === "superAdmin") &&
       user.isOTPVerified === true;
@@ -525,6 +530,7 @@ const generateGuestId = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
 
 export default {
   getUserProfile,

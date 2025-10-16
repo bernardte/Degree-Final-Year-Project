@@ -4,7 +4,7 @@ import { SuspiciousEvent } from "@/types/interface.type";
 import NoEventFount from "@/layout/components/admin-page-component/suspicious-dashboard-component/NoEventFount";
 import EventList from "@/layout/components/admin-page-component/suspicious-dashboard-component/EventList";
 import useSystemSettingStore from "@/stores/useSystemSettingStore";
-import { ChevronLeft, ChevronRight, Loader, AlertCircle } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader, AlertCircle, CircleAlert } from "lucide-react";
 import { debounce } from "lodash";
 
 // Main component for the suspicious events dashboard
@@ -164,9 +164,14 @@ const AdminSuspeciousDashboardPage = () => {
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="mx-auto max-w-7xl">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">
-            Suspicious Events Monitor
-          </h1>
+          <div className="flex items-center space-x-3">
+            <div className="mr-2 rounded-2xl border-1 border-red-300 bg-red-400 p-2">
+              <CircleAlert className="text-red-100"/>
+            </div>
+            <h1 className="text-3xl font-bold text-gray-700">
+              Suspicious Events Monitor
+            </h1>
+          </div>
           <p className="mt-2 text-gray-600">
             Monitor and manage security events detected by the system
           </p>

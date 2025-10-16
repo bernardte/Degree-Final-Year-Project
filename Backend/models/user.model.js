@@ -59,6 +59,10 @@ const usersSchema = mongoose.Schema(
       type: Boolean,
       default: 0,
     },
+    suspended: {
+      type: Boolean,
+      default: false,
+    }
   },
   { timestamps: true }
 );

@@ -9,6 +9,7 @@ import User from "../models/user.model.js";
 let io;
 const userSocketMapped = new Map(); //* userId -> socket.id
 
+
 export const initializeSocket = (server) => {
   io = new Server(server, {
     cors: {
@@ -55,6 +56,10 @@ export const initializeSocket = (server) => {
 
         // Store mapping using .set() if userId exists
         userSocketMapped.set(idKey, socket.id);
+        const activeUserIds = Array.from(userSocketMapped.keys())
+          .filter((key) => key.startsWith("user:"))
+          .map((key) => key.split(":")[1]);
+        io.emit("active-users", activeUserIds);
       }
     );
 
@@ -118,12 +123,11 @@ export const initializeSocket = (server) => {
           console.log("🔗 Match found for:", idKey);
           userSocketMapped.delete(idKey);
 
-          const userId = idKey.startsWith("user:")
-            ? idKey.replace("user:", "")
-            : null;
+          const userId = socket.data.user?.userId;
           console.log("🧾 Extracted userId:", userId);
 
           if (userId) {
+            disconectedUserId = userId;
             try {
               const result = await User.findByIdAndUpdate(userId, {
                 isOnline: false,
@@ -139,7 +143,12 @@ export const initializeSocket = (server) => {
       }
 
       if (disconectedUserId) {
+        console.log("Emitting user_disconnected for: ", disconectedUserId);
         io.emit("user_disconnected", disconectedUserId);
+        const activeUserIds = Array.from(userSocketMapped.keys())
+          .filter((key) => key.startsWith("user:"))
+          .map((key) => key.split(":")[1]);
+        io.emit("active-users", activeUserIds);
       }
     });
   });

@@ -2,7 +2,7 @@
 FSM = {
     "change_booking": ["ask_booking_reference", "ask_new_date", "confirm_change"],
     "cancel": ["ask_order_id", "confirm_cancel"],
-    "booking": ["ask_check_in_date", "ask_check_out_date", "ask_room_type"],
+    "booking": ["ask_check_in_date", "ask_check_out_date", "ask_room_type", "ask_contact_name", "ask_contact_email", "ask_contact_number", "confirm_booking_details"],
     "complaint": ["ask_issue_detail", "apologize_and_log"],
     "chat": ["respond_to_chat"],
     "greeting": ["greet_user"],
@@ -19,9 +19,13 @@ TEMPLATES = {
     "ask_order_id": "May I have your order ID?",
     "confirm_cancel": "Your order has been cancelled successfully.",
 
-    "ask_check_check_in_datekdates": "When is the check-in date would you like to book?",
+    "ask_check_in_date": "When is the check-in date would you like to book?",
     "ask_check_out_date": "When is the check-out date would you like to book?",
     "ask_room_type": "What type of room would you prefer?",
+    "ask_contact_name": "May I have your full name for the booking?",
+    "ask_contact_email": "Could you please provide your email address?",
+    "ask_contact_number": "Can I have your contact number, please?",
+    "confirm_booking_details": "Please confirm that all the information above is correct before I create your booking.",
 
     "ask_issue_detail": "Could you describe the issue you're facing?",
     "apologize_and_log": "We’re sorry to hear that. We've logged your complaint and will follow up soon.",
@@ -32,5 +36,6 @@ TEMPLATES = {
     "provide_status": "Your order is being processed. We'll notify you once it's ready.",
 }
 
+ 
 # ---------------------------- No suggestion returned -----------#
 NO_SUGGESTION_INTENTS = {"goodbye", "chat"}

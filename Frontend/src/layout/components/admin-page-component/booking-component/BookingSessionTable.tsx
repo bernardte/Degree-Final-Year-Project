@@ -20,7 +20,7 @@ const BookingSessionTable = () => {
   const bookingSessions = useBookingSessionStore(
     (state) => state.bookingSessions,
   );
-  const socket = useSocket();
+  const { socket } = useSocket();
 
   // filter booking
   const filteredBookings = bookingSessions.filter((booking) => {
@@ -145,7 +145,6 @@ const BookingSessionTable = () => {
                 );
 
                 return (
-                  <>
                     <tr
                       key={booking._id}
                       className="transition-colors hover:bg-blue-50/50"
@@ -276,7 +275,6 @@ const BookingSessionTable = () => {
                         </div>
                       </td>
                     </tr>
-                  </>
                 );
               })
             )}

@@ -20,7 +20,7 @@ const getAllMessages = async (req, res) => {
 };
 
 const sendMessage = async (req, res) => {
-  const { newMessage, senderType, senderId, lastMessageAt } = req.body;
+  const { newMessage, senderType, senderId, lastMessageAt, mode } = req.body;
   console.log(lastMessageAt);
   const { conversationId } = req.params;
   const uploadImage = req.files?.image || null;
@@ -74,11 +74,12 @@ const sendMessage = async (req, res) => {
         })
 
         console.log(typeof conversationId, newMessage);
-
-        sendToAI(conversationId, newMessage, senderId, senderType, currentUserMessage.map(m => ({
-          role: m.senderType,
-          content: m.content
-        })));
+        if(mode !== "human"){
+          sendToAI(conversationId, newMessage, senderId, senderType, currentUserMessage.map(m => ({
+            role: m.senderType,
+            content: m.content
+          })));
+        }
 
 
         // getIO().to(conversationId).emit("bot-suggestions", {

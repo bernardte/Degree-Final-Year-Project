@@ -18,6 +18,11 @@ router.patch(
   accessControl("assignRole", "update"),
   adminControllers.updateUserRole
 );
+router.patch(
+  "/toggle-suspend-user",
+  accessControl("assignRole", "update"),
+  adminControllers.suspendUser
+);
 
 // room
 router.post(

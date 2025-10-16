@@ -33,7 +33,7 @@ ChartJS.register(
 const BookingRoomTypeRealTimeChart = () => {
   const [stats, setStats] = useState<{ _id: string; count: number }[]>([]);
   const [loading, setLoading] = useState(true);
-  const socket = useSocket();
+  const { socket } = useSocket();
   const { showToast } = useToast();
 
   const labels = stats.map((s) => s._id);

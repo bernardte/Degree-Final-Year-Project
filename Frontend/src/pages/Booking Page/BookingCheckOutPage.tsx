@@ -29,6 +29,7 @@ import { formatDateInBookingCheckOut } from "@/utils/formatDate";
 import axiosInstance from "@/lib/axios";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import { Room } from "@/types/interface.type"
 
 const BookingCheckOutPage = () => {
   const { sessionId } = useParams();
@@ -49,7 +50,7 @@ const BookingCheckOutPage = () => {
   const user = localStorage.getItem("user");
   const isLoggedIn = !!user;
   const [loading, setLoading] = useState(false);
-
+  console.log("sessionId: ", sessionId);
   useEffect(() => {
     if (sessionId) fetchBookingSession(sessionId);
     fetchRooms();
@@ -146,12 +147,12 @@ const BookingCheckOutPage = () => {
   };
 
   const handleRemoveReward = async (code: string) => {
-     const metadata = {
-       page: "http://localhost:3000/checkout",
-       actionId: "remove reward code",
-       params: { code },
-       extra: {},
-     };
+    const metadata = {
+      page: "http://localhost:3000/checkout",
+      actionId: "remove reward code",
+      params: { code },
+      extra: {},
+    };
 
     try {
       const response = await axiosInstance.post(
@@ -182,6 +183,14 @@ const BookingCheckOutPage = () => {
       localStorage.removeItem("searchParams");
     }, 1000);
   };
+
+  const getRoomIds = (roomIdField: string[] | Room[]): string[] => {
+    if (Array.isArray(roomIdField) && typeof roomIdField[0] === "object") {
+      return (roomIdField as { _id: string }[]).map((r) => r._id);
+    }
+    return roomIdField as string[];
+  };
+  const roomIds = bookingSession ? getRoomIds(bookingSession.roomId) : [];
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-gradient-to-tr from-blue-100 via-white to-blue-50">
@@ -281,11 +290,15 @@ const BookingCheckOutPage = () => {
           <Loader2 className="h-12 w-12 animate-spin text-blue-600" />
         </div>
       ) : bookingSession &&
-        rooms.some((room) =>
-          Array.isArray(bookingSession.roomId)
-            ? bookingSession.roomId.includes(room._id)
-            : bookingSession.roomId === room._id,
-        ) ? (
+        rooms.some((room) => {
+          if (Array.isArray(bookingSession.roomId)) {
+            return (bookingSession.roomId as string[]).includes(
+              String(room._id),
+            );
+          } else {
+            return String(bookingSession.roomId) === String(room._id);
+          }
+        }) ? (
         <div className="relative flex flex-1 flex-col md:flex-row">
           <BookingDetails
             bookingSession={bookingSession}
@@ -302,7 +315,7 @@ const BookingCheckOutPage = () => {
             checkOutDate={formatDateInBookingCheckOut(
               bookingSession.checkOutDate,
             )}
-            roomId={bookingSession.roomId}
+            roomId={roomIds}
             breakfastIncluded={bookingSession?.breakfastIncluded}
             appliedReward={appliedReward}
           />

@@ -8,6 +8,7 @@ export interface User {
   loyaltyTier: string;
   totalSpent: number;
   token: string;
+  suspended: boolean;
 }
 
 export interface Room {
@@ -305,14 +306,16 @@ export interface Conversation {
 }
 
 export interface Message {
-  _id: string;
+  _id?: string;
   conversationId: Conversation["_id"];
   senderType: "user" | "guest" | "admin" | "superAdmin" | "bot";
   senderId: string;
   content: string;
   isRead: boolean;
-  image: string;
+  image?: string | null;
   createdAt: Date;
+  isFinal?: boolean;
+  handover_to_human?: boolean;
 }
 
 export interface FAQ {
@@ -379,12 +382,12 @@ export interface Reservation {
 
 export interface SuspiciousEvent {
   _id: string;
-  userId?: string | null; // 可能为空
+  userId?: string | null; 
   guestId?: string;
   type?: string;
-  reason: string; // required
-  details?: Record<string, any>; // Mixed 类型
-  severity: "low" | "medium" | "high"; // enum
+  reason: string; 
+  details?: Record<string, any>; 
+  severity: "low" | "medium" | "high"; 
   handled: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -399,5 +402,18 @@ export interface Carousel {
   link?: string;
   category: "event" | "facility" | "room" | "homepage";
   order: number;
+}
+
+export interface RewardHistory {
+  _id: string;
+  user: User;
+  bookingId: Bookings;
+  bookingReference: Bookings["bookingReference"];
+  points: number;
+  description: string;
+  type: "redeem" | "earn" | "tier-upgrade";
+  source: "booking" | "redemption" | "loyalty" | "others";
+  createdAt: Date;
+  updatedAt: Date;
 }
 

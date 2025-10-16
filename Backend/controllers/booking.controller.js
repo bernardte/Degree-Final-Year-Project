@@ -610,6 +610,7 @@ const deleteBookingSession = async (req, res) => {
       return res.status(404).json({ error: "Session not found or expired" });
     }
 
+    await emitBookingSessionUpdate();
     res.status(200).json({ message: "Booking session deleted successfully" });
   } catch (error) {
     console.log("Error in deleteBookingSession: ", error.message);
@@ -640,6 +641,7 @@ const removeRoomFromBookingSession = async (req, res) => {
     );
     await bookingSession.save();
 
+    await emitBookingSessionUpdate();
     res
       .status(200)
       .json({ message: "Room removed successfully", bookingSession });

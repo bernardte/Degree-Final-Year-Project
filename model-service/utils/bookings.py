@@ -22,7 +22,7 @@ async def add_booking(
     Returns (confirm_link, error_message).
     """
 
-    #  确保 roomTypes 是一维字符串数组
+    # validate room types
     flat_room_types: List[str] = []
     for rt in roomTypes:
         if isinstance(rt, list):
@@ -31,7 +31,7 @@ async def add_booking(
             flat_room_types.append(rt)
     roomTypes = [r.lower().strip() for r in flat_room_types]
 
-    # 查询房型
+    # check if room type exists
     cursor = room_collection.find({"roomType": {"$in": roomTypes}})
     rooms = await cursor.to_list(length=None)
 
@@ -40,7 +40,7 @@ async def add_booking(
 
     roomIds = [str(room["_id"]) for room in rooms]
 
-    # 检查冲突：入住 < 已预订的结束时间 且 离开 > 已预订的开始时间
+    # check for available slot (avoid double booking)
     conflict = await bookings_collection.find_one({
         "roomId": {"$in": roomIds},
         "startDate": {"$lt": checkOutDate},
@@ -49,8 +49,18 @@ async def add_booking(
 
     if conflict:
         return None, "Sorry, this room is not available for the selected dates."
+    
+    num_nights = (checkOutDate - checkInDate).days
+    total_price = 0.0
+    if num_nights <= 0:
+        return None, "Check-out date must be after check-in date."
 
-    # 客人详情
+    #accumulate each room price
+    for room in rooms:
+        room_price = room.get("pricePerNight", 0)
+        total_price += room_price * num_nights
+
+    # guest user details 
     guestDetails: Optional[Dict[str, Any]] = None
     if senderType == "guest":
         guestDetails = {
@@ -59,21 +69,30 @@ async def add_booking(
             "contactNumber": contactNumber
         }
 
-    # 创建 session
+    # create booking session
     session_id = str(uuid.uuid4())
     booking_session = {
         "sessionId": session_id,
         "userId": senderId if senderType == "user" else None,
         "guestId": senderId if senderType == "guest" else None,
         "guestDetails": guestDetails,
-        "roomIds": roomIds,  # ✅ 改为复数，避免混淆
-        "checkInDate": checkInDate.isoformat(),
-        "checkOutDate": checkOutDate.isoformat(),
+        "roomId": roomIds, 
+        "checkInDate": checkInDate,
+        "checkOutDate": checkOutDate,
         "paymentStatus": "pending",
-        "createdAt": datetime.utcnow().isoformat()
+        "createdAt": datetime.utcnow()
     }
 
     await bookingSession_collection.insert_one(booking_session)  # type: ignore
-
+    # http://localhost:3000/booking/confirm/da43d8b3-2a47-4e94-a011-f7dbbcb61a6c
     confirm_link = f"http://localhost:3000/booking/confirm/{session_id}"
     return confirm_link, None
+
+async def get_all_room_types() -> List[str]:
+    """
+        Fetch all distinct room types from the rooms collection.
+    """
+    rooms_cursor = db["rooms"].find({},  {"roomType": 1, "_id": 0})
+    room_list = [room async for room in rooms_cursor]
+    room_types = [room["roomType"] for room in room_list]
+    return room_types

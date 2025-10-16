@@ -53,7 +53,7 @@ const BookingTrendRealtimeChart = () => {
   const [timeRange, setTimeRange] = useState<string>("7d");
   const [trendPercentage, setTrendPercentage] = useState<number>(0);
   const [showInfo, setShowInfo] = useState(false);
-  const socket = useSocket();
+  const { socket } = useSocket();
 
 //  format Diagram
   const formatChartData = (data: BookingDataPoint[]) => {

@@ -5,6 +5,7 @@ import PointsDisplay from "@/layout/components/reward-redemption-page-component/
 import CategoryFilter from "@/layout/components/reward-redemption-page-component/CategoryFilter";
 import AvailableRewardsTab from "@/layout/components/reward-redemption-page-component/AvailableRewardsTab";
 import ClaimedRewardsTab from "@/layout/components/reward-redemption-page-component/ClaimedRewardsTabs";
+import RewardHistoryTab from "@/layout/components/reward-redemption-page-component/RewardHistoryTab";
 import AdditionalInfo from "@/layout/components/reward-redemption-page-component/AdditionalInfo";
 import ErrorDisplay from "@/layout/components/reward-redemption-page-component/ErrorDisplay";
 import { Reward, ClaimedReward } from "@/types/interface.type";
@@ -20,7 +21,7 @@ const RewardRedemptionPage = () => {
   const [userLoyaltyTier, setUserLoyaltyTier] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"available" | "claimed">(
+  const [activeTab, setActiveTab] = useState<"available" | "claimed" | "history">(
     "available",
   );
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
@@ -183,6 +184,16 @@ const RewardRedemptionPage = () => {
             My Rewards (
             {Array.isArray(claimedRewards) ? claimedRewards.length : 0})
           </button>
+          <button
+            className={`px-6 py-3 font-medium ${
+              activeTab === "history"
+                ? "border-b-2 border-blue-600 text-blue-600"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+            onClick={() => setActiveTab("history")}
+          >
+            Reward History
+          </button>
         </div>
 
         {/* Tab Content */}
@@ -199,9 +210,11 @@ const RewardRedemptionPage = () => {
             />
             <AdditionalInfo />
           </>
-        ) : (
+        ) : activeTab === "claimed" ? (
           <ClaimedRewardsTab claimedRewards={claimedRewards} />
-        )}
+        ): activeTab === "history" ? (
+          <RewardHistoryTab />
+        ) : null}
       </div>
     </div>
   );

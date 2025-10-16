@@ -12,6 +12,7 @@ import useUserStore from "@/stores/useUserStore";
 import Pagination from "../../share-components/Pagination";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
+import { useSocket } from "@/context/SocketContext";
 
 const UserTabContent = ({
   fetchUser,
@@ -32,12 +33,14 @@ const UserTabContent = ({
   };
 
   const [searchTerm, setSearchTerm] = useState<string>("");
+  const { activeUsers } = useSocket();
 
   const handleSearch = (page: number, limit: number, searchTerm: string) => {
     if(searchTerm.trim() === "") return;
     fetchUser(page, limit, searchTerm);
   }
 
+  const userSupendedCount = users.filter(user => user.suspended === true).length;
 
   return (
     <motion.div
@@ -137,7 +140,11 @@ const UserTabContent = ({
                     <span className="h-2 w-2 animate-pulse rounded-full bg-blue-500" />
                     {status} Users
                     <span className="text-blue-600">
-                      ({Math.floor(Math.random() * 50)})
+                      (
+                      {status === "Active"
+                        ? activeUsers.length
+                        : userSupendedCount}
+                      )
                     </span>
                   </span>
                 </motion.div>

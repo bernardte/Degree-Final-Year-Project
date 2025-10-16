@@ -1,8 +1,11 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Query
+from fastapi import Request
+from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager #For lifecycle management
 import json
 import uvicorn
 from fastapi import Query
+
 
 # ── own modules ───────────────────────────────────────────
 from config.mongoDB import db, mongo_client
@@ -14,6 +17,7 @@ from controllers.chatbot_controller import handle_chatbot
 from controllers.anomaly_detection_controller import anomaly_detection_booking_session, anomaly_detection_booking
 from models import stream_llm
 from utils import chunkedStream
+from utils.dialogflow.bookings_function import track_booking
 
 # ───────────────────────────────────────────────────────────────
 
@@ -36,6 +40,18 @@ app = FastAPI(title="Smart FAQ Chatbot", lifespan=lifespan)
 # async def rag_reply(payload: RagRequest):
 #     print(f"new request: {payload}")
 #     return await handle_chatbot(payload)
+@app.post("/webhook")
+async def webhook_endpoint(request: Request):
+    payload = await request.json()
+    print(f"payload: {payload}")
+    intent = payload["queryResult"]["intent"]["displayName"]
+    parameters = payload["queryResult"]["parameters"]
+    output_contexts = payload["queryResult"]["outputContexts"]
+
+    if intent == "track booking-context: ongoing-tracking":
+        await track_booking(parameters)
+    
+
 
 @app.websocket("/bot-reply-ws")
 async def websocket_endpoint(ws: WebSocket):

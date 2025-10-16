@@ -6,6 +6,7 @@ import accessControl from "../middleware/accessControl.js";
 
 const router = express.Router();
 
+router.get("/rewards-history", protectRoute, rewardController.getRewardHistoryForCertainUser);
 router
   .route("/rewards")
   .post(

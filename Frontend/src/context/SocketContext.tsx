@@ -3,7 +3,15 @@ import useAuthStore from "@/stores/useAuthStore";
 import io, { Socket } from "socket.io-client";
 import { generateSessionId } from "@/utils/generateSessionId";
 import { getGuestId } from "@/utils/getGuestId";
-const SocketContext = createContext<Socket | null>(null);
+type SocketContextType = {
+  socket: Socket | null;
+  activeUsers: string[];
+}
+
+const SocketContext = createContext<SocketContextType>({
+  socket: null,
+  activeUsers: [],
+});
 
 // Custom hook to use socket anywhere
 export const useSocket = () => useContext(SocketContext);
@@ -16,6 +24,8 @@ export const SocketContextProvider = ({
   const { user: currentLoginUser } = useAuthStore();
   const [socket, setSocket] = useState<Socket | null>(null);
   const { adminReceipentId, setCurrentAdminReceipentId } = useAuthStore();
+  const [activeUsers, setActiveUsers] = useState<string[]>([]);
+
   const adminReceipentRef = useRef(adminReceipentId);
   useEffect(() => {
     // Guest ID fallback
@@ -41,7 +51,8 @@ export const SocketContextProvider = ({
     return () => {
       newSocket.disconnect();
     };
-  }, []);
+  }, [currentLoginUser?._id]);//! Re-run on user login/logout to ensure fresh connection
+
 
   // 4. Emit user info only when both socket is ready and user is loaded
   useEffect(() => {
@@ -100,7 +111,8 @@ export const SocketContextProvider = ({
 
     const handleOfflineUser = (receipentId: string) => {
       console.log("📴 Received user_disconnected:", receipentId);
-
+      setActiveUsers((prev) => prev.filter((id) => id !== receipentId));
+      
       if (receipentId === adminReceipentRef.current) {
         console.log("❌ Admin is offline (matched):", receipentId);
         setCurrentAdminReceipentId(null);
@@ -112,9 +124,25 @@ export const SocketContextProvider = ({
       socket.off("user_disconnected", handleOfflineUser);
     };
   }, [socket]);
+
+  useEffect(() => {
+    if (!socket) return;
+    const getCurrentLoginUser = (activeUserList: string[]) => {
+      console.log("Active user list: ", activeUserList);
+      setActiveUsers(activeUserList)
+    };
+
+    socket.on("active-users", getCurrentLoginUser);
+
+    return () => {
+      socket.off("active-users", getCurrentLoginUser);
+    };
+  }, [socket, currentLoginUser]);
   
 
   return (
-    <SocketContext.Provider value={socket}>{children}</SocketContext.Provider>
+    <SocketContext.Provider value={{ socket, activeUsers }}>
+      {children}
+    </SocketContext.Provider>
   );
 };

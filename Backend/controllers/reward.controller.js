@@ -4,6 +4,7 @@ import RewardHistory from "../models/rewardHistory.model.js";
 import User from "../models/user.model.js";
 import notifyUsers from "../utils/notificationSender.js";
 import { generateRewardCode } from "../logic function/generateRewardCode.js";
+import SystemSetting from "../models/systemSetting.model.js";
 
 const addReward = async (req, res) => {
   const reward = req.body;
@@ -175,6 +176,31 @@ const claimReward = async (req, res) => {
       return res.status(400).json({ error: "User not found" });
     }
 
+    const redemptionSetting = await SystemSetting.findOne({
+      key: "rewardPointsSetting",
+    });
+    const minRedemption = redemptionSetting?.value?.minRedeemPoints || 0;
+    const maxRedemption = redemptionSetting?.value?.maxRedeemPoints || Infinity;
+    const redemptionEnabled =
+      redemptionSetting?.value?.redemptionEnabled ?? true;
+    
+    if (!redemptionEnabled) {
+      return res
+        .status(400)
+        .json({ error: "Reward redemption is currently disabled" });
+    }
+
+    if (user.rewardPoints < minRedemption) {
+      return res.status(400).json({
+        error: `You need at least ${minRedemption} points to redeem rewards.`,
+      });
+    }
+    
+    const reward = await Reward.findById(rewardId);
+    if (!reward) {
+      return res.status(400).json({ error: "Reward not found" });
+    }
+
     //* check reward are claimed previously 
     const rewardBeingClaimed = await ClaimedReward.findOne({
         user: userId,
@@ -186,11 +212,6 @@ const claimReward = async (req, res) => {
         return res.status(400).json({ error: "Reward already claimed" });
     }
 
-    const reward = await Reward.findById(rewardId);
-    if (!reward) {
-      return res.status(400).json({ error: "Reward not found" });
-    }
-
     if (reward.status !== "active") {
       return res.status(400).json({ error: "Reward is no longer active" });
     }
@@ -199,6 +220,12 @@ const claimReward = async (req, res) => {
       return res
         .status(400)
         .json({ error: "Not enough reward points to redeem" });
+    }
+
+    if (reward.points > maxRedemption) {
+      return res.status(400).json({
+        error: `Maximum redemption per reward is ${maxRedemption} points.`,
+      });
     }
 
     // Deduct points for user reward points
@@ -405,6 +432,35 @@ const removeApplyRewardCode = async (req, res) => {
   }
 };
 
+const getRewardHistoryForCertainUser = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { page = 1, limit = 10, type } = req.query;
+    const skip = (page - 1) * limit;
+
+    const query = { user: userId };
+    if (type && type !== "all") query.type = type;
+
+    const rewardHistory = await RewardHistory.find(query)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    const total = await RewardHistory.countDocuments(query);
+
+    res.status(200).json({
+      rewardHistory: rewardHistory,
+      currentPage: parseInt(page),
+      totalPages: Math.ceil(total / limit),
+      total,
+    });
+  } catch (error) {
+    console.log("Error in getRewardHistoryForCertainUser:", error.message);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+
 export default {
   addReward,
   deleteReward,
@@ -416,4 +472,5 @@ export default {
   handleUpdateRewardStatus,
   applyRewardCode,
   removeApplyRewardCode,
+  getRewardHistoryForCertainUser,
 };

@@ -23,6 +23,7 @@ import { useEffect, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import useHandleLogout from "@/hooks/useHandleLogout";
 import useSystemSettingStore from "@/stores/useSystemSettingStore";
+import { useSocket } from "@/context/SocketContext";
 
 const Navbar = () => {
   const { setOpenLoginPopup } = useAuthStore();
@@ -34,7 +35,7 @@ const Navbar = () => {
   const { handleLogout, isLoading } = useHandleLogout();
   const { logo, fetchAllHotelInformationInCustomerSide } =
     useSystemSettingStore((state) => state);
-
+  const { activeUsers } = useSocket();
   const scrollHeader = () => {
     setNavbar(window.scrollY > 10);
   };
@@ -109,9 +110,15 @@ const Navbar = () => {
                       </AvatarFallback>
                     </Avatar>
                     {/* Indicator */}
-                    <div className="absolute -right-1 -bottom-1 rounded-full bg-green-400 p-1.5">
-                      <div className="h-2 w-2 animate-pulse rounded-full bg-green-200"></div>
-                    </div>
+                    {activeUsers.includes(user._id) ? (
+                      <div className="absolute -right-1 -bottom-1 rounded-full bg-green-400 p-1.5">
+                        <div className="h-2 w-2 animate-pulse rounded-full bg-green-200"></div>
+                      </div>
+                    ) : (
+                      <div className="absolute -right-1 -bottom-1 rounded-full bg-gray-400 p-1.5">
+                        <div className="h-2 w-2 rounded-full bg-gray-200" />
+                      </div>
+                    )}
                   </div>
                   <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-lg font-semibold text-transparent">
                     {userDetails?.state?.user?.username}

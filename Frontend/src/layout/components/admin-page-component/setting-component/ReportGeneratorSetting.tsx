@@ -301,9 +301,9 @@ const ReportGeneratorSetting = ({
                         {formatDateInBookingCheckOut(report.createdAt)}
                       </td>
                       <td className="px-4 py-3">
-                        <button className="mr-3 cursor-pointer text-blue-600 hover:text-blue-800">
+                        {/* <button className="mr-3 cursor-pointer text-blue-600 hover:text-blue-800">
                           View
-                        </button>
+                        </button> */}
                         <button
                           onClick={() =>
                             handleDownloadReport(

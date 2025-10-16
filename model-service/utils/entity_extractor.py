@@ -3,6 +3,7 @@ import json
 import subprocess
 from typing import Dict, Optional, Any
 from datetime import datetime
+from dateutil import parser
 
 def regex_extract(user_input: str) -> Dict[str, Optional[str]]:
     result: Dict[str, Optional[str]] = {"bookingReference": "", "email": "", "name": ""}
@@ -96,19 +97,18 @@ def regex_extract_booking_session(user_input: str, userType: str) -> Dict[str, A
     # Date (supports 2025-09-15 or 15/09/2025)
     date_matches = re.findall(r"(\d{4}-\d{2}-\d{2}|\d{2}/\d{2}/\d{4})", user_input)
     if date_matches:
+        result["checkInDate"] = parser.parse(date_matches[0], dayfirst=True).date()
+        if len(date_matches) > 1:
+            result["checkOutDate"] = parser.parse(date_matches[1], dayfirst=True).date()
+    else:
+        # Try fuzzy parse (handles "12 Aug 2025", "tomorrow", etc.)
         try:
-            result["checkInDate"] = datetime.strptime(
-                date_matches[0], "%Y-%m-%d"
-            ) if "-" in date_matches[0] else datetime.strptime(date_matches[0], "%d/%m/%Y")
-
-            if len(date_matches) > 1:
-                result["checkOutDate"] = datetime.strptime(
-                    date_matches[1], "%Y-%m-%d"
-                ) if "-" in date_matches[1] else datetime.strptime(date_matches[1], "%d/%m/%Y")
-        except ValueError:
+            parsed_date = parser.parse(user_input, fuzzy=True)
+            result["checkInDate"] = parsed_date.date()
+        except:
             pass
 
-    # roomTypes (Match keywords deluxe, suite, standard, single, double)
+    # roomTypes
     room_matches = re.findall(r"\b(deluxe|suite|standard|single|double)\b", user_input, re.IGNORECASE)
     if room_matches:
         result["roomTypes"] = [r.lower() for r in room_matches]
@@ -157,7 +157,7 @@ User: {user_input}
         return {}
 
 
-def extract_entities_booking_session(user_input: str, userType: str) -> Dict[str, Any]:
+async def extract_entities_booking_session(user_input: str, userType: str) -> Dict[str, Any]:
     # Step 1: regex first
     entities = regex_extract_booking_session(user_input=user_input, userType=userType)
 

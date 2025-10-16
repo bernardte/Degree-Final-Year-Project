@@ -30,7 +30,7 @@ const AdminChatPage = () => {
   const [loading, setLoading] = useState(false);
   const { showToast } = useToast();
   const senderId = user?._id || guestId;
-  const socket = useSocket();
+  const { socket } = useSocket();
 
   let senderType = "bot";
   if (user) {

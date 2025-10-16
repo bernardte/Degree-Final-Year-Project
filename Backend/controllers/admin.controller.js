@@ -106,6 +106,32 @@ const updateUserRole = async (req, res) => {
   }
 };
 
+const suspendUser = async (req, res) => {
+  const { userId, status } = req.body;
+  console.log(userId, status);
+  if (!userId || typeof status !== "boolean") {
+    return res.status(400).json({ error: "UserId and status are required" });
+  }
+
+  try {
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    user.suspended = status;
+    await user.save();
+    return res
+      .status(200)
+      .json({
+        message: `User has been ${
+          status ? "suspended" : "reactivated"
+        } successfully`,
+      });
+  } catch (error) {
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
 
 // create room by admin panel
 const addRoom = async (req, res) => {
@@ -1192,6 +1218,7 @@ const rejectEvents = async (req, res) => {
 export default {
   getUser,
   updateUserRole,
+  suspendUser,
   addRoom,
   updateRoom,
   updateRoomStatus,

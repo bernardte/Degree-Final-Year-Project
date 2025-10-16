@@ -19,7 +19,7 @@ const RoomReviewDistributionRealTimeChart = ({ setChartType, chartType } : { set
     const [isLoading, setIsLoading] = useState(true);
     const [stats, setStats] = useState<{ _id: number; count: number }[]>([]);
     const [totalReviews, setTotalReviews] = useState(0);
-    const socket = useSocket();
+    const { socket } = useSocket();
 
     const colors = [
         "rgba(239, 68, 68, 0.8)", // red (1-star)
