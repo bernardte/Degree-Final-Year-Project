@@ -29,9 +29,9 @@ const EventList = ({
     <li key={event._id} className="p-6 hover:bg-gray-50">
       <div className="flex items-center justify-between">
         <div className="flex items-center">
-          <div className="ml-4">
+          <div className="ml-1">
             <div className="flex items-center">
-              <h4 className="text-lg font-medium text-gray-900">
+              <h4 className="text-lg font-medium text-gray-900 break-words">
                 {event.reason}
               </h4>
               <div className="ml-3">

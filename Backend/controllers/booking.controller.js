@@ -451,6 +451,7 @@ const createBookingSession = async (req, res) => {
       adults: Number(totalGuest?.adults) || 0,
       children: Number(totalGuest?.children) || 0,
       nights: rangebetweenCheckInCheckOutDate,
+      roomId: roomId
     };
 
     const abnormalDetected = await bookingSessionAbnormalDetection(
@@ -515,7 +516,7 @@ const getBookingSession = async (req, res) => {
   const { sessionId } = req.params;
 
   try {
-    const getSession = await BookingSession.findOne({ sessionId });
+    const getSession = await BookingSession.findOne({ sessionId }).sort({ createdAt: -1 });
 
     if (!getSession) {
       return res.status(404).json({ error: "Session not found or expired" });

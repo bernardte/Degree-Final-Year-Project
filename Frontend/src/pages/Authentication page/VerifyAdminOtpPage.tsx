@@ -94,7 +94,7 @@ const VerifyAdminOtpPage = () => {
           </p>
 
           <div className="align-center flex justify-center">
-            <InputOTP value={otp} onChange={setOtp} maxLength={6}>
+            <InputOTP value={otp} onChange={setOtp} maxLength={6} autoFocus>
               <InputOTPGroup>
                 {[...Array(6)].map((_, index) => (
                   <InputOTPSlot

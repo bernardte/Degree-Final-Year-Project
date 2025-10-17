@@ -23,20 +23,21 @@ const ActivityLogSchema = new mongoose.Schema(
       isMobile: Boolean,
     },
     geo: {
-      regionName: String,
       country: String,
       city: String,
+      regionName: String,
+      region: String,
       ll: [Number], // [lat, lon]
     },
     status: {
       type: String,
       required: true,
-      enum: ["success", "failed"]
+      enum: ["success", "failed"],
     },
     errorMessage: {
       type: String,
-      default: null
-    }
+      default: null,
+    },
   },
   { timestamps: true }
 );

@@ -10,6 +10,7 @@
     "seed:facilitiesList": "node seeds/facility.js",
     "seed:faq": "node seeds/faq.js",
     "seed:user": "node seeds/user.js"
+    
   },
   "keywords": [],
   "author": "",

@@ -85,8 +85,8 @@ const BookingSessionTable = () => {
 
   return (
     <div className="flex h-[447px] flex-col rounded-lg border-1 border-blue-200 bg-white">
-      {/* Table Header - Search and Statistics */}
-      <div className="border-b border-blue-100 bg-gradient-to-r from-indigo-100 to-blue-50 p-4">
+    {/* Table Header - Search and Statistics */}
+      <div className="border-b border-blue-100 bg-gradient-to-r from-indigo-100 to-blue-50 p-4 rounded-t-2xl">
         <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
           <div>
             <h3 className="text-lg font-semibold text-blue-900">

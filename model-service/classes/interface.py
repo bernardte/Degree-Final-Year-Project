@@ -1,6 +1,6 @@
 from typing import List, Dict, Any
-from pydantic import BaseModel #to check resquest body data
-
+from pydantic import BaseModel, Field #to check request body data
+from bson import ObjectId
 # ---------- Pydantic model to validate incoming JSON ---------- #
 class RagRequest(BaseModel):
     question: str
@@ -13,6 +13,10 @@ class BookingSession(BaseModel):
     adults: int
     children: int
     nights: int
+    roomId: List[str] = Field(default_factory=list)
+    class Config:
+        arbitrary_types_allowed = True
+        json_encoders = {ObjectId: str}
 
 class BookingInput(BaseModel):
     bookingReference: str

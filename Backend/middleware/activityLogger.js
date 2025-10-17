@@ -16,11 +16,11 @@ export const activityLogger = (req, res, next) => {
         req.cookies["session-id"] ||
         req.headers["x-session-id"];
 
-        let guestId
+      let guestId;
 
-        if(req.cookies.guestId){
-          guestId = req.cookies.guestId;
-        }
+      if (req.cookies.guestId) {
+        guestId = req.cookies.guestId;
+      }
 
       let logType =
         req.query?.type ||
@@ -48,6 +48,10 @@ export const activityLogger = (req, res, next) => {
       if (ip === "::1" || ip === "0:0:0:0:0:0:0:1") {
         ip = "127.0.0.1";
       }
+      // Handle IPv4 display in IPv6 format (::ffff:127.0.0.1)
+      if (ip.startsWith("::ffff:")) {
+        ip = ip.replace("::ffff:", "");
+      }
 
       const userAgent = req.headers["user-agent"] || "unknown user agent";
       const agent = useragent.parse(userAgent);
@@ -55,13 +59,28 @@ export const activityLogger = (req, res, next) => {
       // get geo information
       // geoip-lite not support IPv6, so we need to use IPv4 address;
       //! geoip-lite return null, since we are using localhost, so we need to set default value
-      const geo = geoip.lookup(ip) || {
-        country: ip === "127.0.0.1" ? "Malaysia" : "unknown country",
-        city: ip === "127.0.0.1" ? "Local" : "unknown city",
-        region: ip === "127.0.0.1" ? "Penang" : "unknown region",
-      //? ll = latitude and longitude
-        ll: [0, 0], // default to [0, 0] if geo lookup fails
-      };
+     const lookup = geoip.lookup(ip);
+     let geo;
+
+     if (lookup) {
+       geo = {
+         ip,
+         country: lookup.country || "unknown country",
+         city: lookup.city || "unknown city",
+         regionName: lookup.region || "unknown region",
+         ll: lookup.ll || [0, 0],
+       };
+     } else {
+       geo = {
+         ip,
+         country: ip === "127.0.0.1" ? "Malaysia" : "unknown country",
+         city: ip === "127.0.0.1" ? "Local" : "unknown city",
+         regionName: ip === "127.0.0.1" ? "Penang" : "unknown region",
+         ll: [0, 0],
+       };
+     }
+
+      console.log(geo);
 
       const device = {
         os: agent.os || "unknown os",
@@ -119,7 +138,7 @@ export const activityLogger = (req, res, next) => {
       //   longitude: geoData.longitude,
       //   latitude: geoData.latitude,
       // };
-
+      console.log("region name: ", geo.regionName)
       metadata = sanitizeSensitiveData(metadata);
       const userId = req.user?.userId || req.user?._id || null;
       const activityLog = await ActivityLog.create({
