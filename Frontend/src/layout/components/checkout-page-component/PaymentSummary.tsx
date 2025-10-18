@@ -44,14 +44,12 @@ const PaymentSummary = ({
       lineTotal: room.pricePerNight * nights,
     }));
     const basePrice = lineItems.reduce((sum, li) => sum + li.lineTotal, 0);
+    console.log(basePrice);
     const roomPrices = lineItems.map((li) => li.pricePerNight);
 
-    const breakfastRooms = bookedRooms.filter((room) => room.breakfastIncluded);
-    const breakfastCounts = breakfastRooms.length;
-
-    // 再算 breakfastTotal
+    // calculate breakfastTotal
     const breakfastTotal =
-      breakfastCount > 0 ? breakfastCounts * breakfastPrice * nights : 0;
+      breakfastCount > 0 ? breakfastCount * breakfastPrice * nights : 0;
     const rewardDiscount = appliedReward?.discount ?? 0;
     const rewardMultiplier = 1 - rewardDiscount / 100;
 
@@ -112,7 +110,7 @@ const PaymentSummary = ({
     }
   };
 
-  console.log(additionalInfo);
+
   return (
     <motion.div
       initial={{ x: 100, opacity: 0 }}
@@ -133,7 +131,7 @@ const PaymentSummary = ({
             </div>
           ))}
 
-          {breakfastCounts > 0 && (
+          {breakfastCount > 0 && (
             <div className="flex justify-between text-sm text-green-200 italic">
               <span>
                 Breakfast for {breakfastCount} room

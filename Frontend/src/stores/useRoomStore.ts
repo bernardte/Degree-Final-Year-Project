@@ -257,7 +257,7 @@ const useRoomStore = create<roomStore>((set, get) => ({
           breakfastCount: breakfastCount
         },
       };
-      await axiosInstance.patch(
+      const response = await axiosInstance.patch(
         "/api/bookings/update-breakfast-count/" + sessionId,
         {
           breakfastCount,
@@ -266,6 +266,8 @@ const useRoomStore = create<roomStore>((set, get) => ({
 
         },
       );
+
+      useBookingSessionStore.getState().setBreakfastCount(response.data);
     } catch (error: any) {
       console.log(
         "Error in handleUpdateBreakfast",
@@ -274,7 +276,8 @@ const useRoomStore = create<roomStore>((set, get) => ({
     }
   },
 
-  updateSelectedRoomBreakfast: (roomId: string, sessionId: string) => {
+  updateSelectedRoomBreakfast: async (roomId: string, sessionId: string) => {
+    let breakfastCount = 0
     set((prevState) => {
       const updatedRooms = prevState.rooms.map((room) =>
         room._id === roomId
@@ -283,19 +286,21 @@ const useRoomStore = create<roomStore>((set, get) => ({
       );
 
       // calculate breakfast
-       const breakfastCount = updatedRooms.reduce((count, r) => {
+       breakfastCount = updatedRooms.reduce((count, r) => {
          if (!(r as RoomDefaultWithBreakfast).defaultBreakfast && r.breakfastIncluded) {
            return count + 1;
          }
          return count;
        }, 0);
 
-        useBookingSessionStore.getState().setBreakfastCount(breakfastCount);
-      // send to backend
-      get().handleUpdateBreakfast(breakfastCount, sessionId);
 
+       useBookingSessionStore.getState().setBreakfastCount(breakfastCount);
+      
       return { ...prevState, rooms: updatedRooms };
     });
+
+      //send to backend and update booking session breakfast count
+      await get().handleUpdateBreakfast(breakfastCount, sessionId);
   },
 
   fetchRoomCalendarView: async () => {

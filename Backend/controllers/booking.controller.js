@@ -637,6 +637,12 @@ const removeRoomFromBookingSession = async (req, res) => {
       return res.status(404).json({ error: "Booking Session Not Found " });
     }
 
+    const roomDefaultExcludeBreakfast = await Room.findById(roomId).select("breakfastIncluded")
+
+    if(roomDefaultExcludeBreakfast?.breakfastIncluded){
+      bookingSession.breakfastIncluded = Math.max(0, bookingSession.breakfastIncluded - 1);
+    }
+
     bookingSession.roomId = bookingSession.roomId.filter(
       (id) => id.toString() !== roomId
     );

@@ -73,6 +73,7 @@ const useBookingSessionStore = create<BookingSessionStore>((set, get) => ({
       })
       .finally(() => set({ isLoading: false }));
   },
+
   removeBookingSessionRoom: async (roomIdToRemove: string) => {
     const sessionId = get().bookingSession.sessionId;
 
@@ -82,6 +83,7 @@ const useBookingSessionStore = create<BookingSessionStore>((set, get) => ({
     }
 
     set({ isLoading: true, error: null });
+
     try {
       await axiosInstance.delete(
         `/api/bookings/${sessionId}/remove-room/${roomIdToRemove}`,
@@ -106,13 +108,22 @@ const useBookingSessionStore = create<BookingSessionStore>((set, get) => ({
           }
         }
 
+        const updatedBreakfastCount = updatedRooms.filter(
+          (room: any) => room.breakfastIncluded && !room.defaultBreakfast,
+        ).length;
+
+        // update breakfast count in booking session store
+        get().setBreakfastCount(updatedBreakfastCount);
+
         return {
           bookingSession: {
             ...prevState.bookingSession,
             roomId: updatedRooms,
+            breakfastIncluded: updatedBreakfastCount,
           },
         };
       });
+
     } catch (error: any) {
       console.log(
         "Error in remove BookingSession Room: ",

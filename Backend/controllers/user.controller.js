@@ -141,7 +141,6 @@ const resetPassword = async (req, res) => {
     const hashedPassword = await bcrypt.hash(newPassword, salt);
     user.password = hashedPassword;
 
-    //! reset after successful update password
     user.resetToken = "";
     user.resetTokenExpiry = undefined;
     await user.save();
