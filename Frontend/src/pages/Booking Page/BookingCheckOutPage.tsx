@@ -29,7 +29,8 @@ import { formatDateInBookingCheckOut } from "@/utils/formatDate";
 import axiosInstance from "@/lib/axios";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Room } from "@/types/interface.type"
+import { Room } from "@/types/interface.type";
+import useAuthStore from "@/stores/useAuthStore";
 
 const BookingCheckOutPage = () => {
   const { sessionId } = useParams();
@@ -47,7 +48,7 @@ const BookingCheckOutPage = () => {
     discount: number;
   } | null>(null);
 
-  const user = localStorage.getItem("user");
+  const { user } = useAuthStore();
   const isLoggedIn = !!user;
   const [loading, setLoading] = useState(false);
   console.log("sessionId: ", sessionId);
@@ -210,17 +211,16 @@ const BookingCheckOutPage = () => {
                       e.preventDefault();
                       setOpenDialog(true);
                     }}
-                    className={
-                      loadingTarget === "/"
-                        ? "font-bold text-gray-700"
-                        : "text-blue-600 hover:underline"
-                    }
+                    className="flex items-center text-blue-600 transition-colors hover:text-blue-800"
                   >
-                    {loadingTarget === "/" ? (
-                      <span className="animate-caret-blink">Loading...</span>
-                    ) : (
-                      "Home"
-                    )}
+                    <div className="flex items-center justify-center">
+                      <Home className="mr-2 h-4 w-4" />
+                      {loadingTarget === "/" ? (
+                        <span className="animate-pulse">Loading...</span>
+                      ) : (
+                        "Home"
+                      )}
+                    </div>
                   </BreadcrumbLink>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
