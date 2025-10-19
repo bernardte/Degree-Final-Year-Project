@@ -151,10 +151,9 @@ const createBooking = async (req, res) => {
        key: "Hotel Information",
      }).select("value");
 
-     const hotelInfo = hotelInfoDoc?.value;
+    const hotelInfo = hotelInfoDoc?.value;
     const emailTo = user?.email || contactEmail || guestDetails?.contactEmail;
     if (emailTo && qrCodePublicURLfromCloudinary) {
-      console.log("reach here")
       await sendBookingConfirmationEmail(emailTo, {
         username: user?.name || newBooking.contactName,
         bookingReference,

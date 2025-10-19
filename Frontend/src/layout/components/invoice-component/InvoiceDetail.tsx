@@ -26,7 +26,7 @@ import { useReactToPrint } from "react-to-print";
 import useToast from "@/hooks/useToast";
 
 const InvoiceDetail = () => {
-  // Hotel invoice data
+  // Hotel invoice base data
   const invoiceData = {
     invoiceNumber: "HOTEL-INV-2023-00142",
     issueDate: "2023-11-15",
@@ -322,10 +322,10 @@ const InvoiceDetail = () => {
                 {totalBreakfastVoucher > 0 && (
                   <tr>
                     <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-800 capitalize">
-                      Breakfast Voucher ( {totalBreakfastVoucher} x RM 30.00 )
+                      Breakfast Voucher ( {totalBreakfastVoucher} x RM 30.00 x {nights} {nights > 1 ? "nights" : "night" } )
                     </td>
                     <td className="px-6 py-4 text-right text-sm font-medium whitespace-nowrap text-gray-800">
-                      RM {(30 * totalBreakfastVoucher).toFixed(2)}
+                      RM {(30 * totalBreakfastVoucher * nights).toFixed(2)}
                     </td>
                   </tr>
                 )}

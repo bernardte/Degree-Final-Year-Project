@@ -66,8 +66,16 @@ const handlePaymentCancelled = async (req, res) => {
   try {
     const session = await stripe.checkout.sessions.retrieve(sessionId);
     const rewardCode = session.metadata.rewardCode;
-    console.log("your reward code", rewardCode);
+    const bookingSessionId = session.metadata.sessionId;
 
+    const bookingSession = await BookingSession.findOne({ sessionId: bookingSessionId });
+
+    //! if booking session is expired after 30 minutes
+    if(!bookingSession){
+      return res.status(404).json({ error: "Your booking session has expired. Payment is no longer valid. "})
+    }
+
+    // if include reward code then allow to make it active again
     if (rewardCode) {
       await ClaimedReward.findOneAndUpdate(
         { rewardCode, status: "used" },
@@ -75,10 +83,11 @@ const handlePaymentCancelled = async (req, res) => {
       );
       return res.status(200).json({
         message: "Booking cancelled and your reward will restored",
+        bookingSessionId
       });
     }
 
-    return res.status(200).json({ message: "Booking cancelled" });
+    return res.status(200).json({ message: "Booking cancelled", bookingSessionId });
   } catch (error) {
     console.error("Error handling payment cancelled", error);
     res.status(500).json({ error: "Internal Server Error" });

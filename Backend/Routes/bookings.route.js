@@ -8,7 +8,7 @@ const router = express.Router();
 router.post("/create-booking", bookingControllers.createBooking); // Create a new booking
 router.post("/create-booking-session", bookingControllers.createBookingSession); // Create a booking session
 router.post("/cancel-booking", bookingControllers.cancelBooking); // Cancel a booking
-router.get("/get-booking-session/:sessionId", bookingControllers.getBookingSession); // Create a new booking
+router.get("/get-booking-session/:sessionId", bookingControllers.getBookingSession); // get booking session by sessionId
 router.get("/get-booking-session-by-user", protectRoute, bookingControllers.getBookingSessionByUser); // Get booking session by user
 router.get("/fetch-booking-session", protectRoute, verifyRoles, bookingControllers.getBookingSessionInAdmin)
 router.delete("/delete-booking-session/:sessionId", bookingControllers.deleteBookingSession);//delete booking session

@@ -67,6 +67,8 @@ const BookingCheckOutPage = () => {
 
   if (error) {
     showToast("error", error);
+    navigate("/");
+    return;
   }
 
   const handleDeleteBookingSession = async (sessionId: string) => {

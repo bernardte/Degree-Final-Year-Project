@@ -23,7 +23,7 @@ export const generateBookingEmailHTML = ({
   const nights = Math.ceil(
     (new Date(checkOutDate) - new Date(checkInDate)) / (1000 * 3600 * 24)
   );
-  const totalBreakfastPrice = breakfastIncluded * 30.0;
+  const totalBreakfastPrice = breakfastIncluded * 30.0 * nights;
   const totalRoomPrice =
     roomDetail.reduce((acc, rm) => acc + rm.pricePerNight, 0) || 0;
   const subtotal = totalRoomPrice * nights
@@ -274,7 +274,7 @@ export const generateBookingEmailHTML = ({
                             <td style="padding: 12px; font-size: 14px; color: #1e293b;">
                                 Breakfast Voucher (${
                                   totalBreakfastPrice / 30
-                                } x RM 30.00)
+                                } x RM 30.00 x ${nights} night${nights > 1 ? "s" : ""})
                             </td>
                             <td style="padding: 12px; text-align: right; font-weight: 500; color: #1e293b;">
                                 RM ${totalBreakfastPrice.toFixed(2)}
