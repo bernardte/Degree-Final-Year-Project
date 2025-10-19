@@ -56,7 +56,6 @@ const BookingButton = ({ selectedRoom }: BookingButtonProps) => {
         }
 
         const { sessionId } = data;
-        localStorage.removeItem("searchParams");
         navigate(`/booking/confirm/${sessionId}`);
       } catch (error: any) {
         const errorMessage =

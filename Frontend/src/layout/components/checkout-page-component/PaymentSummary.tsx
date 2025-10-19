@@ -5,6 +5,7 @@ import axiosInstance from "@/lib/axios";
 import useToast from "@/hooks/useToast";
 import useBookingSessionStore from "@/stores/useBookingSessionStore";
 import { Gift } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface PaymentSummaryProps {
   checkInDate: string; // ISO date string
@@ -33,6 +34,7 @@ const PaymentSummary = ({
     const { rooms } = useRoomStore();
     const breakfastCount = useBookingSessionStore((state) => state.breakfastCount);
     const additionalInfo = useBookingSessionStore((state) => state.additionalInfo);
+    const navigate = useNavigate();
     const bookedRooms = rooms.filter((room) =>
       (roomId as string[])?.includes(room._id),
     );
@@ -103,7 +105,10 @@ const PaymentSummary = ({
         window.location.href = response.data?.sessionUrl;
       } else {
         showToast("error", "Transaction Failed");
+        navigate("/")
       }
+
+      localStorage.removeItem("searchParams");
     } catch (error: any) {
       console.log("Error in continue payment: ", error?.response?.error);
       showToast("error", error?.response?.error);

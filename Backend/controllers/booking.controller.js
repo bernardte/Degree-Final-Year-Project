@@ -431,17 +431,59 @@ const createBookingSession = async (req, res) => {
     }
   }
 
+  const dbSession = await mongoose.startSession();
+  dbSession.startTransaction();
+
   try {
     const sessionId = uuidv4();
 
     const user = await User.findOne({ email: userEmail })
       .select("_id username")
       .lean(); //convert to object instead of mongodb docs
+    
+    // prevent overbooking by checking existing bookings for the room
+    const overlappingBooking = await Booking.findOne({
+      roomId: roomId,
+      $or: [
+        {
+          startDate: { $lt: new Date(checkOutDate) },
+          endDate: { $gt: new Date(checkInDate) },
+        },
+      ],
+    }).session(dbSession);
+
+    const overlappingSession = await BookingSession.findOne({
+      roomId,
+      $or: [
+        {
+          checkInDate: { $lt: new Date(checkOutDate) },
+          checkOutDate: { $gt: new Date(checkInDate) },
+        },
+      ],
+    }).session(dbSession);
+
+    if (overlappingBooking || overlappingSession) {
+      await dbSession.abortTransaction();
+      dbSession.endSession();
+      return res.status(409).json({
+        error:
+          "This room is already booked or occupied during the selected dates.",
+      });
+    }
 
     const rangebetweenCheckInCheckOutDate = differenceInCalendarDays(
       new Date(checkOutDate),
       new Date(checkInDate)
     );
+
+    if (rangebetweenCheckInCheckOutDate <= 0) {
+      await dbSession.abortTransaction();
+      dbSession.endSession();
+      return res
+        .status(400)
+        .json({ error: "Check-out date must be after check-in date." });
+    }
+
     const actualtotalPrice = rangebetweenCheckInCheckOutDate * totalPrice;
 
     const passingAbnormallyDatection = {
@@ -502,7 +544,10 @@ const createBookingSession = async (req, res) => {
 
       await suspiciousEvent.save();
     }
-
+    
+    await dbSession.commitTransaction();
+    dbSession.endSession();
+    
     await emitBookingSessionUpdate();
     res.status(201).json({ sessionId });
   } catch (error) {
