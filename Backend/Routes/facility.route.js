@@ -7,9 +7,9 @@ const router = express.Router();
 
 router.get("/", facilityController.getFacility);
 router.get("/facility/:facilityId", facilityController.getCertainFacility)
-router.get("/paginated", facilityController.getAdminPageFacility);
 
 router.use(protectRoute, verifyRole);
+router.get("/paginated", facilityController.getAdminPageFacility);
 router.post("/create-facility", facilityController.createFacility);
 router.patch(
   "/update-facility-status/:facilityId",

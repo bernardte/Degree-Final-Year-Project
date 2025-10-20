@@ -17,7 +17,7 @@ const CancellationRequestSchema = mongoose.Schema({
   requestedAt: { type: Date, default: Date.now },
   processedAt: Date,
   processedBy: { type: mongoose.Schema.Types.ObjectId, ref: "user" },
-});
+}, { timestamps: true });
 const CancellationRequest = mongoose.model(
   "CancellationRequest",
   CancellationRequestSchema

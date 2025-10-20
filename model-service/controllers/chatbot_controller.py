@@ -30,7 +30,7 @@ async def handle_chatbot(payload: dict) -> AsyncGenerator[tuple[Any, bool], None
     await update_conversation_context(str(conversationId), str(senderType), user_input)
     chat_context = await get_conversation_context(conversationId)
     # --- User requests to be transferred to manual customer service ---
-    if any(kw in user_input.lower() for kw in ["human", "customer service", "real people", "agent", "transfer to manual", "real agent"]):
+    if any(kw in user_input.lower() for kw in ["human", "customer service", "real people", "agent", "transfer to manual", "real agent", "real human", "real assistant"]):
         await redis_client.delete(conversationId)
         prompt = """
 You are Harold, a polite and professional hotel assistant.

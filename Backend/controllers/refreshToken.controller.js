@@ -21,7 +21,8 @@ const handleRefreshToken = async (req, res) => {
     const { accessToken } = generateTokensAndSetCookies(
       user._id,
       res,
-      user.role
+      user.role,
+      { requireRefresh: true }
     );
 
     user.password = undefined; // Remove password from user object

@@ -51,7 +51,6 @@ const deleteFacility = async (req, res) => {
 
     try {
         const facility = await Facility.findByIdAndDelete(facilityId);
-        console.log(user);
 
         if (!facility) {
             return res.status(404).json({ error: "Facility not found" });
@@ -103,11 +102,9 @@ const updateFacility = async (req, res) => {
 
     // Upload new image if provided
     if (image) {
-      const imageUrl = await uploadToCloudinary(image); // path or buffer depending on your cloudinary helper
-      facility.image = imageUrl; // imageUrl should include { url, public_id }
+      const imageUrl = await uploadToCloudinary(image); 
+      facility.image = imageUrl; // imageUrl include { url, public_id }
     }
-    console.log("old icon", facility.icon)
-    console.log("old icon color", facility.iconColor)
 
     facility.facilitiesName = facilitiesName;
     facility.description = description;

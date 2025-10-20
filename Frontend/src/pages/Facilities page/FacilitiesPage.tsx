@@ -237,7 +237,7 @@ const FacilitiesPage = () => {
             <div className="text-center">
               <motion.button
                 onClick={() => navigate("/filter-room")}
-                className="rounded-full bg-white px-8 py-3 font-bold text-blue-600 shadow-lg transition-all hover:bg-gray-100"
+                className="rounded-full bg-white px-8 py-3 font-bold text-blue-600 shadow-lg transition-all hover:bg-gray-100 cursor-pointer"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >

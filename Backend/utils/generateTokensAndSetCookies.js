@@ -3,7 +3,7 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const generateTokensAndSetCookies = (userId, res, role) => {
+const generateTokensAndSetCookies = (userId, res, role, { requireRefresh = false }) => {
 
   const accessToken = jwt.sign(
     { userId, role },
@@ -13,20 +13,26 @@ const generateTokensAndSetCookies = (userId, res, role) => {
     }
   );
 
-  const refreshToken = jwt.sign({ userId }, process.env.JWT_REFRESH_TOKEN, {
-    expiresIn: "7d",
-  });
+  if(requireRefresh) {
+      const refreshToken = jwt.sign(
+        { userId },
+        process.env.JWT_REFRESH_TOKEN, 
+        {
+          expiresIn: "7d", 
+        }
+      );
+      console.log("🔹 Refresh Token:", refreshToken); // Debugging
+      // Set Refresh Token (HTTP Only Cookie)
+      res.cookie("refreshToken", refreshToken, {
+        httpOnly: true,
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        secure: process.env.NODE_ENV === "production",
+      });
+  }
 
   console.log("🔹 Access Token:", accessToken); // Debugging
-  console.log("🔹 Refresh Token:", refreshToken); // Debugging
 
-  // Set Refresh Token (HTTP Only Cookie)
-  res.cookie("refreshToken", refreshToken, {
-    httpOnly: true,
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-    secure: process.env.NODE_ENV === "production",
-  });
 
   // Set Access Token (HTTP Only Cookie)
   res.cookie("accessToken", accessToken, {
@@ -37,7 +43,7 @@ const generateTokensAndSetCookies = (userId, res, role) => {
   });
 
 
-  return { accessToken, refreshToken };
+  return { accessToken };
 };
 
 export default generateTokensAndSetCookies;

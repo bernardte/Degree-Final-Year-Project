@@ -80,7 +80,7 @@ const updateUserRole = async (req, res) => {
         .json({ error: "New role is the same as the current role" });
     }
 
-    if (newRole === "superAdmin" || req.user.role === newRole) {
+    if (newRole === "superAdmin") {
       return res.status(403).json({
         error:
           "Access denied: You do not have sufficient permission to assign the 'Super Admin' role.",
@@ -818,7 +818,7 @@ const updateAllPendingBookingStatusToConfirmed =  async (req, res) => {
       { $set: { status: "confirmed"} }
     )
 
-    emitBookingStatusUpdate();
+    await emitBookingStatusUpdate();
     res.status(201).json({
       message: `${result.modifiedCount} pending bookings updated to confirmed`,
       newStatus: "confirmed",
@@ -866,6 +866,7 @@ const getAllAcceptCancelledBookings = async (req, res) => {
   }
 };
 
+// update the cancellation request from the table of booking cancellation request in admin dashboard
 const updateCancellationRequest = async (req, res) => {
   const { requestId } = req.params;
   const { status } = req.body;
@@ -885,7 +886,7 @@ const updateCancellationRequest = async (req, res) => {
       return res.status(404).json({ error: "Cancellation request not found" });
     }
 
-    const booking = request.bookingId;
+    const booking = await Booking.findById(request.bookingId);
     if (!booking)
       return res.status(404).json({ error: "Related booking not found" });
 
@@ -933,6 +934,8 @@ const updateCancellationRequest = async (req, res) => {
         booking.paymentStatus = "refund"; // Update payment status to refunded
         booking.refundAmount = refundAmount; // Update total price to the refund amount
         console.log("Refund amount1: ", refundAmount);
+
+        //remove booking from the room model collection bookings array
         for (const roomId of booking.room) {
           const room = await Room.findById(roomId);
           if (!room) {
@@ -947,6 +950,10 @@ const updateCancellationRequest = async (req, res) => {
         await booking.save(); // Save the updated booking status
       }
       console.log("Refund amount2: ", refundAmount);
+
+      //real-time update booking status
+      await emitBookingStatusUpdate();
+
       return res.status(200).json({
         message: `Cancellation approved. ${policyNote}`,
         refund: refundAmount,

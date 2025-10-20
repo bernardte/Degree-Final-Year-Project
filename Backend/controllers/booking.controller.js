@@ -270,7 +270,7 @@ const cancelBooking = async (req, res) => {
 
     const currentDate = new Date();
     const checkInDate = new Date(booking.startDate);
-
+    const checkOutDate = new Date(booking.endDate);
     const msUntilCheckIn = checkInDate - currentDate;
 
     const totalHours = Math.max(
@@ -282,6 +282,20 @@ const cancelBooking = async (req, res) => {
 
     console.log("daysUntilCheckIn: ", daysUntilCheckIn);
     console.log("hoursLeftAfterDays: ", hoursLeftAfterDays);
+
+    // prevent cancellation if current date is on or after check in date but before check-out date
+    if(totalHours <= 0 && currentDate <= checkOutDate){
+      return res.status(400).json({
+        error: "Cannot cancel booking during or after your stay period."
+      })
+    }
+
+    // prevent cancellation if current date is after check-out date
+    if(currentDate > checkOutDate){
+      return res.status(400).json({
+        error: "Booking already completed, cancellation not possible."
+      })
+    }
 
     if (booking.status === "completed") {
       return res.status(400).json({
