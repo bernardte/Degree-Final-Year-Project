@@ -9,6 +9,7 @@ from sklearn.preprocessing import MinMaxScaler, LabelEncoder
 import joblib
 import asyncio
 from config.mongoDB import db
+import matplotlib.pyplot as plt
 
 # Connect to MongoDB
 booking_collection = db["bookings"]
@@ -68,16 +69,16 @@ df["bookingInterval"] = df.groupby("userId")["bookingDate"].diff().dt.total_seco
 df["bookingInterval"] = df["bookingInterval"].fillna(0)
 
 le = LabelEncoder()
-df["roomEncoded"] = le.fit_transform(df["room"].astype(str))
+df["roomNum"] = df["room"].apply(lambda x: len(x) if isinstance(x, list) else 1)
 features = [
              "totalPrice",
              "totalGuestsNum",
              "bookingInterval",
              "refundAmount",
-             "rewardDiscount", 
-             "roomEncoded", 
+             "rewardDiscount",  
              "advanceBookingDays",
-             "nights"
+             "nights",
+             "roomNum"
             ]
 
 scaled_features = scaler.fit_transform(df[features])
@@ -111,6 +112,66 @@ def build_sequences(df, seq_len=SEQ_LEN):
 x_train_seq, train_indices = build_sequences(df_scaled)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu") 
+
+def detect_possible_reason(row, df, features):
+    reasons = []
+
+    user_df = df[df["userId"] == row["userId"]]
+    user_mean = user_df[features].mean()
+
+    price_diff = row["totalPrice"] - user_mean["totalPrice"]
+    if abs(price_diff) > user_mean["totalPrice"] * 0.5:  # 超过50%偏差
+        if price_diff > 0:
+            reasons.append("Unusually high total price")
+        else:
+            reasons.append("Unusually low total price")
+            
+    if row["totalPrice"] < user_mean["totalPrice"] * 0.5:
+        reasons.append("Possible undercharged booking")
+
+    if row["advanceBookingDays"] > user_mean["advanceBookingDays"] * 2:
+        reasons.append("Booked far in advance")
+
+    if row["refundAmount"] > 0:
+        reasons.append("Contains refund")
+
+    if row["rewardDiscount"] > user_mean["rewardDiscount"] * 2:
+        reasons.append("Large reward discount")
+
+    if row["advanceBookingDays"] < 1:
+        reasons.append("Very short advance booking")
+
+    if row["totalGuestsNum"] > user_mean["totalGuestsNum"] * 1.5:
+        reasons.append("Unusually large group size")
+
+    if row["bookingInterval"] > user_mean["bookingInterval"] * 2:
+        reasons.append("Long interval since last booking")
+
+    if row["nights"] > user_mean["nights"] * 2:
+        reasons.append("Long stay duration")
+
+    if not reasons:
+        reasons.append("Unusual booking pattern detected")
+
+    return ", ".join(reasons)
+
+class EarlyStopping:
+  def __init__(self, patience=15, min_delta=1e-4) -> None:
+      self.patience = patience
+      self.min_delta = min_delta
+      self.best_loss = np.inf
+      self.counter = 0
+      self.early_stop = False
+
+  def step(self, current_loss):
+    if current_loss < self.best_loss - self.min_delta:
+        self.best_loss = current_loss
+        self.counter = 0
+
+    else:
+        self.counter += 1
+        if self.counter >= self.patience:
+           self.early_stop = True
 
 class BookingDataset(Dataset):
   def __init__(self, sequences):
@@ -146,7 +207,7 @@ class LSTMAutoencoder(nn.Module):
     self.output_layer = nn.Linear(
       in_features=hidden_size, out_features=n_features
     )
-    nn.ReLU()
+    self.relu = nn.ReLU()
 
   def forward(self, x):
     # Encode
@@ -156,7 +217,7 @@ class LSTMAutoencoder(nn.Module):
     # Decode
     decoded, _ = self.decoder(hidden_repeated)
     out = self.output_layer(decoded)
-    return out
+    return self.relu(out)
   
 LSTMAutoencoderModel = LSTMAutoencoder(n_features=len(features), hidden_size=32, seq_len=5)
 LSTMAutoencoderModel.to(device=device)
@@ -166,6 +227,8 @@ optimizer = torch.optim.Adam(params=LSTMAutoencoderModel.parameters(), lr=0.01)
 
 EPOCHS = 170
 train_losses = []
+early_stopper = EarlyStopping(patience=15)
+
 for epoch in tqdm(range(EPOCHS)):
   LSTMAutoencoderModel.train()
   losses = []
@@ -183,6 +246,13 @@ for epoch in tqdm(range(EPOCHS)):
   if epoch % 5 == 0:
     print(f"Epoch {epoch}, loss: {train_losses[-1]:.4f}")
 
+  # Early stopping check
+  early_stopper.step(np.mean(train_loss))
+  if early_stopper.early_stop:
+     print(f"Early stopping triggered at epoch {epoch}")
+     break
+     
+
 LSTMAutoencoderModel.eval()
 with torch.inference_mode():
   X_tensor = torch.tensor(x_train_seq, dtype=torch.float32).to(device)
@@ -198,6 +268,8 @@ print(f"anomaly: {len(anomalies_index)}")
 for i in anomalies_index:
   row_index = train_indices[i]
   row = df.loc[row_index]
+  possible_reason = detect_possible_reason(row, df, features)
+
   print(
           f"Index: {row.name}\t"
           f"bookingReference: {row['bookingReference']}\t"
@@ -215,8 +287,22 @@ for i in anomalies_index:
           f"bookingCreatedByUser: {row.get('bookingCreatedByUser','')}\t"
           f"advanceBookingDays: {row['advanceBookingDays']}\t"
           f"checkInDate: {row['checkInDate']}\t"
-          f"checkOutDate: {row['checkOutDate']}"
+          f"checkOutDate: {row['checkOutDate']}\t"
+          f"possible reason: {possible_reason}"
       )
 joblib.dump(threshold, "models/load_dict/anomaly-detection/threshold.pkl")
 joblib.dump(scaler, "models/load_dict/anomaly-detection/scaler.pkl")
 joblib.dump(le, "models/load_dict/anomaly-detection/label_encoder.pkl")
+  
+
+
+plt.figure(figsize=(8,5))
+plt.hist(mse, bins=50, color="skyblue", label="Reconstruction Error")
+plt.axvline(threshold, color="red", linestyle="--", label="Threshold")# type: ignore
+plt.legend()
+plt.title("Reconstruction Error Distribution")
+plt.xlabel("MSE")
+plt.ylabel("Count")
+plt.show()
+
+

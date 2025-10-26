@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 
 const AdminBookingCalendarPage = () => {
-  const { fetchAllBookingViewInCalendar, bookings, isLoading, error } = useBookingStore();
+  const { fetchAllBookingViewInCalendar, bookings, isLoading, error, statisticCount } = useBookingStore();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -55,7 +55,7 @@ const AdminBookingCalendarPage = () => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
-      className="p-4 bg-sky-50"
+      className="bg-sky-50 p-4"
     >
       <div className="my-2 flex flex-col items-center justify-between gap-4 md:flex-row">
         <div>
@@ -63,8 +63,12 @@ const AdminBookingCalendarPage = () => {
             Reservation Calendar
           </h1>
           <p className="text-gray-600">
-            {bookings.length} {bookings.length === 1 ? "booking" : "bookings"}{" "}
-            scheduled
+            {statisticCount?.total && (
+              <>
+                {statisticCount?.total ?? 0}{" "}
+                {bookings.length === 1 ? "booking" : "bookings"} scheduled
+              </>
+            )}
           </p>
         </div>
 
@@ -74,14 +78,21 @@ const AdminBookingCalendarPage = () => {
         </Button>
       </div>
 
-        <motion.div
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.2 }}
-          className="rounded-2xl p-6"
-        >
-          <BookingCalendarView events={mappedBooking} bookings={bookings} isLoading={isLoading} error={error} onRefresh={handleRefresh} />
-        </motion.div>
+      <motion.div
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.2 }}
+        className="rounded-2xl p-6"
+      >
+        <BookingCalendarView
+          events={mappedBooking}
+          bookings={bookings}
+          isLoading={isLoading}
+          error={error}
+          onRefresh={handleRefresh}
+          statisticCount={statisticCount}
+        />
+      </motion.div>
     </motion.div>
   );
 };

@@ -187,7 +187,7 @@ const loginUser = async (req, res) => {
     const { accessToken } = generateTokensAndSetCookies(
       user._id,
       res,
-      user.role
+      user.role,
     );
 
     res.status(200).json({

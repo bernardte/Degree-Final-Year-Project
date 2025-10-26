@@ -13,7 +13,7 @@ bookingSession_anomaly_detection_model = joblib.load("models/load_dict/anomaly-d
 feature_names = joblib.load("models/load_dict/anomaly-detection-booking-session/feature_names.pkl")
 scaler = joblib.load("models/load_dict/anomaly-detection-booking-session/scaler.pkl")
 
-def anomaly_detection_booking_session(session: BookingSession) -> tuple[int, float]:
+def anomaly_detection_booking_session(session: BookingSession) -> tuple[int, float, str]:
     # ---- 构建输入 DataFrame ----
     df = pd.DataFrame([{
         "totalPrice": session.totalPrice,
@@ -61,7 +61,38 @@ def anomaly_detection_booking_session(session: BookingSession) -> tuple[int, flo
     prediction = bookingSession_anomaly_detection_model.predict(X_scaled)[0]
     score = bookingSession_anomaly_detection_model.decision_function(X_scaled)[0]
     print(f"prediction: {prediction}, score: {score}")
-    return prediction, score
+
+    try:
+        normal_means = joblib.load("models/load_dict/anomaly-detection-booking-session/normal_means.pkl")
+    except:
+        normal_means = pd.Series(np.zeros(len(feature_names)), index=feature_names)
+
+    diffs = (df.iloc[0][feature_names] - normal_means)
+    abs_diffs = diffs.abs()
+    top_features = abs_diffs.sort_values(ascending=False).head(2).index.tolist()
+
+    readable_names = {
+        "log_nights": "Length of Stay",
+        "log_totalPrice": "Total Price",
+        "log_price_per_night": "Price per Night",
+        "log_price_per_person": "Price per Person",
+        "log_price_per_night_per_person": "Price per Night per Person",
+        "adults": "Number of Adults",
+        "children": "Number of Children",
+        "children_ratio": "Children-to-Adult Ratio",
+        "nights": "Nights Stayed",
+        "roomNum": "Number of Rooms",
+    }
+
+    readable_reasons = []
+    for f in top_features:
+        direction = "higher than usual" if diffs[f].item() > 0 else "lower than usual"
+        readable_reasons.append(f"{readable_names.get(f, f)} is {direction}")
+
+    reason = "; ".join(readable_reasons)
+
+    # ---- 返回完整结果 ----
+    return prediction, score, reason
 
 async def anomaly_detection_booking():
     cursor = db["bookings"].find(
@@ -92,6 +123,7 @@ async def anomaly_detection_booking():
     
     df = pd.DataFrame(docs)
     df_result = detect_booking_anomalies(df)
+    print(f"df_result: {df_result}")
     
     if df_result is None or df_result.empty:
         return []

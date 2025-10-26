@@ -53,28 +53,45 @@ const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   }
 
   useEffect(() => {
-    const initAuth = async () => {
-      setAuthLoading(true);
+  const initAuth = async () => {
+    setAuthLoading(true);
+    try {
+      // Attempt to refresh token only if user is not logged out
       await refreshToken();
+    } catch (error) {
+      console.error("Initial auth check failed:", error);
+      logout();
+      updateAxiosHeader(null);
+    } finally {
       setIsChecking(false);
       setAuthLoading(false);
     }
+  };
 
-    initAuth();
-  }, [login, logout, setAuthLoading]);
+  initAuth();
+}, [login, logout, setAuthLoading]);
 
-  // Every 1 minute check token expiry
-  useEffect(() => {
-    const interval = setInterval(async () => {
-      const token = useAuthStore.getState().token;
-      if(token && isTokenExpiringSoon(token)){
-        await refreshToken();
+// Every 1 minute check token expiry
+useEffect(() => {
+  const interval = setInterval(async () => {
+    const { token } = useAuthStore.getState();
+
+    // Only refresh if user is logged in and token exists
+    if (!token) return;
+
+    if (isTokenExpiringSoon(token)) {
+      const refreshed = await refreshToken();
+      if (!refreshed) {
+        // Stop refresh attempts when refresh fails (likely 401)
+        clearInterval(interval);
       }
-    }, 60000); // every 1 minute check 1 time
-    return () => {
-      clearInterval(interval);
-    } 
-  }, [])
+    }
+  }, 60000); // every 1 minute
+
+  return () => {
+    clearInterval(interval);
+  };
+}, []);
 
   
 

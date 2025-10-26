@@ -550,7 +550,7 @@ const createBookingSession = async (req, res) => {
         type: "abnormal",
         reason: `Abnormal Detected on Booking Session with ${sessionId} on ${
           user ? user.username : contactName
-        }`,
+        } with score ${abnormalDetected.score} due to ${abnormalDetected.anomaly_reason || "N/A"}`,
         details: session,
         severity: "medium",
         handled: false,

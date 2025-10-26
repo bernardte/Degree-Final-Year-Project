@@ -22,7 +22,6 @@ const handleRefreshToken = async (req, res) => {
       user._id,
       res,
       user.role,
-      { requireRefresh: true }
     );
 
     user.password = undefined; // Remove password from user object

@@ -13,10 +13,11 @@ features = [
             "bookingInterval", 
             "refundAmount", 
             "rewardDiscount", 
-            "roomEncoded",
             "advanceBookingDays",
             "nights",
+            "roomNum"
             ]
+
 class LSTMAutoencoder(nn.Module):
     def __init__(self, n_features, hidden_size, seq_len):
         super().__init__()
@@ -75,8 +76,8 @@ def preprocess_booking(df):
     df["advanceBookingDays"] = (df["checkInDate"] - df["bookingDate"]).dt.days
     df["advanceBookingDays"] = df["advanceBookingDays"].fillna(0).clip(lower=0)
 
-    df["room"] = df["room"].apply(lambda x: str(x[0]) if isinstance(x, list) and x else "unknown")
-    df["roomEncoded"] = df["room"].apply(lambda x: le.transform([x])[0] if x in le.classes_ else 0)
+
+    df["roomNum"] = df["room"].apply(lambda x: len(x) if isinstance(x, list) else 1)
 
     # Only keep feature columns
     for f in features:
@@ -98,6 +99,48 @@ def build_sequences(df, seq_len=5):
             indices.append(group.index[i + seq_len])
 
     return np.array(all_sequences, dtype=np.float32), indices
+
+def detect_possible_reason(row, df, features):
+    reasons = []
+
+    user_df = df[df["userId"] == row["userId"]]
+    user_mean = user_df[features].mean()
+
+    price_diff = row["totalPrice"] - user_mean["totalPrice"]
+    if abs(price_diff) > user_mean["totalPrice"] * 0.5:  # 超过50%偏差
+        if price_diff > 0:
+            reasons.append("Unusually high total price")
+        else:
+            reasons.append("Unusually low total price")
+            
+    if row["totalPrice"] < user_mean["totalPrice"] * 0.5:
+        reasons.append("Possible undercharged booking")
+
+    if row["advanceBookingDays"] > user_mean["advanceBookingDays"] * 2:
+        reasons.append("Booked far in advance")
+
+    if row["refundAmount"] > 0:
+        reasons.append("Contains refund")
+
+    if row["rewardDiscount"] > user_mean["rewardDiscount"] * 2:
+        reasons.append("Large reward discount")
+
+    if row["advanceBookingDays"] < 1:
+        reasons.append("Very short advance booking")
+
+    if row["totalGuestsNum"] > user_mean["totalGuestsNum"] * 1.5:
+        reasons.append("Unusually large group size")
+
+    if row["bookingInterval"] > user_mean["bookingInterval"] * 2:
+        reasons.append("Long interval since last booking")
+
+    if row["nights"] > user_mean["nights"] * 2:
+        reasons.append("Long stay duration")
+
+    if not reasons:
+        reasons.append("Unusual booking pattern detected")
+
+    return ", ".join(reasons)
 
 def detect_booking_anomalies(df_new: pd.DataFrame) -> pd.DataFrame:
     df_prep = preprocess_booking(df_new)
@@ -130,7 +173,13 @@ def detect_booking_anomalies(df_new: pd.DataFrame) -> pd.DataFrame:
 
     df_result = df_result[df_result["isAnomaly"] == True]
 
-    if df_result.empty:
-        return pd.DataFrame(columns=["bookingReference", "userEmail", "bookingCreatedByUser", "reconstructionError", "isAnomaly"])
+    if not df_result.empty:
+        possible_reasons = []
+        for _, row in df_result.iterrows():
+            reason = detect_possible_reason(row=row, df=df_prep, features=features)
+            possible_reasons.append(reason)
+        df_result["possibleReason"] = possible_reasons
+    else:
+        return pd.DataFrame(columns=["bookingReference", "userEmail", "bookingCreatedByUser", "reconstructionError", "isAnomaly", "possibleReason"])
 
-    return df_result[["bookingReference", "userEmail", "bookingCreatedByUser", "reconstructionError", "isAnomaly"]].copy()
+    return df_result[["bookingReference", "userEmail", "bookingCreatedByUser", "reconstructionError", "isAnomaly", "possibleReason"]].copy()

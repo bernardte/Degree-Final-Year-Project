@@ -364,8 +364,8 @@ const BookingCheckOutPage = () => {
                 >
                   Back to Home
                 </Button>
-                <Button onClick={() => navigate(-1)} className="cursor-pointer">
-                  Back to Previous Page
+                <Button onClick={() => navigate("/filter-room")} className="cursor-pointer">
+                  Back to room Selection Page 
                 </Button>
               </div>
             </div>

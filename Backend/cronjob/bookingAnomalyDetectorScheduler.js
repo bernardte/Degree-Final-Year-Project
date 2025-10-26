@@ -5,7 +5,7 @@ import User from "../models/user.model.js";
 import Booking from "../models/booking.model.js"
 import mongoose  from "mongoose";
 
-const bookingAnomalyDetectorScheduler = cron.schedule("*/30 * * * *", 
+const bookingAnomalyDetectorScheduler = cron.schedule("*/15 * * * *", 
     async () => {
         try {
             const results = await bookingAbnormalDetection();
@@ -47,7 +47,7 @@ const bookingAnomalyDetectorScheduler = cron.schedule("*/30 * * * *",
                   (user && user.username) ||
                   (booking && booking.contactName) ||
                   "Unknown"
-                }`;
+                }; ${result.possibleReason}`;
 
                 await SuspiciousEvent.create({
                  userId: userId,

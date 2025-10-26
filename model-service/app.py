@@ -84,13 +84,14 @@ async def websocket_endpoint(ws: WebSocket):
 @app.post("/predict")
 def predict_booking_session_anomaly(session: BookingSession):
     print(f"your session: {session}")
-    prediction, score = anomaly_detection_booking_session(session=session)
+    prediction, score, reason = anomaly_detection_booking_session(session=session)
 
     return {
         "anomaly": bool(prediction == -1),
         "raw_prediction": int(prediction),
         "score": float(score),
         "result": "abnormal" if prediction == -1 else "normal",
+        "anomaly_reason": reason,
     }
 
 @app.post("/predict-booking-anomaly")

@@ -10,7 +10,7 @@ const createCheckoutSession = async (req, res) => {
     sessionId,
     discount: rewardDiscount,
     rewardCode,
-    additionalInfo,
+    additionalInfo,p
   } = req.body;
 
   console.log("request: ", req.body);

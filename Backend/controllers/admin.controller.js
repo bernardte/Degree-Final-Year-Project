@@ -193,7 +193,7 @@ const addRoom = async (req, res) => {
       roomNumber,
     });
     if (existingRoom) {
-      return res.status(400).json({ message: "Room number already exists." });
+      return res.status(400).json({ error: "Room number already exists." });
     }
 
     // Upload images in parallel
@@ -510,7 +510,7 @@ const deleteRoom = async (req, res) => {
       return res.status(404).json({ error: "Room not found" });
     }
 
-    // Optional: Check if this room is associated with any booking
+    // Check if this room is associated with any booking
     const existingBooking = await Booking.findOne({ room: room._id });
     if (existingBooking) {
       return res
@@ -633,6 +633,20 @@ const getAllBookingsViewInCalendar = async (req, res) => {
         "bookingReference contactEmail contactName contactNumber startDate endDate status bookingCreatedByUser room totalGuests totalPrice"
       );
 
+      const counts = await Booking.aggregate([
+        { $group: { _id: "$status", count: { $sum: 1 }}}
+      ])
+
+
+
+      const statisticCount = {
+        total: bookings.length,
+        pendingBookings: counts.find((stat) => stat._id === "pending")?.count || 0,
+        confirmedBookings: counts.find((stat) => stat._id === "confirmed")?.count || 0,
+        cancelledBookings: counts.find((stat) => stat._id === "cancelled")?.count || 0,
+        completedBookings: counts.find((stat) => stat._id === "completed")?.count || 0,
+      }
+
       const mappedBookings = bookings.flatMap((booking) => {
         const fallbackUser = booking.bookingCreatedByUser || {};
         console.log(booking.startDate);
@@ -655,7 +669,9 @@ const getAllBookingsViewInCalendar = async (req, res) => {
         }));
       });
       
-    res.status(200).json(mappedBookings);
+    res
+      .status(200)
+      .json({ mappedBookings: mappedBookings, statisticCount: statisticCount });
   } catch (error) {
     console.error(
       "Error fetching getAllBookingsViewInCalendar: ",

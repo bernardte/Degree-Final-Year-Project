@@ -7,6 +7,13 @@ interface BookingStore {
   bookings: Bookings[];
   cancelledBookings: CancelBookingRequest[];
   acceptCancelledBookingsRequest: CancelBookingRequest[];
+  statisticCount: {
+    total: number;
+    pendingBookings: number;
+    confirmedBookings: number;
+    cancelledBookings: number;
+    completedBookings: number;
+  };
   isLoading: boolean;
   isAcceptCancelledBookingsRequestLoading: boolean;
   isCancelBookingRequestLoading: boolean;
@@ -40,6 +47,13 @@ const useBookingStore = create<BookingStore>((set) => ({
   bookings: [],
   cancelledBookings: [],
   acceptCancelledBookingsRequest: [],
+  statisticCount: {
+    total: 0,
+    pendingBookings: 0,
+    confirmedBookings: 0,
+    cancelledBookings: 0,
+    completedBookings: 0,
+  },
   bookingSessions: [],
   totalPages: 1,
   currentPage: 1,
@@ -179,7 +193,11 @@ const useBookingStore = create<BookingStore>((set) => ({
     axiosInstance
       .get("/api/admin/get-all-bookings-view-in-calendar")
       .then((response) => {
-        set({ bookings: response.data, error: null });
+        set({
+          bookings: response.data.mappedBookings,
+          statisticCount: response.data.statisticCount,
+          error: null,
+        });
       })
       .catch((error: any) => {
         set({

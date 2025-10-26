@@ -27,12 +27,14 @@ interface EventCalendarViewProps {
   events: Event[];
   isLoading: boolean;
   error: string | null;
+  totalEvents: number;
 }
 
 const EventCalendarView: React.FC<EventCalendarViewProps> = ({
   events,
   isLoading,
   error,
+  totalEvents,
 }) => {
   const calendarRef = useRef<FullCalendar>(null);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
@@ -169,7 +171,7 @@ const EventCalendarView: React.FC<EventCalendarViewProps> = ({
               <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-2">
                 {[
                   {
-                    count: events.length,
+                    count: totalEvents,
                     label: "Total Events",
                     bg: "bg-indigo-50",
                     border: "border-indigo-100",
