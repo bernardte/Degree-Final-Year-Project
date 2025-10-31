@@ -13,11 +13,25 @@ import { v4 as uuidv4 } from "uuid";
 import { generateOTP } from "../utils/generateAdminOTP.js";
 import { sendAdminAccessCode } from "../utils/admin access Code/adminAccessCode.js";
 import SuspiciousEvent from "../models/suspiciousEvent.model.js";
+import ActivityLog from "../models/activityLog.model.js";
 
 dotenv.config();
 
 const signupUser = async (req, res) => {
   const { name, username, email, password } = req.body;
+
+   if (
+     typeof email !== "string" ||
+     typeof password !== "string" ||
+     typeof name !== "string" ||
+     typeof username !== "string"
+   ) {
+     console.warn("Signup rejected - invalid types", {
+       ip: req.ip,
+       body: req.body,
+     });
+     return res.status(400).json({ error: "Invalid input types" });
+   }
 
   if (!name.trim() || !username.trim() || !email.trim() || !password.trim()) {
     return res.status(400).json({ error: "Please fill in all fields" });
@@ -530,6 +544,35 @@ const generateGuestId = async (req, res) => {
   }
 };
 
+const unauthorizedAccess = async (req, res) => {
+  const { guestId, userId, userRole, sessionId } = req.body;
+  const ip =
+    req.ip || req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+  const ua = req.headers["user-agent"] || "";
+
+  try {
+    const response = await ActivityLog.create({
+      userId: userId || null, 
+      guestId: guestId || null,
+      userRole: userRole || "guest",
+      sessionId: sessionId || null,
+      type: "unauthorized_access",
+      action: "attempted_access",
+      ip,
+      ua,
+      status: "failed",
+      errorMessage: "Unauthorized Access",
+    });
+
+    console.log("response data: ", response)
+
+    res.status(403).json({ error: "Unauthorized Access" });
+  } catch (error) {
+    console.error("Error logging unauthorized access:", error.message);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
 
 export default {
   getUserProfile,
@@ -544,4 +587,5 @@ export default {
   verifyOTP,
   getCurrentLoginUser,
   generateGuestId,
+  unauthorizedAccess,
 };

@@ -63,7 +63,6 @@ const accessControl = (resource, actions) => {
           });
       }
     }
-
     // All actions passed
     next();
   };

@@ -138,6 +138,7 @@ export const activityLogger = (req, res, next) => {
       //   longitude: geoData.longitude,
       //   latitude: geoData.latitude,
       // };
+      console.log("status code: ", res.statusCode);
       console.log("region name: ", geo.regionName)
       metadata = sanitizeSensitiveData(metadata);
       const userId = req.user?.userId || req.user?._id || null;

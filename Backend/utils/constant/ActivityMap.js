@@ -42,5 +42,6 @@ export const actionMap = {
   "DELETE /api/systemSetting/report": "Super Admin Deleted current existing report",
   "GET /api/invoices/invoice/:objectId": "User checking their own invoice",
   "POST /api/users/logout": "User has been logout",
-  "PATCH /api/admin/update-pending-status-to-confirm": "Admin updated all pending booking status to confirmed" //update all pending booking status to confirmed
-};
+  "PATCH /api/admin/update-pending-status-to-confirm": "Admin updated all pending booking status to confirmed", //update all pending booking status to confirmed
+  "POST /api/users/unauthorized": "⚠️ Access Denied: Attempted access to a restricted area.",
+}

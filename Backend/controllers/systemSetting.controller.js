@@ -84,7 +84,6 @@ const updateSettings = async (req, res) => {
   const logo = req.files?.logo;
   const username = req.user.name;
 
-  console.log("logo", logo);
   let imageURL;
 
   if (!settings || !key) {

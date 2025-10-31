@@ -272,10 +272,20 @@ const updateRoom = async (req, res) => {
     const isValid = validateRoomAmenities(amenities);
     if (!isValid) return res.status(400).json({ error: "Invalid amenities" });
 
+    const existingRoom = await Room.findOne({
+      roomNumber,
+      _id: { $ne: roomId },
+    });
+    
+    if (existingRoom) {
+      return res.status(400).json({ error: "Room number already exists" });
+    }
+
     const room = await Room.findById(roomId);
     if (!room) return res.status(404).json({ error: "Room not found" });
 
     let newImages = [...room.images]; // Default: keep existing
+
 
     // If a new cover image was uploaded
     if (coverImages.length > 0) {

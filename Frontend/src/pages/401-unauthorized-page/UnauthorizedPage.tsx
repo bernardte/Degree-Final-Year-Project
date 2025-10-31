@@ -1,18 +1,48 @@
 import { useNavigate } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Home } from "lucide-react";
+import axiosInstance from "@/lib/axios";
+import useToast from "@/hooks/useToast";
+import useAuthStore from "@/stores/useAuthStore";
+
 
 const HotelUnauthorized = () => {
   const navigate = useNavigate();
+  const guestId = localStorage.getItem("guestId") || undefined;
+  const sessionId = localStorage.getItem("sessionId") || undefined;
+  const user = useAuthStore((state) => state.user);
+  const showToastRef = useRef<boolean>(false);
+  const statusCodeRef = useRef<HTMLDivElement>(null);
 
   // Activate status code pulse animation after component mounts
   useEffect(() => {
     const timer = setTimeout(() => {
-      document
-        .getElementById("status-code")
-        ?.classList.add("animate-status-pulse");
+      statusCodeRef.current?.classList.add("animate-status-pulse");
     }, 500);
     return () => clearTimeout(timer);
+  }, []);
+
+  const { showToast } = useToast();
+
+  useEffect(() => {
+
+    if (!showToastRef.current) {
+      showToastRef.current = true;
+
+      axiosInstance
+        .post("/api/users/unauthorized", {
+          guestId,
+          userId: user?._id,
+          userRole: user?.role,
+          sessionId,
+        })
+        .then((response) => {
+          console.log("response: ", response.data);
+        })
+        .catch((error) => {
+          showToast("warn", error?.response?.data?.error);
+        });
+    }
   }, []);
 
   return (
@@ -34,7 +64,7 @@ const HotelUnauthorized = () => {
             />
           </svg>
           {/* Status Code Display with Pulse Animation */}
-          <div className="animate-fadeInDown mb-8 text-center pl-4">
+          <div className="animate-fadeInDown mb-8 pl-4 text-center">
             <div
               id="status-code"
               className="mx-auto inline-block font-mono text-8xl font-bold text-blue-600 dark:text-blue-400"

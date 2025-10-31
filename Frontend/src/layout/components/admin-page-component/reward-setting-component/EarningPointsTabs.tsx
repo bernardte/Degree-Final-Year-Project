@@ -14,7 +14,6 @@ interface EarningPointsTabProps {
 }
 
 const EarningPointsTab: React.FC<EarningPointsTabProps> = ({ settings, handleSettingChange }) => {
-  console.log(settings);
   return(
     <Card>
       <CardHeader>

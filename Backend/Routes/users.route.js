@@ -15,5 +15,6 @@ router.post("/reset-password", userControllers.resetPassword);
 router.post("/verify-otp", protectRoute, userControllers.verifyOTP);
 router.post("/login", userControllers.loginUser);
 router.post("/logout", userControllers.logoutUser);
+router.post("/unauthorized", userControllers.unauthorizedAccess);
 router.put("/updateProfile/:userId", protectRoute, userControllers.updateUserProfile);
 export default router;

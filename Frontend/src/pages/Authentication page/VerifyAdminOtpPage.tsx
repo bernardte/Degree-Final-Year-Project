@@ -102,7 +102,7 @@ const VerifyAdminOtpPage = () => {
           `Invalid verification code. Remaining attempts: ${remainingAttempts}`,
         );
       } else {
-        showToast("error", "Verification failed. Redirecting to login...");
+        showToast("error", "Verification failed. Redirecting to homepage...");
         setTimeout(() => navigate("/"), 1000);
       }
 

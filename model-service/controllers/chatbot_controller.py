@@ -102,7 +102,7 @@ Your task:
     print("FAQ found:", faq)
     print("Score:", score)
     
-    # 只有在没有活跃对话状态时才使用FAQ
+    # Use FAQ only when there is no active conversation
     if faq.get("answer") and score >= 0.5:
         prompt = f"""
 You are Harold, a polite and professional hotel assistant.
