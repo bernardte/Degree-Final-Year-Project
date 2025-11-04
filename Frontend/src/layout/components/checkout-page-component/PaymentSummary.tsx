@@ -5,12 +5,14 @@ import axiosInstance from "@/lib/axios";
 import useToast from "@/hooks/useToast";
 import useBookingSessionStore from "@/stores/useBookingSessionStore";
 import { Gift } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface PaymentSummaryProps {
   checkInDate: string; // ISO date string
   checkOutDate: string; // ISO date string
   roomId: string[]; // Array of room IDs
-  appliedReward?: { code: string; discount: number } | null;//apply reward
+  appliedReward?: { code: string; discount: number } | null; //apply reward
+  breakfastIncluded: number;
 }
 
 const PaymentSummary = ({
@@ -19,32 +21,35 @@ const PaymentSummary = ({
   roomId,
   appliedReward,
 }: PaymentSummaryProps) => {
-  const breakfastPrice = 30;
   
-  // Calculate the number of nights
-  const nights = differenceInCalendarDays(
-    new Date(checkOutDate),
-    new Date(checkInDate),
-  );
-  
-  // Access rooms from store
-  const { rooms } = useRoomStore();
-  const breakfastCount = useBookingSessionStore((state) => state.breakfastCount);
-  const additionalInfo = useBookingSessionStore((state) => state.additionalInfo);
-  const bookedRooms = rooms.filter((room) =>
-    (roomId as string[])?.includes(room._id),
-  );
+    const breakfastPrice = 30;
+    
+    // Calculate the number of nights
+    const nights = differenceInCalendarDays(
+      new Date(checkOutDate),
+      new Date(checkInDate),
+    );
+    
+    // Access rooms from store
+    const { rooms } = useRoomStore();
+    const breakfastCount = useBookingSessionStore((state) => state.breakfastCount);
+    const additionalInfo = useBookingSessionStore((state) => state.additionalInfo);
+    const navigate = useNavigate();
+    const bookedRooms = rooms.filter((room) =>
+      (roomId as string[])?.includes(room._id),
+    );
 
-  // 3) compute each room’s line-item and the base total
-  const lineItems = bookedRooms.map((room) => ({
-    roomName: room.roomName,
-    pricePerNight: room.pricePerNight,
-    lineTotal: room.pricePerNight * nights,
-  }));
-  const basePrice = lineItems.reduce((sum, li) => sum + li.lineTotal, 0);
-  const roomPrices = lineItems.map((li) => li.pricePerNight);
+    // 3) compute each room’s line-item and the base total
+    const lineItems = bookedRooms.map((room) => ({
+      roomName: room.roomName,
+      pricePerNight: room.pricePerNight,
+      lineTotal: room.pricePerNight * nights,
+    }));
+    const basePrice = lineItems.reduce((sum, li) => sum + li.lineTotal, 0);
+    console.log(basePrice);
+    const roomPrices = lineItems.map((li) => li.pricePerNight);
 
-    console.log(breakfastCount)
+    // calculate breakfastTotal
     const breakfastTotal =
       breakfastCount > 0 ? breakfastCount * breakfastPrice * nights : 0;
     const rewardDiscount = appliedReward?.discount ?? 0;
@@ -59,6 +64,23 @@ const PaymentSummary = ({
 
   const handleContinuePayment = async () => {
     const sessionId = bookingSession.sessionId;
+
+    const metadata = {
+      page: `http://localhost:3000/booking/confirm/${sessionId}`,
+      actionId: "continue make payment",
+      params: {
+          totalPrice,
+          checkInDate,
+          roomId,
+          checkOutDate,
+          discount: appliedReward?.discount,
+          rewardCode: appliedReward?.code,
+          additionalInfo,
+          sessionId,
+      },
+      extra: {}
+    };
+
     try {
       const response = await axiosInstance.post(
         "/api/checkout/payment-gateway",
@@ -71,21 +93,29 @@ const PaymentSummary = ({
           rewardCode: appliedReward?.code,
           additionalInfo,
           sessionId,
-        },
+        },{
+          params: {
+            type: "action",
+            metadata: JSON.stringify(metadata)
+          }
+        }
       );
 
       if (response.data?.sessionUrl) {
         window.location.href = response.data?.sessionUrl;
       } else {
         showToast("error", "Transaction Failed");
+        navigate("/")
       }
+
+      localStorage.removeItem("searchParams");
     } catch (error: any) {
       console.log("Error in continue payment: ", error?.response?.error);
       showToast("error", error?.response?.error);
     }
   };
 
-  console.log(additionalInfo);
+
   return (
     <motion.div
       initial={{ x: 100, opacity: 0 }}

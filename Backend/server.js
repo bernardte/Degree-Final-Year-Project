@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import path from "path";
-import { connnectDB } from "./config/db.js";
+import { connectDB } from "./config/db.js";
 import usersRoute from "./Routes/users.route.js";
 import roomRoute from "./Routes/room.route.js";
 import facilityRoute from "./Routes/facility.route.js";
@@ -19,13 +19,19 @@ import systemSettingRoute from "./Routes/systemSetting.route.js";
 import messageRoute from "./Routes/messages.route.js";
 import conversationRoute from "./Routes/conversations.route.js";
 import notificationRoute from "./Routes/notification.route.js";
-import faqRouter from "./Routes/faq.route.js";
-import invoiceRouter from "./Routes/invoice.route.js";
+import faqRoute from "./Routes/faq.route.js";
+import invoiceRoute from "./Routes/invoice.route.js";
+import reservationRoute from "./Routes/reservation.route.js";
 import bookingStatusUpdater from "./cronjob/bookingStatusUpdater.js";
 import roomStatusScheduler from "./cronjob/roomStatusScheduler.js";
 import { initializeSocket } from "./config/socket.js";
 import { createServer } from "http"; //http server
 import { initAISocket } from "./websocket/websocket.js";
+import { activityLogger } from "./middleware/activityLogger.js";
+import deleteTempfileScheduler from "./cronjob/deleteTempfileScheduler.js";
+import { attachUser } from "./middleware/attachUser.js";
+import bookingAnomalyDetectorScheduler from "./cronjob/bookingAnomalyDetectorScheduler.js"
+import { nosqlDetectionMiddleware } from "./utils/Nosql injection detection/injectionDetection.js";
 
 dotenv.config();
 const app = express();
@@ -39,23 +45,52 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
+
 const PORT = process.env.PORT || 5000;
 
 const __dirname = path.resolve();
 
 app.use(
-    fileupload({
-        useTempFiles: true,
-        tempFileDir: path.join(__dirname, "temp"),
-        createParentPath: true,
-        limits: {
-            fileSize: 10 * 1024 * 1024, // 10MB
-        },
-    }
+  fileupload({
+    useTempFiles: true,
+    tempFileDir: path.join(__dirname, "temp"),
+    createParentPath: true,
+    limits: {
+      fileSize: 10 * 1024 * 1024, // 10MB
+    },
+  }
 ))
 
 const httpServer = createServer(app);
 initializeSocket(httpServer)
+
+app.use(
+  nosqlDetectionMiddleware({
+    sensitiveRoutes: [
+      /^\/login$/, // Exact match /login
+      /^\/signup$/, // Exact match /signup
+      /^\/admin(\/.*)?$/, // matches /admin and /admin/anything
+      /^\/bookings\/.+$/, // Matches all /bookings/... subroutes
+    ],
+    fieldExpectations: {
+      "^/signup$": { username: "string", email: "string", password: "string" },
+      "^/login$": { email: "string", password: "string" },
+      "^/bookings/create-booking$": {
+        totalPrice: "number",
+        startDate: "Date",
+        endDate: "Date",
+        totalGuests: "object",
+        breakfastIncluded : "number",
+        "totalGuests.adults": "number",
+        "totalGuests.children": "number",
+      },
+    },
+  })
+);
+
+
+app.use(attachUser); //* catch login user
+app.use(activityLogger); //* Use activity logger middleware, to keep track of user recent activities
 
 app.use("/api/users", usersRoute);
 app.use("/api/rooms", roomRoute);
@@ -71,13 +106,16 @@ app.use("/api/systemSetting", systemSettingRoute);
 app.use("/api/messages", messageRoute);
 app.use("/api/conversations", conversationRoute);
 app.use("/api/notification", notificationRoute);
-app.use("/api/faq", faqRouter);
-app.use("/api/invoices", invoiceRouter);
+app.use("/api/faqs", faqRoute);
+app.use("/api/invoices", invoiceRoute);
+app.use("/api/reservations", reservationRoute);
 
 httpServer.listen(PORT, async () => {
     console.log("Server is running on port", PORT);
-    await connnectDB();
+    await connectDB();
+    deleteTempfileScheduler.start();
     bookingStatusUpdater.start();
     roomStatusScheduler.start();
+    bookingAnomalyDetectorScheduler.start();
     initAISocket();
 })

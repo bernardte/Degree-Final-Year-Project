@@ -4,7 +4,6 @@ import Message from "../models/message.model.js";
 import { getIO } from "../config/socket.js";
 import { uploadToCloudinary } from "../utils/uploadToCloudinary.js";
 import { checkIsRead } from "../utils/checkMessageIsRead.js";
-import axiosInstance from "../config/axios.js";
 import { sendToAI } from "../websocket/websocket.js";
 
 //TODO: maybe need to adjust of this, when superadmin require to view the message
@@ -21,7 +20,7 @@ const getAllMessages = async (req, res) => {
 };
 
 const sendMessage = async (req, res) => {
-  const { newMessage, senderType, senderId, lastMessageAt } = req.body;
+  const { newMessage, senderType, senderId, lastMessageAt, mode } = req.body;
   console.log(lastMessageAt);
   const { conversationId } = req.params;
   const uploadImage = req.files?.image || null;
@@ -47,7 +46,7 @@ const sendMessage = async (req, res) => {
     let loginUserName = "";
 
     // if login user then check their usercode is same as their name or not
-    if (!senderId.startsWith("guest") && senderType === "user") {
+    if (senderType === "user") {
       const userDoc = await User.findById(senderId).select("name").lean();
       if (!userDoc) return res.status(404).json({ message: "User not found" });
       loginUserName = userDoc.name;
@@ -67,7 +66,6 @@ const sendMessage = async (req, res) => {
         const currentUserMessage = await Message.find({ conversationId })
           .select("senderType content -_id") 
           .lean();
-        console.log("hello world: ", newMessage);
 
         // Tell frontend customer have send a new message
         getIO().to(conversationId).emit("new-message", {
@@ -76,11 +74,12 @@ const sendMessage = async (req, res) => {
         })
 
         console.log(typeof conversationId, newMessage);
-
-        sendToAI(conversationId, newMessage, currentUserMessage.map(m => ({
-          role: m.senderType,
-          content: m.content
-        })));
+        if(mode !== "human"){
+          sendToAI(conversationId, newMessage, senderId, senderType, currentUserMessage.map(m => ({
+            role: m.senderType,
+            content: m.content
+          })));
+        }
 
 
         // getIO().to(conversationId).emit("bot-suggestions", {

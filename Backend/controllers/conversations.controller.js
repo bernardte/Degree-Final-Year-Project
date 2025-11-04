@@ -1,6 +1,7 @@
 import Conversation from "../models/conversation.model.js";
 import User from "../models/user.model.js";
 import { assignConversationToAdmin } from "../utils/assignmentAdmin.js";
+import mongoose from "mongoose";
 
 const getAllConversation = async (req, res) => {
   const userId = req.user._id;
@@ -59,11 +60,16 @@ const createConversations = async (req, res) => {
 
   try {
     // if login user then use it name as the usercode
-    let userCode = senderId;
-    if (!senderId.startsWith("guest")) {
+    const isObjectId = mongoose.Types.ObjectId.isValid(senderId);
+    let userCode;
+    // userId
+    if (isObjectId) {
       const userDoc = await User.findById(senderId).select("name").lean();
       if (!userDoc) return res.status(404).json({ error: "User not found" });
       userCode = userDoc.name;
+    }else{
+      // guest
+      userCode = senderId
     }
 
     const conversationData = {

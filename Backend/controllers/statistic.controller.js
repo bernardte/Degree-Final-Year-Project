@@ -8,7 +8,7 @@ const getStatistic = async (req, res) => {
     const today = new Date(); // Get today's date
 
     // 1. Get all rooms
-    const totalRoom = await Room.find().countDocuments();
+    const totalRoom = await Room.countDocuments({ isActivate: true });
 
     // 2. Get all bookings overlapping with today
     const overlappingBookings = await Booking.find({

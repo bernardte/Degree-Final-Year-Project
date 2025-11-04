@@ -8,6 +8,7 @@ export interface User {
   loyaltyTier: string;
   totalSpent: number;
   token: string;
+  suspended: boolean;
 }
 
 export interface Room {
@@ -153,7 +154,8 @@ export interface BookingSession {
   _id: string;
   sessionId: string;
   userId: User;
-  roomId: string[];
+  guestId: string;
+  roomId: Room[] | string [];
   checkInDate: Date;
   checkOutDate: Date;
   customerName: string;
@@ -167,11 +169,15 @@ export interface BookingSession {
   paymentStatus: string;
   totalPrice: number;
   userType: "user" | "guest";
-  contactName: string;
-  contactEmail: string;
-  contactNumber: number;
+  guestDetails: {
+    contactName: string;
+    contactEmail: string;
+    contactNumber: number;
+  }
   additionalDetails: string;
   roomName: string;
+  rewardCode: string;
+  rewardDiscount: number;
   createdAt: Date;
 }
 
@@ -300,12 +306,114 @@ export interface Conversation {
 }
 
 export interface Message {
-  _id: string;
+  _id?: string;
   conversationId: Conversation["_id"];
   senderType: "user" | "guest" | "admin" | "superAdmin" | "bot";
   senderId: string;
   content: string;
   isRead: boolean;
-  image: string;
+  image?: string | null;
+  createdAt: Date;
+  isFinal?: boolean;
+  handover_to_human?: boolean;
+}
+
+export interface FAQ {
+  _id: string;
+  intent: string;
+  question: string;
+  answer: string;
+  category: string;
+}
+
+export interface Settings {
+  _id: string;
+  action: string;
+  type: string;
+  userRole: string;
+  geo: {
+    city: string,
+    regionName: string,
+    country: string;
+  }
+  userId: {
+    _id: string,
+    username: string,
+  }
+  ip: string,
+  status: "failed" | "success";
+  errorMessage: string; 
+  name: string;
   createdAt: Date;
 }
+
+export interface Reports {
+  _id: string,
+  name: string,
+  type: string,
+  fileFormat: string,
+  data: Record<string, any>,
+  createdAt: Date,
+}
+
+export interface HotelInfo {
+  _id: string,
+  name: string,
+  checkInTime: string,
+  checkOutTime: string,
+  address: string,
+  logo: string,
+  email: string,
+  phone: string, 
+}
+
+export interface Reservation {
+  _id: string,
+  name: string,
+  email: string,
+  phone: string,
+  date: Date,
+  numberOfGuest: number,
+  category: string,
+  time: string,
+  createdAt: Date,
+  updatedAt: Date,
+}
+
+export interface SuspiciousEvent {
+  _id: string;
+  userId?: string | null; 
+  guestId?: string;
+  type?: string;
+  reason: string; 
+  details?: Record<string, any>; 
+  severity: "low" | "medium" | "high"; 
+  handled: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export interface Carousel {
+  _id: string;
+  title: string;
+  description: string;
+  image: File | null;
+  imageUrl: string;
+  link?: string;
+  category: "event" | "facility" | "room" | "homepage";
+  order: number;
+}
+
+export interface RewardHistory {
+  _id: string;
+  user: User;
+  bookingId: Bookings;
+  bookingReference: Bookings["bookingReference"];
+  points: number;
+  description: string;
+  type: "redeem" | "earn" | "tier-upgrade";
+  source: "booking" | "redemption" | "loyalty" | "others";
+  createdAt: Date;
+  updatedAt: Date;
+}
+

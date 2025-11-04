@@ -3,7 +3,7 @@ import { Gift } from "lucide-react";
 
 const SettingsHeader = () => (
   <div className="mb-6">
-    <h1 className="flex items-center text-2xl font-bold text-gray-800">
+    <h1 className="items-center bg-gradient-to-r flex from-blue-600 to-purple-600 bg-clip-text text-3xl font-bold text-transparent">
       <Gift className="mr-3 text-blue-600" size={28} />
       Reward Points Setting
     </h1>

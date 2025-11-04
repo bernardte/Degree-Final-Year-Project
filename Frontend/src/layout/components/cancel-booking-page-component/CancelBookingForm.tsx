@@ -42,9 +42,25 @@ const CancelBookingForm = () => {
             return;
         }
         try {
+
+            const metadata = {
+              type: "action",
+              actionId: "request to cancelled booking",
+              params: {
+                email: email,
+                bookingReference,
+              }
+            }
+
             const response = await axiosInstance.post("/api/bookings/cancel-booking", {
                 email,
                 bookingReference,
+            }, {
+              params: {
+                type: "action",
+                action: "request of cancelling booking",
+                metadata: JSON.stringify(metadata)
+              }
             })
             if(response?.data){
                 setEmail("");

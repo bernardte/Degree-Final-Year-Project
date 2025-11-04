@@ -10,8 +10,13 @@ const bookingSessionSchema = new mongoose.Schema(
     // ← if logged-in: populated; if guest: null
     userId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: "user",
       required: false,
+    },
+    guestId: {
+      type: String,
+      default: null,
+      requrired: false,
     },
     // ← if guest: filled; if logged-in: left undefined
     guestDetails: {
@@ -46,8 +51,8 @@ const bookingSessionSchema = new mongoose.Schema(
     },
     paymentMethod: {
       type: String,
-      enum: ["card", "fpx", "grabpay"],
-      default: "card",
+      enum: ["card", "fpx", "grabpay", ""],
+      default: "",
     },
     paymentIntentId: {
       type: String,

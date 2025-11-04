@@ -48,7 +48,7 @@ const BookingStatusDistributionRealTimeChart = ({
     (acc, item) => acc + item.count,
     0,
   )
-  const socket = useSocket();
+  const { socket } = useSocket();
   
 
   // Fetch booking status data from API

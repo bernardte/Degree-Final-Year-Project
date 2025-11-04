@@ -43,14 +43,26 @@ const usersSchema = mongoose.Schema(
       type: Number,
       default: 0,
     },
+    resetToken: {
+      type: String,
+      default: "",
+    },
+    resetTokenExpiry: {
+      type: String,
+      default: "",
+    },
     totalSpent: {
       type: Number,
       default: 0,
     },
     isOnline: {
       type: Boolean,
-      default: 0, 
+      default: 0,
     },
+    suspended: {
+      type: Boolean,
+      default: false,
+    }
   },
   { timestamps: true }
 );

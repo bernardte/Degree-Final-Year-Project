@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { motion } from "framer-motion";
 import {
   Sparkles,
   Wifi,
@@ -23,11 +24,19 @@ const FacilitiesPage = () => {
   const { showToast } = useToast();
   const [activeCategory, setActiveCategory] = useState("All Facilities");
   const [expandedDescription, setExpandedDescription] = useState(false);
-  const navigate = useNavigate()
+  const [contentHeight, setContentHeight] = useState(0);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchFacility();
   }, []);
+
+  useEffect(() => {
+    if (contentRef.current) {
+      setContentHeight(contentRef.current.scrollHeight ?? 0);
+    }
+  }, [expandedDescription]);
 
   if (error) {
     showToast("error", error);
@@ -58,22 +67,7 @@ const FacilitiesPage = () => {
     <div className="min-h-screen bg-gradient-to-b from-white via-blue-50 to-cyan-100">
       {/* carousel */}
       <div className="relative">
-        <Carousel
-          images={facilities
-            .map((facility) => getImageSrc(facility.image) ?? "")
-            .filter((src) => src)}
-        />
-        <div className="absolute inset-0 flex items-end bg-gradient-to-t from-blue-900/70 to-transparent">
-          <div className="mx-auto w-full max-w-7xl px-4 pb-16 text-center">
-            <h1 className="mb-4 text-4xl font-bold text-white md:text-5xl">
-              Luxury Facilities & Amenities
-            </h1>
-            <p className="mx-auto max-w-3xl text-xl text-blue-100">
-              Discover our exceptional amenities designed for your comfort and
-              enjoyment
-            </p>
-          </div>
-        </div>
+        <Carousel category="facility"/>
       </div>
 
       {/* Selected facilities display */}
@@ -117,29 +111,39 @@ const FacilitiesPage = () => {
             </h2>
 
             <div className="mx-auto mb-8 max-w-4xl">
-              <p
-                className={`mb-4 text-gray-600 ${expandedDescription ? "" : "line-clamp-3"}`}
+              <motion.div
+                ref={contentRef}
+                initial={false}
+                animate={{
+                  height: expandedDescription ? contentHeight : "4.5rem",
+                }}
+                transition={{ duration: 0.4, ease: "easeInOut" }}
+                className="overflow-hidden"
               >
-                At The Seraphine Hotel, we pride ourselves on offering an
-                unparalleled range of facilities designed to enhance every
-                aspect of your stay. From our state-of-the-art wellness center
-                to our gourmet dining experiences, each amenity has been
-                carefully curated to provide the ultimate luxury experience. Our
-                commitment to excellence ensures that every facility is
-                maintained to the highest standards, offering both functionality
-                and aesthetic appeal. Whether you're seeking relaxation,
-                recreation, or rejuvenation, our diverse amenities cater to
-                every need and preference.
-              </p>
+                <p className="text-gray-600">
+                  At The Seraphine Hotel, we pride ourselves on offering an
+                  unparalleled range of facilities designed to enhance every
+                  aspect of your stay. From our state-of-the-art wellness center
+                  to our gourmet dining experiences, each amenity has been
+                  carefully curated to provide the ultimate luxury experience.
+                  Our commitment to excellence ensures that every facility is
+                  maintained to the highest standards, offering both
+                  functionality and aesthetic appeal. Whether you're seeking
+                  relaxation, recreation, or rejuvenation, our diverse amenities
+                  cater to every need and preference.
+                </p>
+              </motion.div>
               <button
                 onClick={() => setExpandedDescription(!expandedDescription)}
-                className="mx-auto flex items-center font-medium text-blue-600"
+                className="mx-auto mt-2 flex items-center font-medium text-blue-600 transition-colors duration-300 hover:text-blue-800"
               >
                 {expandedDescription ? "Show less" : "Read more"}
-                <ChevronDown
-                  className={`ml-1 transition-transform ${expandedDescription ? "rotate-180" : ""}`}
-                  size={18}
-                />
+                <motion.div
+                  animate={{ rotate: expandedDescription ? 180 : 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <ChevronDown className="ml-1" size={18} />
+                </motion.div>
               </button>
             </div>
 
@@ -231,9 +235,14 @@ const FacilitiesPage = () => {
               </div>
             </div>
             <div className="text-center">
-              <button onClick={() => navigate("/filter-room") } className="rounded-full bg-white px-8 py-3 font-bold text-blue-600 shadow-lg transition-all hover:bg-gray-100">
+              <motion.button
+                onClick={() => navigate("/filter-room")}
+                className="rounded-full bg-white px-8 py-3 font-bold text-blue-600 shadow-lg transition-all hover:bg-gray-100 cursor-pointer"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
                 Book Your Stay
-              </button>
+              </motion.button>
             </div>
           </div>
         </div>

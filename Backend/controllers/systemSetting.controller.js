@@ -1,50 +1,67 @@
+import fs from "fs";
+import path from "path";
 import RewardHistory from "../models/rewardHistory.model.js";
 import SystemSetting from "../models/systemSetting.model.js";
 import notifyUsers from "../utils/notificationSender.js";
 import User from "../models/user.model.js";
+import ActivityLog from "../models/activityLog.model.js";
+import Report from "../models/report.model.js";
+import { actionMap } from "../utils/constant/ActivityMap.js";
+import { generateOccupancyReport } from "../utils/report/generateOccupancyReport.js";
+import { generaterRevenueReport } from "../utils/report/generateRevenueReport.js";
+import { generateFinancialReport } from "../utils/report/generateFinancialReport.js";
+import { generateCancellationReport } from "../utils/report/generateCancellationReport.js";
+import {
+  generateCSV,
+  generatePDF,
+} from "../utils/report/Generate File/generateFile.js";
+import { uploadToCloudinary } from "../utils/uploadToCloudinary.js";
+import SuspiciousEvent from "../models/suspiciousEvent.model.js";
+import Carousel from "../models/carousel.model.js";
+import cloudinary from "../config/cloudinary.js";
 
 const updateRewardPointSetting = async (req, res) => {
-    const { settings } = req.body;
-    console.log(settings);
-    const user = req.user;
-    try {
-      const Setting = await SystemSetting.findOneAndUpdate(
-        { key: "rewardPointsSetting" },
-        { value: settings, updatedAt: Date.now() },
-        { upsert: true, new: true }
-      );
+  const { settings } = req.body;
+  console.log(settings);
+  const user = req.user;
+  try {
+    const Setting = await SystemSetting.findOneAndUpdate(
+      { key: "rewardPointsSetting" },
+      { value: settings, updatedAt: Date.now() },
+      { upsert: true, new: true }
+    );
 
-      //* notify all admin
-      const allAdmins = await User.find({
-        role: { $in: ["admin", "superAdmin"] },
-      });
-      const adminIds = allAdmins.map((admin) => admin._id);
-      console.log("Your Admin: ", adminIds);
-      await notifyUsers(
-        adminIds,
-        `Reward setting have been updated by ${user.name}`,
-        "system"
-      );
+    //* notify all admin
+    const allAdmins = await User.find({
+      role: { $in: ["admin", "superAdmin"] },
+    });
+    const adminIds = allAdmins.map((admin) => admin._id);
+    console.log("Your Admin: ", adminIds);
+    await notifyUsers(
+      adminIds,
+      `Reward setting have been updated by ${user.name}`,
+      "system"
+    );
 
-      res.json({ success: true, newData: Setting });
-    } catch (error) {
-        console.log("Error in updateRewardPointSetting: ", error.message);
-        res.status(500).json({ error: "Internal Server Error" });
-    }
-}
+    res.json({ success: true, newData: Setting });
+  } catch (error) {
+    console.log("Error in updateRewardPointSetting: ", error.message);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
 
 const getRewardPointSetting = async (req, res) => {
-    try {
-        const Setting = await SystemSetting.find({
-          key: "rewardPointsSetting",
-        }).select("value");
-        console.log("Setting: ", Setting);
-        res.json({ success: true, newData: Setting });
-    } catch (error) {
-        console.log("Error in getRewardPointSetting: ", error.message);
-        res.status(500).json({ error: "Internal Server Error" });
-    }
-}
+  try {
+    const Setting = await SystemSetting.find({
+      key: "rewardPointsSetting",
+    }).select("value");
+    console.log("Setting: ", Setting);
+    res.json({ success: true, newData: Setting });
+  } catch (error) {
+    console.log("Error in getRewardPointSetting: ", error.message);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
 const getAllRewardPointHistory = async (req, res) => {
   try {
     const history = await RewardHistory.find()
@@ -61,10 +78,638 @@ const getAllRewardPointHistory = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
-  
- 
+
+const updateSettings = async (req, res) => {
+  const { settings, key } = req.body;
+  const logo = req.files?.logo;
+  const username = req.user.name;
+
+  let imageURL;
+
+  if (!settings || !key) {
+    return res.status(400).json({ error: "All fields are required" });
+  }
+
+  try {
+    if (logo) {
+      imageURL = await uploadToCloudinary(logo);
+    }
+
+    const mergeValue = {
+      ...(typeof settings === "string" ? JSON.parse(settings) : settings),
+      ...(imageURL && { logo: imageURL }),
+    };
+
+    const updatedSetting = await SystemSetting.findOneAndUpdate(
+      { key }, // filter by key
+      { value: mergeValue, updatedAt: Date.now() }, //update value and timestamp
+      { new: true, upsert: true } //upsert: true to create if not exists
+    );
+
+    if (!updatedSetting) {
+      return res.status(404).json({ error: "Settings not found" });
+    }
+
+    //* Notify all admins
+    const allAdmins = await User.find({
+      role: { $in: ["admin", "superAdmin"] },
+    });
+    const adminIds = allAdmins.map((admin) => admin._id);
+
+    await notifyUsers(
+      adminIds,
+      `System setting "${key}" has been updated by ${username}`,
+      "system"
+    );
+    res.status(200).json({
+      success: true,
+      message: "Settings updated successfully",
+      updatedSettings: updatedSetting,
+    });
+  } catch (error) {
+    console.log("Error in updatedHotelInformation: ", error.message);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+const getHotelInformation = async (req, res) => {
+  try {
+    const hotelInfo = await SystemSetting.findOne({
+      key: "Hotel Information",
+    }).select("value");
+
+    if (!hotelInfo) {
+      return res.status(404).json({ error: "Hotel information not found" });
+    }
+
+    res.status(200).json({
+      success: true,
+      hotelInformation: hotelInfo.value,
+    });
+  } catch (error) {
+    console.log("Error in getHotelInformation: ", error.message);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+const activityStreamFetching = async (req, res) => {
+  //? setup SSE headers
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+  res.flushHeaders();
+
+  //* Save set already send activityId
+  const sentIds = new Set();
+  //Use MongoDB Change Stream to monitor ActivityLog table changes
+  const changeStream = ActivityLog.watch([], { fullDocument: "updateLookup" });
+
+  changeStream.on("change", async (change) => {
+    if (change.operationType === "insert") {
+      const newActivity = change.fullDocument;
+
+      //* Determine whether the action is in the actionMap，is in it return to the frontend
+      if (
+        actionMap &&
+        Object.values(actionMap).includes(newActivity.action) &&
+        !sentIds.has(newActivity._id.toString())
+      ) {
+        let updateActivity = await ActivityLog.findById(newActivity._id)
+          .populate("userId", "username")
+          .lean();
+
+        res.write(`data: ${JSON.stringify(updateActivity)}\n\n`);
+        sentIds.add(newActivity._id.toString());
+      }
+    }
+  });
+
+  req.on("close", () => {
+    changeStream.close();
+    res.end();
+  });
+};
+
+const getUserActivityTracking = async (req, res) => {
+  try {
+    const { type, role, startDate, endDate } = req.query;
+    console.log("your role: ", role);
+
+    let { limit, page } = req.query;
+    limit = parseInt(limit) || 10;
+    page = parseInt(page) || 1;
+    const query = {};
+    if (role) query.userRole = role;
+    if (type) query.type = type;
+
+    if (startDate || endDate) {
+      query.createdAt = {};
+      if (startDate) query.createdAt.$gte = new Date(startDate);
+      if (endDate) query.createdAt.$lte = new Date(endDate);
+    }
+
+    query.action = { $in: Object.values(actionMap) }; //! Only return records in actionMap
+
+    const skip = (page - 1) * limit;
+
+    const activities = await ActivityLog.find(query)
+      .populate("userId", "username")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    const total = await ActivityLog.countDocuments(query);
+
+    return res.status(200).json({
+      success: true,
+      data: activities,
+      pagination: {
+        total,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        totalPages: Math.ceil(total / limit),
+      },
+    });
+  } catch (error) {
+    console.log("Error in fetching user activity: ", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+const generateReport = async (req, res) => {
+  const { type, startDate, endDate, exportFileFormat } = req.body;
+
+  console.log(req.body);
+  if (!type || !startDate || !endDate || !exportFileFormat) {
+    return res.status(400).json({ error: "Missing required fields" });
+  }
+
+  try {
+    let reportData = {};
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    switch (type) {
+      case "occupancy":
+        reportData = await generateOccupancyReport(start, end);
+        break;
+      case "revenue":
+        reportData = await generaterRevenueReport(start, end);
+        break;
+
+      case "financial":
+        reportData = await generateFinancialReport(start, end);
+        break;
+      case "cancellation":
+        reportData = await generateCancellationReport(start, end);
+        break;
+
+      default:
+        return res.status(404).json({ error: "Unable to generate report" });
+    }
+
+    const reportsDir = path.join(process.cwd(), "reports");
+    if (!fs.existsSync(reportsDir)) {
+      fs.mkdirSync(reportsDir, { recursive: true });
+    }
+
+    const timestamp = Date.now();
+    const fileName = `${type}_report_${timestamp}.${exportFileFormat}`;
+    const filePath = path.join(reportsDir, fileName);
+
+    let fileBuffer;
+    if (exportFileFormat === "csv") {
+      await generateCSV(type, reportData, filePath);
+    } else if (exportFileFormat === "pdf") {
+      await generatePDF(type, reportData, filePath, start, end);
+    } else {
+      return res.status(400).json({ error: "unknown file path" });
+    }
+
+    const formatDate = (date) =>
+      date.toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      });
+
+    const newReport = new Report({
+      name: `${type} report ${formatDate(start)} - ${formatDate(end)}`,
+      type: type,
+      dateRange: { startDate: startDate, endDate: endDate },
+      data: reportData,
+      fileFormat: exportFileFormat,
+      filePath: fileName,
+    });
+
+    await newReport.save();
+
+    res.status(201).json({
+      success: true,
+      message: "Report generated successfully",
+      report: newReport,
+    });
+  } catch (error) {
+    console.log("Error in fetching generate report: ", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+const getAllReportHistory = async (req, res) => {
+  try {
+    const getAllReportHistory = await Report.find().sort({ createdAt: -1 });
+    if (!getAllReportHistory) {
+      return res.status(404).json({ error: "Report not found" });
+    }
+
+    res.status(200).json({ success: "true", reports: getAllReportHistory });
+  } catch (error) {
+    console.log("Error in fetching get all report history: ", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+const reportDownload = async (req, res) => {
+  const { reportId } = req.params;
+  const { type, format } = req.query;
+  try {
+    const report = await Report.findById(reportId);
+    if (!report) {
+      res.status(404).json({ error: "Report not found" });
+    }
+
+    const filePath = path.resolve("reports", report.filePath);
+
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${type}.${format}"`
+    );
+    res.setHeader("Content-Type", `application/${report.fileFormat}`);
+
+    return res.download(filePath, (error) => {
+      if (error) {
+        console.error("Error in res.download:", error.message);
+        return res.status(500).json({ error: "Error downloading file" });
+      }
+    });
+  } catch (error) {
+    console.log("Error in downloadReport: ", error.message);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+const deleteAllReports = async (req, res) => {
+  try {
+    await Report.deleteMany();
+
+    const reportsDir = path.join(process.cwd(), "reports");
+
+    if (fs.existsSync(reportsDir)) {
+      fs.rmSync(reportsDir, { recursive: true, force: true });
+      // recursive: true recursively delete the entire directory
+      // force: true force delete even if errors occur
+    }
+
+    res
+      .status(200)
+      .json({ message: "All reports and files removed successfully" });
+  } catch (error) {
+    console.log("Error in deleteAllReports: ", error.message);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+const fetchAllSuspiciousEvent = async (req, res) => {
+  try {
+    //! SSE response header
+    res.setHeader("content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+    res.flushHeaders();
+
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    // Build filter object based on query parameters
+    const filter = {};
+
+    if (req.query.severity && req.query.severity !== "all") {
+      filter.severity = req.query.severity;
+    }
+
+    if (req.query.status && req.query.status !== "all") {
+      if (req.query.status === "handled") {
+        filter.handled = true;
+      } else if (req.query.status === "unhandled") {
+        filter.handled = false;
+      }
+    }
+
+    if (req.query.search) {
+      filter.$or = [
+        { reason: { $regex: req.query.search, $options: "i" } },
+        { type: { $regex: req.query.search, $options: "i" } },
+      ];
+    }
+
+    // Determine sort order
+    let sort = { createdAt: -1 }; // Default sort by date descending
+
+    if (req.query.sortBy === "severity") {
+      sort = {
+        severity: req.query.sortOrder === "asc" ? 1 : -1,
+        createdAt: -1,
+      };
+    } else if (req.query.sortBy === "date") {
+      sort = { createdAt: req.query.sortOrder === "asc" ? 1 : -1 };
+    }
+
+    // Query database with pagination
+    const events = await SuspiciousEvent.find(filter)
+      .sort(sort)
+      .skip(skip)
+      .limit(limit);
+
+    // Get total count for pagination
+    const total = await SuspiciousEvent.countDocuments(filter);
+
+    res.write(
+      `data: ${JSON.stringify({
+        events,
+        currentPage: page,
+        totalPages: Math.ceil(total / limit),
+        totalEvents: total,
+      })}\n\n`
+    );
+
+    const changeStream = SuspiciousEvent.watch();
+
+    changeStream.on("change", async () => {
+      const updatedEvents = await SuspiciousEvent.find(filter)
+        .sort(sort)
+        .skip(skip)
+        .limit(limit);
+
+      const updatedTotal = await SuspiciousEvent.countDocuments(filter);
+
+      res.write(
+        `data: ${JSON.stringify({
+          events: updatedEvents,
+          currentPage: page,
+          totalPages: Math.ceil(updatedTotal / limit),
+          totalEvents: updatedTotal,
+        })}\n\n`
+      );
+    });
+
+    req.on("close", () => {
+      console.log("The client disconnects from the SSE connection");
+      changeStream.close();
+      res.end();
+    });
+  } catch (error) {
+    console.error("Error fetching suspicious events:", error);
+    res.status(500).json({ error: "Internal Server error" });
+  }
+};
+
+const updateMarkAsSolved = async (req, res) => {
+  const suspiciousEventId = req.params.suspiciousEventId;
+  const markAsSolved = req.body.handled;
+
+  try {
+    const updateSuspiciousEvent = await SuspiciousEvent.findOneAndUpdate(
+      { _id: suspiciousEventId },
+      { handled: markAsSolved },
+      { new: true, select: "handled" }
+    );
+
+    if (!updateSuspiciousEvent) {
+      return res.status(404).json({ error: "No result found" });
+    }
+
+    console.log("updated: ", updateSuspiciousEvent);
+
+    return res.status(200).json(updateSuspiciousEvent);
+  } catch (error) {
+    console.log("Error in updateMarkAsSolved: ", error.message);
+    res.status(500).json({ error: "Internal Server error" });
+  }
+};
+
+const fetchCarousel = async (req, res) => {
+  const { category } = req.query;
+
+  try {
+    const filter = category ? { category } : {};
+    const carousels = await Carousel.find(filter).sort({ order: 1 });
+    res.status(200).json(carousels);
+  } catch (error) {
+    console.log("Error in fetchCarousel: ", error.message);
+    res.status(500).json({ error: "Internal Server error" });
+  }
+};
+
+const createCarousel = async (req, res) => {
+  const { title, description, link, category, order } = req.body;
+  const image = req.files.image;
+  const user = req.user;
+
+  if (!title || !description || !image || !category || order == undefined) {
+    return res.status(400).json({ error: "All field are required" });
+  }
+
+  try {
+    const existing = await Carousel.findOne({ order: Number(order), category });
+
+    if (existing) {
+      return res
+        .status(400)
+        .json({ error: `Order ${order} already exist in the ${category}` });
+    }
+
+    const imageUrl = await uploadToCloudinary(image);
+
+    const newSlide = new Carousel({
+      title,
+      description,
+      imageUrl,
+      link,
+      category,
+      order: Number(order),
+    });
+
+    await newSlide.save();
+    //* notify all admin
+    const allAdmins = await User.find({
+      role: { $in: ["admin", "superAdmin"] },
+    });
+    const adminIds = allAdmins.map((admin) => admin._id);
+    console.log("Your Admin: ", adminIds);
+    await notifyUsers(
+      adminIds,
+      `Carousel setting "${newSlide.title}" have been created by ${user.name}`,
+      "system"
+    );
+    res.status(200).json(newSlide);
+  } catch (error) {
+    console.log("Error in createCarousel: ", error.message);
+    res.status(500).json({ error: "Internal Server error" });
+  }
+};
+
+const updateCarousel = async (req, res) => {
+  try {
+    const { carouselId } = req.params;
+    const user = req.user;
+    const { title, description, link, category, order } = req.body;
+    const numericOrder =
+      order !== undefined && order !== null ? Number(order) : null;
+    const image = req.files?.image || null;
+    const carousel = await Carousel.findById({ _id: carouselId });
+
+    let imageUrl = null;
+
+    if (!carousel) {
+      return res.status(404).json({ error: "Carousel not found" });
+    }
+
+    //convert order to number and make sure order is unique
+    if (numericOrder !== null) {
+      const conflict = await Carousel.findOne({
+        order: numericOrder,
+        category,
+        _id: { $ne: carouselId },
+      });
+
+      if (conflict) {
+        return res.status(400).json({
+          error: `Order ${numericOrder} is already used by another carousel in a same ${category}.`,
+        });
+      }
+    }
+
+    imageUrl = carousel.imageUrl;
+    if (image) {
+      imageUrl = await uploadToCloudinary(image);
+    }
+
+    carousel.title = title || carousel.title;
+    carousel.description = description || carousel.description;
+    carousel.imageUrl = imageUrl;
+    // If a link is passed, use the new value (including an empty string), otherwise keep the original value
+    if (link !== undefined) {
+      carousel.link = link;
+    }
+
+    carousel.link = link || carousel.link;
+    carousel.category = category || carousel.category;
+    carousel.order = numericOrder || carousel.order;
+
+    await carousel.save();
+
+    //* notify all admin
+    const allAdmins = await User.find({
+      role: { $in: ["admin", "superAdmin"] },
+    });
+    const adminIds = allAdmins.map((admin) => admin._id);
+    console.log("Your Admin: ", adminIds);
+    await notifyUsers(
+      adminIds,
+      `Carousel setting "${carousel.title}" have been updated by ${user.name}`,
+      "system"
+    );
+
+    res.status(200).json(carousel);
+  } catch (error) {
+    console.log("Error in updateCarousel: ", error.message);
+    res.status(500).json({ error: "Internal Server error" });
+  }
+};
+
+const deleteCarousel = async (req, res) => {
+  try {
+    const { carouselId } = req.params;
+    const user = req.user;
+
+    // Find the slide you want to delete
+    const slide = await Carousel.findById(carouselId);
+    if (!slide) {
+      return res.status(404).json({ message: "Slide not found" });
+    }
+
+    const { imageUrl, order, category } = slide;
+
+    // Delete Cloudinary images
+    try {
+      const publicId = imageUrl.split("/").pop().split(".")[0];
+      await cloudinary.uploader.destroy(publicId);
+    } catch (err) {
+      console.log("Cloudinary delete failed, but will continue:", err.message);
+      // Continue deleting the database even if Cloudinary fails to delete
+    }
+
+    // delete carousel
+    await Carousel.findByIdAndDelete(carouselId);
+
+    // Re-adjust the order within the same category
+    await Carousel.updateMany(
+      { category, order: { $gt: order } }, // Greater than the order to be deleted
+      { $inc: { order: -1 } } // Move all forward 1
+    );
+
+    //* notify all admin
+    const allAdmins = await User.find({
+      role: { $in: ["admin", "superAdmin"] },
+    });
+    const adminIds = allAdmins.map((admin) => admin._id);
+    console.log("Your Admin: ", adminIds);
+    await notifyUsers(
+      adminIds,
+      `Carousel setting "${slide.title}" have been deleted by ${user.name}`,
+      "system"
+    );
+
+    res.status(200).json({ message: "Slide deleted and order adjusted" });
+  } catch (error) {
+    console.log("Error in deleteCarousel: ", error.message);
+    res.status(500).json({ error: "Internal Server error" });
+  }
+};
+
+const getAllCarousel = async (req, res) => {
+  const category = req.query.category;
+  if (!category) {
+    return res.status(400).json({ error: "Category is required" });
+  }
+
+  try {
+    const carousel = await Carousel.find({ category });
+    res.status(200).json(carousel);
+  } catch (error) {
+    console.log("Error in deleteCarousel: ", error.message);
+    res.status(500).json({ error: "Internal Server error" });
+  }
+};
+
 export default {
   updateRewardPointSetting,
   getRewardPointSetting,
   getAllRewardPointHistory,
+  updateSettings,
+  getHotelInformation,
+  getUserActivityTracking,
+  activityStreamFetching,
+  generateReport,
+  getAllReportHistory,
+  reportDownload,
+  deleteAllReports,
+  fetchAllSuspiciousEvent,
+  updateMarkAsSolved,
+  fetchCarousel,
+  createCarousel,
+  updateCarousel,
+  deleteCarousel,
+  getAllCarousel,
 };

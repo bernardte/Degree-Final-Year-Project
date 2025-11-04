@@ -1,4 +1,5 @@
 import Booking from "../models/booking.model.js";
+import BookingSession from "../models/BookingSession.model.js";
 import Room from "../models/room.model.js";
 
 
@@ -105,4 +106,13 @@ export const bookingStatusDistribution = async () => {
         { $sort: { count: -1 } },
     ]);
     return  stats;
+}
+
+export const bookingSessionUpdate = async () => {
+  const bookingSession = await BookingSession.find().populate([
+    { path: "roomId", select: "roomName" },
+    { path: "userId", select: "username email profilePic" },
+  ])
+
+  return bookingSession;
 }

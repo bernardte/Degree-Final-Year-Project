@@ -1,5 +1,5 @@
 import { getIO, getUserMap } from "../config/socket.js";
-import { bookingTrends, getRoomTypeStats, ratingDistribution, bookingStatusDistribution } from "../utils/bookingStats.js";
+import { bookingTrends, getRoomTypeStats, ratingDistribution, bookingStatusDistribution, bookingSessionUpdate } from "../utils/bookingStats.js";
 
 //! get the booking tends daily in real-time
 export const emitBookingTrendsUpdate = async (range = "7d") => {
@@ -51,4 +51,13 @@ export const emitToSpecificUser = (userId, eventName, data = {}) => {
     console.log(`⚠️ No socket found for user ${userId}`);
   }
 };
+
+export const emitBookingSessionUpdate = async () => {
+  try {
+    const bookingSession = await bookingSessionUpdate();
+    getIO().emit("booking-session-update", bookingSession);
+  } catch (error) {
+     console.log("Error in emitBookingSessionUpdate: ", error.message);
+  }
+}
 

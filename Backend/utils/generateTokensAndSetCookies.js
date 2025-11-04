@@ -1,8 +1,10 @@
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
+
 dotenv.config();
 
 const generateTokensAndSetCookies = (userId, res, role) => {
+
   const accessToken = jwt.sign(
     { userId, role },
     process.env.JWT_ACCESS_TOKEN,
@@ -11,13 +13,14 @@ const generateTokensAndSetCookies = (userId, res, role) => {
     }
   );
 
-  const refreshToken = jwt.sign({ userId }, process.env.JWT_REFRESH_TOKEN, {
-    expiresIn: "7d",
-  });
-
-  console.log("🔹 Access Token:", accessToken); // Debugging
+  const refreshToken = jwt.sign(
+    { userId },
+    process.env.JWT_REFRESH_TOKEN, 
+    {
+      expiresIn: "7d", 
+    }
+  );
   console.log("🔹 Refresh Token:", refreshToken); // Debugging
-
   // Set Refresh Token (HTTP Only Cookie)
   res.cookie("refreshToken", refreshToken, {
     httpOnly: true,
@@ -25,6 +28,9 @@ const generateTokensAndSetCookies = (userId, res, role) => {
     sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
     secure: process.env.NODE_ENV === "production",
   });
+
+  console.log("🔹 Access Token:", accessToken); // Debugging
+
 
   // Set Access Token (HTTP Only Cookie)
   res.cookie("accessToken", accessToken, {
@@ -35,7 +41,7 @@ const generateTokensAndSetCookies = (userId, res, role) => {
   });
 
 
-  return { accessToken, refreshToken };
+  return { accessToken };
 };
 
 export default generateTokensAndSetCookies;

@@ -9,23 +9,37 @@ export const handleRewardPoints = async (
   checkOutDate,
   rooms
 ) => {
+  // get system setting for reward points
   const setting = await SystemSetting.findOne({ key: "rewardPointsSetting" });
-  const pointsPerNight = setting?.value.bookingRewardPoints || 0;
   const rewardProgramActivate = setting?.value?.rewardProgramEnabled;
   if (!rewardProgramActivate) return;
 
+  // Get relevant parameters (with default values ​​to prevent errors)
+  const pointsPerBooking = setting?.value?.bookingRewardPoints || 0; // 每房每晚积分
+  const earnRatio = setting?.value?.earningRatio || 0; // 每RM获得多少积分
+  const tierMultipliers =
+    setting?.value?.tierMultipliers?.[user.loyaltyTier?.toLowerCase()] || 1;
+
+  // Calculate basic data
+  const totalSpent = booking.totalPrice || 0;
   const nights = Math.ceil(
     (new Date(checkOutDate) - new Date(checkInDate)) / (1000 * 60 * 60 * 24)
   );
-  const roomsBooked = rooms.length;
-  const tierMultipliers =
-    setting?.value.tierMultipliers?.[user.loyaltyTier.toLowerCase()] || 1;
+  const roomsBooked = rooms?.length || 0;
 
-  const basePoints = nights * roomsBooked * pointsPerNight;
-  const rewardPoints = Math.round(basePoints * tierMultipliers);
+  // Calculate two sources of points
+  const perBookingPoints = nights * roomsBooked * pointsPerBooking;
+  const perRinggitPoints = totalSpent * earnRatio;
 
-  user.totalSpent += booking.totalPrice;
+  // Combine points and add membership multiplier
+  const totalRewardPoints = Math.round(
+    (perBookingPoints + perRinggitPoints) * tierMultipliers
+  );
+
+  // Update user total consumption & membership level
+  user.totalSpent += totalSpent;
   const newTier = calculateLoyaltyTier(user.totalSpent);
+
   if (user.loyaltyTier !== newTier) {
     user.loyaltyTier = newTier;
     await RewardHistory.create({
@@ -39,17 +53,20 @@ export const handleRewardPoints = async (
     });
   }
 
-  user.rewardPoints = (user.rewardPoints || 0) + rewardPoints;
+  // Update points balance
+  user.rewardPoints = (user.rewardPoints || 0) + totalRewardPoints;
   await user.save();
+
+  //store to reward history
   await RewardHistory.create({
     user: user._id,
     bookingId: booking._id,
     bookingReference: booking.bookingReference,
-    points: rewardPoints,
-    description: `Earned for booking ${rooms.length} room(s) for ${nights} night(s)`,
+    points: totalRewardPoints,
+    description: `Earned ${totalRewardPoints} points — ${roomsBooked} room(s), ${nights} night(s), RM ${totalSpent.toFixed(
+      2
+    )} spent.`,
     type: "earn",
     source: "booking",
   });
-}
-
-
+};

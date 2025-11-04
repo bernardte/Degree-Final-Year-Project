@@ -10,13 +10,22 @@ import { differenceInCalendarDays } from "date-fns";
 import mongoose from "mongoose";
 import { handleRewardPoints } from "../logic function/handleRewardPoints.js";
 import {
-  emitBookingStatusUpdate,
+  emitBookingSessionUpdate,
   emitBookingTrendsUpdate,
   emitRoomTypeUpdate,
+  emitBookingStatusUpdate,
 } from "../socket/socketUtils.js";
 import notifyUsers from "../utils/notificationSender.js";
 import Invoice from "../models/invoice.model.js";
 import { generateInvoiceNumber } from "../utils/invoiceNumberGenerator.js";
+import { sendInvoiceEmail } from "../utils/invoices/sendInvoiceEmail.js";
+import Reward from "../models/reward.model.js";
+import ClaimedReward from "../models/claimedReward.model.js";
+import SystemSetting from "../models/systemSetting.model.js";
+import { bookingSessionAbnormalDetection } from "../utils/httpRequest/bookingSessionAbnormalDetection.js";
+import { bookingAbnormalDetection } from "../utils/httpRequest/bookingSessionAbnormalDetection.js";
+import SuspiciousEvent from "../models/suspiciousEvent.model.js";
+import { bookingSessionUpdate } from "../utils/bookingStats.js";
 
 const createBooking = async (req, res) => {
   const { bookingSessionId, specialRequests } = req.body;
@@ -38,6 +47,7 @@ const createBooking = async (req, res) => {
       checkInDate,
       checkOutDate,
       userId,
+      guestId,
       totalGuest,
       totalPrice,
       paymentMethod,
@@ -64,7 +74,7 @@ const createBooking = async (req, res) => {
       return res.status(404).json({ error: "One or more rooms not found" });
 
     const user = userId ? await User.findById(userId) : null;
-    const guestUserId = session.guestDetails?._id;
+    const guestUserId = guestId;
     const bookingReference = uuidv4();
 
     for (let room of rooms) {
@@ -81,7 +91,8 @@ const createBooking = async (req, res) => {
 
     const newBooking = new Booking({
       userEmail: contactEmail || user?.email || null,
-      bookingCreatedByUser: userId || guestUserId,
+      bookingCreatedByUser: userId || null,
+      guestId: guestUserId || null,
       userType: userId ? "user" : "guest",
       room: rooms.map((r) => r._id),
       startDate: checkInDate,
@@ -110,6 +121,7 @@ const createBooking = async (req, res) => {
     const roomDetails = rooms.map((r) => ({
       roomType: r.roomType,
       roomNumber: r.roomNumber,
+      pricePerNight: r.pricePerNight,
     }));
     const qrCodeData = {
       bookingReference,
@@ -120,6 +132,8 @@ const createBooking = async (req, res) => {
     const qrCodePublicURLfromCloudinary = await generateAndUploadQRCode(
       qrCodeData
     );
+
+    console.log("generated QR code: " ,qrCodePublicURLfromCloudinary)
     newBooking.qrCodeImageURL = qrCodePublicURLfromCloudinary;
     await newBooking.save();
 
@@ -133,18 +147,24 @@ const createBooking = async (req, res) => {
         rooms
       );
 
+     const hotelInfoDoc = await SystemSetting.findOne({
+       key: "Hotel Information",
+     }).select("value");
+
+    const hotelInfo = hotelInfoDoc?.value;
     const emailTo = user?.email || contactEmail || guestDetails?.contactEmail;
     if (emailTo && qrCodePublicURLfromCloudinary) {
       await sendBookingConfirmationEmail(emailTo, {
-        username: user?.username || contactName,
+        username: user?.name || newBooking.contactName,
         bookingReference,
         roomDetail: roomDetails,
         checkInDate,
         checkOutDate,
-        breakfastIncluded,
+        breakfastIncluded: newBooking.breakfastIncluded,
         adults: totalGuest.adults,
         children: totalGuest.children,
         totalPrice,
+        hotelDetail: hotelInfo,
         qrCodeImageURL: qrCodePublicURLfromCloudinary,
       });
     }
@@ -173,27 +193,58 @@ const createBooking = async (req, res) => {
     ]).then(result => console.log("Socket updates emitted successfully: ", result));
 
     const invoiceNumber = generateInvoiceNumber();
+    const loyaltyTier = user ? user.loyaltyTier : null
     
-    if(user){
-      const newInvoice = new Invoice({
-        bookingReference,
-        invoiceNumber,
-        invoiceDate: new Date(),
-        bookingId: newBooking._id,
-        loyaltyTier: user.loyaltyTier,
-        invoiceAmount: totalPrice,
-        status: "issued",
-        paymentMethod: paymentMethod,
-        paymentStatus: paymentStatus,
-        paymentDate: newBooking.createdAt,
-        paymentIntentId: paymentIntentId,
-        billingName: user?.username || contactName,
-        billingEmail: user?.email || contactEmail,
-        billingPhoneNumber: contactNumber,
-        rewardDiscount: rewardDiscount,
-      });
+    const newInvoice = new Invoice({
+      bookingReference,
+      invoiceNumber,
+      invoiceDate: new Date(),
+      bookingId: newBooking._id,
+      loyaltyTier: loyaltyTier,
+      invoiceAmount: totalPrice,
+      status: "issued",
+      paymentMethod: paymentMethod,
+      paymentStatus: paymentStatus,
+      paymentDate: newBooking.createdAt,
+      paymentIntentId: paymentIntentId,
+      billingName: user?.username || newBooking.contactName,
+      billingEmail: user?.email || newBooking.contactEmail,
+      billingPhoneNumber: contactNumber,
+      rewardDiscount: rewardDiscount,
+    });
       await newInvoice.save();
-    }
+
+      const rewardClaimed = await ClaimedReward.findOne({ rewardCode: newBooking.rewardCode }).select("_id");
+      let reward = null;
+      if (rewardClaimed) {
+        reward = await Reward.findOne({ _id: rewardClaimed._id }).select(
+          "description discountPercentage"
+        );
+      }
+
+      if(newInvoice){
+        await sendInvoiceEmail(
+          emailTo,
+          {
+            username: user?.username || newBooking.contactName,
+            bookingReference,
+            roomDetail: roomDetails,
+            checkInDate,
+            checkOutDate,
+            breakfastIncluded: newBooking.breakfastIncluded,
+            adults: totalGuest.adults,
+            children: totalGuest.children,
+            totalPrice: totalPrice,
+            paymentStatus,
+            paymentIntentId,
+            paymentMethod,
+          },
+          reward,
+          loyaltyTier,
+          invoiceNumber,
+          hotelInfo,
+        );
+      }
     
     // delete current booking session 
     await BookingSession.deleteOne({ sessionId: bookingSessionId });
@@ -219,7 +270,7 @@ const cancelBooking = async (req, res) => {
 
     const currentDate = new Date();
     const checkInDate = new Date(booking.startDate);
-
+    const checkOutDate = new Date(booking.endDate);
     const msUntilCheckIn = checkInDate - currentDate;
 
     const totalHours = Math.max(
@@ -231,6 +282,20 @@ const cancelBooking = async (req, res) => {
 
     console.log("daysUntilCheckIn: ", daysUntilCheckIn);
     console.log("hoursLeftAfterDays: ", hoursLeftAfterDays);
+
+    // prevent cancellation if current date is on or after check in date but before check-out date
+    if(totalHours <= 0 && currentDate <= checkOutDate){
+      return res.status(400).json({
+        error: "Cannot cancel booking during or after your stay period."
+      })
+    }
+
+    // prevent cancellation if current date is after check-out date
+    if(currentDate > checkOutDate){
+      return res.status(400).json({
+        error: "Booking already completed, cancellation not possible."
+      })
+    }
 
     if (booking.status === "completed") {
       return res.status(400).json({
@@ -281,6 +346,7 @@ const cancelBooking = async (req, res) => {
 
 const getBookingByUser = async (req, res) => {
   const userId = req.user._id;
+  console.log("userid testing:  ", userId)
 
   try {
     // Fetch all bookings created by the user with userType 'user'
@@ -379,30 +445,88 @@ const createBookingSession = async (req, res) => {
     }
   }
 
+  const dbSession = await mongoose.startSession();
+  dbSession.startTransaction();
+
   try {
     const sessionId = uuidv4();
 
-    const userId = await User.findOne({ email: userEmail })
-      .select("_id")
+    const user = await User.findOne({ email: userEmail })
+      .select("_id username")
       .lean(); //convert to object instead of mongodb docs
+    
+    // prevent overbooking by checking existing bookings for the room
+    const overlappingBooking = await Booking.findOne({
+      roomId: roomId,
+      $or: [
+        {
+          startDate: { $lt: new Date(checkOutDate) },
+          endDate: { $gt: new Date(checkInDate) },
+        },
+      ],
+    }).session(dbSession);
+
+    const overlappingSession = await BookingSession.findOne({
+      roomId,
+      $or: [
+        {
+          checkInDate: { $lt: new Date(checkOutDate) },
+          checkOutDate: { $gt: new Date(checkInDate) },
+        },
+      ],
+    }).session(dbSession);
+
+    if (overlappingBooking || overlappingSession) {
+      await dbSession.abortTransaction();
+      dbSession.endSession();
+      return res.status(409).json({
+        error:
+          "This room is already booked or occupied during the selected dates.",
+      });
+    }
 
     const rangebetweenCheckInCheckOutDate = differenceInCalendarDays(
       new Date(checkOutDate),
       new Date(checkInDate)
     );
+
+    if (rangebetweenCheckInCheckOutDate <= 0) {
+      await dbSession.abortTransaction();
+      dbSession.endSession();
+      return res
+        .status(400)
+        .json({ error: "Check-out date must be after check-in date." });
+    }
+
     const actualtotalPrice = rangebetweenCheckInCheckOutDate * totalPrice;
+
+    const passingAbnormallyDatection = {
+      sessionId: sessionId,
+      totalPrice: Number(actualtotalPrice),
+      adults: Number(totalGuest?.adults) || 0,
+      children: Number(totalGuest?.children) || 0,
+      nights: rangebetweenCheckInCheckOutDate,
+      roomId: roomId
+    };
+
+    const abnormalDetected = await bookingSessionAbnormalDetection(
+      passingAbnormallyDatection
+    );
+
+    console.log("result: ", abnormalDetected);
 
     // 4) Build the document
     const session = new BookingSession({
       sessionId,
-      userId: userId ? userId : undefined, // null for one-time guests
+      userId: user ? user._id : undefined, // null for one-time guests
+      guestId: !user ? req.cookies?.guestId : null, 
       roomId,
       checkInDate,
       checkOutDate,
       totalGuest,
       totalPrice: actualtotalPrice,
       // only include guestDetails when userId is null
-      ...(userId
+      ...(user
         ? {}
         : {
             guestDetails: {
@@ -416,6 +540,29 @@ const createBookingSession = async (req, res) => {
 
     await session.save();
 
+    if (
+      abnormalDetected.result === "abnormal" ||
+      abnormalDetected.anomaly === true
+    ) {
+      const suspiciousEvent = new SuspiciousEvent({
+        userId: user ? user._id : null,
+        guestId: !user ? req.cookies.guestId : null,
+        type: "abnormal",
+        reason: `Abnormal Detected on Booking Session with ${sessionId} on ${
+          user ? user.username : contactName
+        } with score ${abnormalDetected.score} due to ${abnormalDetected.anomaly_reason || "N/A"}`,
+        details: session,
+        severity: "medium",
+        handled: false,
+      });
+
+      await suspiciousEvent.save();
+    }
+    
+    await dbSession.commitTransaction();
+    dbSession.endSession();
+    
+    await emitBookingSessionUpdate();
     res.status(201).json({ sessionId });
   } catch (error) {
     console.error("Error in createBookingSession:", error);
@@ -427,7 +574,7 @@ const getBookingSession = async (req, res) => {
   const { sessionId } = req.params;
 
   try {
-    const getSession = await BookingSession.findOne({ sessionId });
+    const getSession = await BookingSession.findOne({ sessionId }).sort({ createdAt: -1 });
 
     if (!getSession) {
       return res.status(404).json({ error: "Session not found or expired" });
@@ -458,6 +605,21 @@ const getBookingSession = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+const getBookingSessionInAdmin = async(req, res) => {
+  try {
+    const bookingSession = await bookingSessionUpdate();
+
+    if(!bookingSession){
+      return res.status(404).json({ error: "No Booking Session found!" });
+    }
+
+    res.status(200).json(bookingSession);
+  } catch (error) {
+    console.error("Error in getBookingSessionInAdmin: ", error.message);
+    res.status(500).json({ error: error.message });
+  }
+}
 
 const getBookingSessionByUser = async (req, res) => {
   const userId = req.user._id;
@@ -507,6 +669,7 @@ const deleteBookingSession = async (req, res) => {
       return res.status(404).json({ error: "Session not found or expired" });
     }
 
+    await emitBookingSessionUpdate();
     res.status(200).json({ message: "Booking session deleted successfully" });
   } catch (error) {
     console.log("Error in deleteBookingSession: ", error.message);
@@ -532,11 +695,18 @@ const removeRoomFromBookingSession = async (req, res) => {
       return res.status(404).json({ error: "Booking Session Not Found " });
     }
 
+    const roomDefaultExcludeBreakfast = await Room.findById(roomId).select("breakfastIncluded")
+
+    if(roomDefaultExcludeBreakfast?.breakfastIncluded){
+      bookingSession.breakfastIncluded = Math.max(0, bookingSession.breakfastIncluded - 1);
+    }
+
     bookingSession.roomId = bookingSession.roomId.filter(
       (id) => id.toString() !== roomId
     );
     await bookingSession.save();
 
+    await emitBookingSessionUpdate();
     res
       .status(200)
       .json({ message: "Room removed successfully", bookingSession });
@@ -572,13 +742,18 @@ const handleUpdateBreakfastCount = async (req, res) => {
 
   try {
     const session = await BookingSession.findById(sessionId);
+    
     if (!session) {
       return res.status(404).json({ error: "Booking session not found!" });
     }
 
     await BookingSession.updateOne(
       { _id: sessionId },
-      { $set: { breakfastIncluded: breakfastCount } }
+      {
+        $set: {
+          breakfastIncluded: breakfastCount,
+        },
+      }
     );
 
     return res.status(200).json(breakfastCount);
@@ -594,6 +769,7 @@ export default {
   createBookingSession,
   getBookingSession,
   getBookingByUser,
+  getBookingSessionInAdmin,
   getBookingSessionByUser,
   deleteBookingSession,
   removeRoomFromBookingSession,

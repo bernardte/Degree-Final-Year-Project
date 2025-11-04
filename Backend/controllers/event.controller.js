@@ -31,7 +31,7 @@ const enquireEvents = async (req, res) => {
     const adminIds = allAdmins.map((admin) => admin._id);
     await notifyUsers(
       adminIds,
-      `New Event Enquire Request from ${fullname} and ${email}`,
+      `New Event Enquire Request from ${name} and ${email}`,
       "event"
     );
 
@@ -45,7 +45,8 @@ const enquireEvents = async (req, res) => {
 const getAllEventRequestForCalendarView = async (req, res) => {
   try {
     const eventsData = await Event.find().sort({ createdAt: -1 });
-    res.status(200).json(eventsData);
+    const totalEvents = await Event.countDocuments();
+    res.status(200).json({ event: eventsData, totalEvents: totalEvents });
   } catch (error) {
     console.log("Error in getAllEventRequestForCalendarView: ", error.message);
     return res.status(500).json({ error: "Internal Server Error" });

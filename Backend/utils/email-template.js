@@ -9,8 +9,10 @@ export const generateBookingEmailHTML = ({
   adults,
   children,
   totalPrice,
+  hotelDetail,
   qrCodeImageURL,
 }) => {
+  console.log("Your hotel Detail: ", hotelDetail);
   return `
     <body style="margin:0; padding:0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">
       <!-- outer container -->
@@ -20,7 +22,7 @@ export const generateBookingEmailHTML = ({
 
         <!-- header -->
         <div style="padding: 40px 20px; text-align: center; background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
-          <img src="https://example.com/logo.png" alt="Hotel Logo" style="height: 50px; margin-bottom: 25px;">
+          <img src="${hotelDetail?.logo}" alt="Hotel Logo" style="height: 300px; margin-bottom: 25px;">
           <h1 style="color: #1a365d; font-size: 28px; margin: 0; padding: 0;">
             Your Stay is Confirmed
           </h1>
@@ -98,10 +100,10 @@ export const generateBookingEmailHTML = ({
                       } • ${adults} Adults • ${children} Children
                     </div>
                     <div style="color: ${
-                      breakfastIncluded ? "#38a169" : "#e53e3e"
+                      breakfastIncluded > 0 ? "#38a169" : "#e53e3e"
                     }; font-size: 14px;">
                       ${
-                        breakfastIncluded
+                        breakfastIncluded > 0
                           ? "✓ Breakfast included"
                           : "No breakfast included"
                       }
@@ -143,12 +145,12 @@ export const generateBookingEmailHTML = ({
               <tr>
                 <td style="width: 50%; vertical-align: top;">
                   <div style="color: #4a5568; font-size: 14px; margin-bottom: 10px;">Need Help?</div>
-                  <a href="mailto:support@example.com" style="color: #0057a3; text-decoration: none; font-size: 14px;">Contact Support →</a>
+                  <a href="${hotelDetail?.email}" style="color: #0057a3; text-decoration: none; font-size: 14px;">Contact Support →</a>
                 </td>
                 <td style="width: 50%; vertical-align: top; text-align: right;">
                   <div style="color: #4a5568; font-size: 14px; margin-bottom: 10px;">Hotel Address</div>
                   <div style="color: #718096; font-size: 14px;">
-                    George Town, Penang, Malaysia
+                   ${hotelDetail?.address}
                   </div>
                 </td>
               </tr>
@@ -156,10 +158,10 @@ export const generateBookingEmailHTML = ({
           </div>
         </div>
 
-        <!-- 页脚 -->
+        <!-- footer -->
         <div style="background: #1a365d; padding: 20px; text-align: center; border-radius: 0 0 12px 12px;">
           <div style="color: #ffffff; font-size: 12px;">
-            © ${new Date().getFullYear()} The Seraphine Hotel. All rights reserved.
+            © ${new Date().getFullYear()} ${hotelDetail?.name}. All rights reserved.
           </div>
         </div>
       </div>

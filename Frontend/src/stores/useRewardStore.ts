@@ -1,19 +1,26 @@
 import axiosInstance from "@/lib/axios";
-import { Reward } from "@/types/interface.type";
+import { Reward, RewardHistory } from "@/types/interface.type";
 import { create } from "zustand";
 
 type rewardStore = {
   rewards: Reward[];
+  rewardHistory: RewardHistory[];
   error: string | null;
   isLoading: boolean;
   fetchAllRewardList: () => Promise<void>;
   addRewards: (reward: Reward) => void;
   deleteReward: (rewardId: string) => void;
   updateNewReward: (updateReward: Reward) => void;
+  getRewardHistoryForCertainUser: (
+    page: number,
+    limit: number,
+    append: boolean,
+  ) => Promise<void>;
 };
 
 const useRewardStore = create<rewardStore>()((set) => ({
   rewards: [],
+  rewardHistory: [],
   error: null,
   isLoading: false,
   fetchAllRewardList: async () => {
@@ -46,6 +53,25 @@ const useRewardStore = create<rewardStore>()((set) => ({
         reward._id === updateReward._id ? updateReward : reward,
       ),
     }));
+  },
+  getRewardHistoryForCertainUser: async (
+    page = 1,
+    limit = 10,
+    append = false,
+  ) => {
+    set({ isLoading: true, error: null });
+    axiosInstance
+      .get(`/api/reward/rewards-history?page=${page}&limit=${limit}`)
+      .then((response) => {
+        console.log(response.data.rewardHistory);
+        set((state) => ({
+          rewardHistory: append
+            ? [...state.rewardHistory, ...response.data.rewardHistory]
+            : response.data.rewardHistory,
+        }));
+      })
+      .catch((error) => set({ error: error.response?.data?.error }))
+      .finally(() => set({ isLoading: false }));
   },
 }));
 

@@ -49,3 +49,22 @@ export const getChatFormattedDate = (dateString: string | Date) => {
   return format(date, "MMMM d, yyyy"); // e.g., July 1, 2025
 };
 
+export const formatDateWithDayAndTime = (date: Date) => {
+  const now = new Date();
+  const diffTime = Math.abs(now.getTime() - date.getTime());
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+  if (diffDays === 0) {
+    return `Today, ${date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+  } else if (diffDays === 1) {
+    return `Yesterday, ${date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+  } else {
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  }
+};

@@ -10,17 +10,57 @@ import { CalendarClock } from "lucide-react";
 import BookingTable from "./BookingTable";
 import useBookingStore from "@/stores/useBookingStore";
 import Pagination from "../../share-components/Pagination";
+import { Input } from "@/components/ui/input";
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import axiosInstance from "@/lib/axios";
+import useToast from "@/hooks/useToast";
 
 const BookingTabContent = ({
   fetchAllBooking,
 }: {
-  fetchAllBooking: (page: number) => Promise<void>;
+  fetchAllBooking: (page: number, limit: number, searchTerm: string) => Promise<void>;
 }) => {
-  const { bookings, currentPage, totalPages } = useBookingStore();
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const { bookings, currentPage, totalPages, setBookingStatus } = useBookingStore(state => state);
+  const { showToast } = useToast();
+  const [countPendingBooking, setCountPendingBooking] = useState<number>(0);
 
-  const handlePageChange = (page: number) => {
-    fetchAllBooking(page);
+  const handlePageChange = (page: number, limit = 10, searchTerm: "") => {
+    fetchAllBooking(page, limit, searchTerm);
   };
+
+  const handleSearch = (page: number, limit: number, searchTerm: string) => {
+    if(searchTerm.trim() === "") {
+      return;
+    }
+    fetchAllBooking(page, limit, searchTerm);
+  };
+
+  useEffect(() => {
+    const pendingCount = bookings.filter((b) => b.status === "pending").length;
+    setCountPendingBooking(pendingCount);
+  }, [bookings]);
+
+
+  const handleUpdatePendingStatusToConfirm = async () => {
+    try {
+      const response = await axiosInstance.patch("/api/admin/update-pending-status-to-confirm");
+      if(response?.data){
+        setBookingStatus(response?.data?.newStatus)
+        showToast("success", response.data?.message);
+      }
+    } catch (error: any) {
+       const message =
+         error?.response?.data?.error || error?.response?.data?.message;
+       if (message.includes("Access Denied")) {
+         showToast("warn", error?.response?.data?.message);
+         return;
+       }
+
+       showToast("error", error?.response?.data?.error);
+    }
+  }
 
   return (
     <motion.div
@@ -64,6 +104,46 @@ const BookingTabContent = ({
           <CardContent className="mt-4">
             <div className="overflow-hidden rounded-lg border border-blue-200 bg-white/70 p-2 shadow-inner backdrop-blur">
               <div className="w-full overflow-x-auto">
+                <div className="my-4 ml-2 flex items-center gap-3">
+                  <Input
+                    placeholder="Search by booking reference or Email..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="max-w-sm rounded-lg border-gray-300 transition focus:border-blue-500 focus:ring focus:ring-blue-200"
+                  />
+                  <div className="flex-1">
+                    <button
+                      onClick={() => handleSearch(1, 10, searchTerm)}
+                      className="focus:ring-opacity-75 flex min-w-[100px] transform items-center justify-center rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 px-4 py-2 font-medium text-white shadow-lg shadow-blue-500/30 transition-all duration-200 hover:scale-105 hover:from-blue-600 hover:to-blue-700 focus:ring-2 focus:ring-blue-400 focus:outline-none active:scale-[98%]"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="mr-2 h-5 w-5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                        />
+                      </svg>
+                      Search
+                    </button>
+                  </div>
+                  <div className="mr-3">
+                    <Button
+                      className={`capitalize ${countPendingBooking <= 0 ? "bg-gray-400" : ""}`}
+                      disabled={countPendingBooking <= 0}
+                      onClick={handleUpdatePendingStatusToConfirm}
+                    >
+                      Update status to confirmed
+                    </Button>
+                  </div>
+                </div>
+
                 <BookingTable />
                 {totalPages > 1 && (
                   <Pagination
@@ -153,6 +233,12 @@ const BookingTabContent = ({
                     Start by creating a new reservation or check your search
                     parameters.
                   </p>
+                  <button
+                    onClick={() => fetchAllBooking(1, 10, "")}
+                    className="mt-4 inline-flex items-center justify-center rounded-lg bg-blue-600 px-6 py-2 text-white shadow-md transition-all hover:bg-blue-700 focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                  >
+                    Refresh
+                  </button>
                 </div>
 
                 {/* Animated decorative dots */}

@@ -5,78 +5,100 @@ import User from "../models/user.model.js";
 import Message from "../models/message.model.js";
 
 let ws;
-let buffer = "";
-let conversationTextMap = {}
+let conversationTextMap = {};
 
 export function initAISocket() {
   ws = new WebSocket(`${process.env.PYTHON_BACKEND_URL}/bot-reply-ws`);
 
-  ws.on("open", () => console.log("Connected to AI service"));
+  ws.on("open", () => console.log("✅ Connected to AI service"));
 
-    ws.on("message", async (chunk) => {
+  ws.on("message", async (msg) => {
     try {
-        buffer += chunk.toString(); // 追加到缓存
+      const data = JSON.parse(msg.toString());
+      const io = getIO();
 
-        // 检查是否是完整 JSON（简单判断方式）
-        // 1. 去掉前后空格
-        // 2. 必须以 "{" 开头 以 "}" 结尾
-        if (buffer.trim().startsWith("{") && buffer.trim().endsWith("}")) {
-            const data = JSON.parse(buffer); // 解析完整 JSON
-            console.log("reached")
-            buffer = ""; // 清空缓存，准备接收下一条
+      // Check whether it is a manual customer service transfer signal
+      console.log("Received from AI Websocket: ", data);
+      if (data.token.handover_to_human === true) {
+        console.log(
+          `🤝 Conversation ${data.conversationId} -> Handover to human`
+        );
 
-            if(!conversationTextMap[data.conversationId]){
-                conversationTextMap[data.conversationId] = "";
-            }
+        const bot = await User.findOne({ name: "AI Chatbot" }).select("_id");
 
-            conversationTextMap[data.conversationId] += data.token
+        // Broadcast "Transfer to manual customer service" notification to the front end
+        io.to(data.conversationId).emit("ai-handover", {
+          conversationId: data.conversationId,
+          content:
+            data.fulfillmentText ||
+            "We are transferring you to manual customer service. Please wait...",
+          senderType: "bot",
+          senderId: bot._id,
+          isRead: true,
+          image: null,
+          createdAt: new Date().toISOString(),
+          isFinal: true,
+          handover_to_human: true,
+        });
 
-            const bot = await User.findOne({ name: "AI Chatbot" }).select("_id");
+        // save to database
+        await Message.create({
+          conversationId: data.conversationId,
+          content:
+            data.fulfillmentText ||
+            "We are transferring you to manual customer service. Please wait...",
+          senderType: "bot",
+          senderId: bot._id,
+          isRead: true,
+        });
 
-            // 处理数据
-            getIO()
-            .to(data.conversationId)
-            .emit("ai-stream", {
-                conversationId: data.conversationId,
-                content: data.token,
-                senderType: "bot",
-                senderId: bot._id, // 可以先随便给个固定 ID
-                isRead: true,
-                image: null,
-                createdAt: new Date().toISOString(),
-                isFinal: data.isFinal,
-            });
+        // Clear the cache and stop cumulative generation
+        delete conversationTextMap[data.conversationId];
+        return; // Stop subsequent AI token processing
+      }
 
-            if (data.isFinal === true) {
+      // Normal AI reply processing logic
+      if (!conversationTextMap[data.conversationId]) {
+        conversationTextMap[data.conversationId] = "";
+      }
 
-            const finalText = conversationTextMap[data.conversationId] || "";
-            await Message.create({
-                conversationId: data.conversationId,
-                content: finalText,
-                senderType: "bot",
-                senderId: bot._id,
-                isRead: true,
-                });
-                delete conversationTextMap[data.conversationId]; // 清理内存
-            }
-        }
+      conversationTextMap[data.conversationId] += data.token;
+
+      const bot = await User.findOne({ name: "AI Chatbot" }).select("_id");
+
+      io.to(data.conversationId).emit("ai-stream", {
+        conversationId: data.conversationId,
+        content: data.token,
+        senderType: "bot",
+        senderId: bot._id,
+        isRead: true,
+        image: null,
+        createdAt: new Date().toISOString(),
+        isFinal: data.isFinal,
+      });
+
+      if (data.isFinal) {
+        const finalText = conversationTextMap[data.conversationId] || "";
+        await Message.create({
+          conversationId: data.conversationId,
+          content: finalText,
+          senderType: "bot",
+          senderId: bot._id,
+          isRead: true,
+        });
+        delete conversationTextMap[data.conversationId];
+      }
     } catch (err) {
-        // 如果还没收完整，不解析
-        if (err instanceof SyntaxError) {
-        return;
-        }
-        console.error("AI WebSocket message error:", err);
-        buffer = ""; // 避免缓存脏数据
+      console.error("❌ AI WebSocket message error:", err);
     }
-    });
-
+  });
 
   ws.on("error", (err) => {
-    console.error("AI WebSocket error:", err.message);
+    console.error("⚠️ AI WebSocket error:", err.message);
   });
 
   ws.on("close", () => {
-    console.warn("AI WebSocket closed, reconnecting...");
+    console.warn("🔁 AI WebSocket closed, reconnecting...");
     ws = null;
     setTimeout(() => {
       if (!ws || ws.readyState === WebSocket.CLOSED) {
@@ -86,16 +108,24 @@ export function initAISocket() {
   });
 }
 
-export const sendToAI = (conversationId, newMessage, context) => {
-  console.log(conversationId, newMessage);
-  console.log(ws?.readyState === WebSocket.OPEN);
+export const sendToAI = (
+  conversationId,
+  newMessage,
+  senderId,
+  senderType,
+  context
+) => {
   if (ws?.readyState === WebSocket.OPEN) {
     ws.send(
       JSON.stringify({
-        conversationId: conversationId,
+        senderId,
+        senderType,
+        conversationId,
         question: newMessage,
-        context: context,
+        context,
       })
     );
+  } else {
+    console.warn("⚠️ WebSocket not connected, message not sent");
   }
 };

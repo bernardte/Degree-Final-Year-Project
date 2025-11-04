@@ -1,4 +1,3 @@
-// ChatWidget.jsx
 import { useState, useEffect, useRef } from "react";
 import { MessageCircle } from "lucide-react";
 import ChatWidgetHeader from "./ChatWidgetHeader";
@@ -25,7 +24,7 @@ const ChatWidget = () => {
   // ---------------- stores / hooks ----------------
   const { user, adminReceipentId, setCurrentAdminReceipentId } = useAuthStore();
   const { showToast } = useToast();
-  const socket = useSocket();
+  const { socket } = useSocket();
 
   const { messagesMap, fetchMessage, pushMessage } = useMessageStore();
   const [streamingBotMsg, setStreamingBotMsg] = useState("");
@@ -82,23 +81,73 @@ const ChatWidget = () => {
         };
         pushMessage(conversationId, finalMessage);
 
-        // 清空缓存
+        // clear cache
         delete streamBuffer.current[conversationId];
         setStreamingBotMsg("");
       } else {
-        // 累加 token 到缓存
+        // Accumulate tokens to the cache
         streamBuffer.current[conversationId] += content;
         setStreamingBotMsg(streamBuffer.current[conversationId]);
       }
     };
 
+    socket.on("ai-stream", listenBotMsg);
+
+    const listenHandoverMsg = (msg: Message) => {
+      if (!msg?.conversationId) return;
+      const { conversationId, content } = msg;
+
+      // Initialize the cache
+      if (!streamBuffer.current[conversationId]) {
+        streamBuffer.current[conversationId] = "";
+      }
+
+      // Simulate typing flow (word-by-word splicing)
+      const text =
+        content ||
+        "We are transferring you to manual customer service. Please wait...";
+      let index = 0;
+
+      const interval = setInterval(() => {
+        if (index < text.length) {
+          streamBuffer.current[conversationId] += text[index];
+          setStreamingBotMsg(streamBuffer.current[conversationId]);
+          index++;
+        } else {
+          clearInterval(interval);
+
+          // Finally push the message array (save)
+          const finalMessage: Omit<Message, "_id"> = {
+            conversationId,
+            senderType: "bot",
+            senderId: msg.senderId,
+            content: text,
+            createdAt: new Date(),
+            isRead: true,
+            image: null,
+            isFinal: true,
+            handover_to_human: true,
+          };
+          pushMessage(conversationId, finalMessage);
+
+          //Switch to manual customer service mode
+          setMode("human");
+
+          // clear cache
+          delete streamBuffer.current[conversationId];
+          setStreamingBotMsg("");
+        }
+      }, 40); // Each word is separated by 40ms
+    };
+
     socket.emit("join-room", conversationId);
     socket.on("new-message", onMsg);
-    socket.on("ai-stream", listenBotMsg);
+    socket.on("ai-handover", listenHandoverMsg);
 
     return () => {
       socket.off("new-message", onMsg);
       socket.off("ai-stream", listenBotMsg);
+      socket.off("ai-handover", listenHandoverMsg);
     };
   }, [socket, conversationId, pushMessage]);
 
@@ -139,6 +188,7 @@ const ChatWidget = () => {
       senderId && fd.append("senderId", senderId);
       uploadImage && fd.append("image", uploadImage);
       fd.append("lastMessageAt", new Date().toISOString());
+      fd.append("mode", mode);
 
       const { data: msg } = await axiosInstance.post(
         "/api/messages/" + cid,

@@ -70,10 +70,28 @@ const EventInquireForm = ({title} : { title: string }) => {
       setErrors(validationErrors);
       return;
     }
+    const metadata = {
+      page: "http://localhost:3000/event",
+      actionId: "submit event enquiry form",
+      params: {
+        ...formData 
+      },
+      extra: {}
+    };
 
     try{
       setIsSubmitting(true);
-      const response = await axiosInstance.post("/api/event/event-enquiry", formData);
+      const response = await axiosInstance.post(
+        "/api/event/event-enquiry",
+        formData,
+        {
+          params: {
+            type: "action",
+            action: `${name} submitting a event enquiry form`,
+            metadata: JSON.stringify(metadata)
+          },
+        },
+      );
       console.log(formData);
       if(response.data){
         showToast("success", "successfully send!")
@@ -114,7 +132,7 @@ const EventInquireForm = ({title} : { title: string }) => {
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             {/* Name Input */}
             <div className="relative">
-              <UserRound className="absolute top-1/2 left-4 h-5 w-5 -translate-y-1/2 text-blue-600/80" />
+              <UserRound className="absolute top-6 left-4 h-5 w-5 -translate-y-1/2 text-blue-600/80" />
               <input
                 type="text"
                 aria-label="Full Name"
@@ -126,15 +144,15 @@ const EventInquireForm = ({title} : { title: string }) => {
                 className={`w-full rounded-2xl border-2 ${errors.name ? "border-red-300" : "border-blue-100/80"} bg-white/90 py-3.5 pr-6 pl-12 text-gray-700 transition-all duration-300 placeholder:text-blue-300/90 focus:border-blue-400 focus:ring-4 focus:ring-blue-100/60`}
               />
               {errors.name && (
-                <span className="absolute -bottom-5 left-0 text-sm text-red-500">
+                <span className="absolute -bottom-2 left-0 text-sm text-red-500">
                   {errors.name}
                 </span>
               )}
             </div>
 
             {/* Email Input */}
-            <div className="relative">
-              <Mail className="absolute top-1/2 left-4 h-5 w-5 -translate-y-1/2 text-blue-600/80" />
+            <div className="relative space-y-3">
+              <Mail className="absolute top-7 left-4 h-5 w-5 -translate-y-1/2 text-blue-600/80" />
               <input
                 type="email"
                 placeholder="Email *"
@@ -145,15 +163,15 @@ const EventInquireForm = ({title} : { title: string }) => {
                 className={`w-full rounded-2xl border-2 ${errors.email ? "border-red-300" : "border-blue-100/80"} bg-white/90 py-3.5 pr-6 pl-12 text-gray-700 transition-all duration-300 placeholder:text-blue-300/90 focus:border-blue-400 focus:ring-4 focus:ring-blue-100/60`}
               />
               {errors.email && (
-                <span className="absolute -bottom-5 left-0 text-sm text-red-500">
+                <span className="absolute -bottom-2 left-0 text-sm text-red-500">
                   {errors.email}
                 </span>
               )}
             </div>
 
             {/* Phone Input */}
-            <div className="relative">
-              <Phone className="absolute top-1/2 left-4 h-5 w-5 -translate-y-1/2 text-blue-600/80" />
+            <div className="relative space-y-3">
+              <Phone className="absolute top-7 left-4 h-5 w-5 -translate-y-1/2 text-blue-600/80" />
               <input
                 type="tel"
                 placeholder="Phone Number"
@@ -162,15 +180,15 @@ const EventInquireForm = ({title} : { title: string }) => {
                 className={`w-full rounded-2xl border-2 ${errors.phone ? "border-red-300" : "border-blue-100/80"} bg-white/90 py-3.5 pr-6 pl-12 text-gray-700 transition-all duration-300 placeholder:text-blue-300/90 focus:border-blue-400 focus:ring-4 focus:ring-blue-100/60`}
               />
               {errors.phone && (
-                <span className="absolute -bottom-5 left-0 text-sm text-red-500">
+                <span className="absolute -bottom-2 left-0 text-sm text-red-500">
                   {errors.phone}
                 </span>
               )}
             </div>
 
             {/* Guests Input */}
-            <div className="relative">
-              <Users className="absolute top-1/2 left-4 h-5 w-5 -translate-y-1/2 text-blue-600/80" />
+            <div className="relative space-y-3">
+              <Users className="absolute top-7 left-4 h-5 w-5 -translate-y-1/2 text-blue-600/80" />
               <input
                 type="number"
                 min={1}
@@ -185,7 +203,7 @@ const EventInquireForm = ({title} : { title: string }) => {
                 className={`w-full rounded-2xl border-2 ${errors.guests ? "border-red-300" : "border-blue-100/80"} bg-white/90 py-3.5 pr-6 pl-12 text-gray-700 transition-all duration-300 placeholder:text-blue-300/90 focus:border-blue-400 focus:ring-4 focus:ring-blue-100/60`}
               />
               {errors.guests && (
-                <span className="absolute -bottom-5 left-0 text-sm text-red-500">
+                <span className="absolute -bottom-2 left-0 text-sm text-red-500">
                   {errors.guests}
                 </span>
               )}
@@ -193,7 +211,7 @@ const EventInquireForm = ({title} : { title: string }) => {
           </div>
 
           {/* Event Type Select */}
-          <div className="relative">
+          <div className="relative space-y-8">
             <Select
               value={formData.eventType}
               onValueChange={(value) =>
@@ -216,20 +234,20 @@ const EventInquireForm = ({title} : { title: string }) => {
               </SelectContent>
             </Select>
             {errors.eventType && (
-              <span className="absolute -bottom-5 left-0 text-sm text-red-500">
+              <span className="absolute -bottom-6 left-0 text-sm text-red-500">
                 {errors.eventType}
               </span>
             )}
           </div>
 
           {/* Date Picker */}
-          <div className="relative">
+          <div className="relative space-y-5">
             <div
               className={`group relative flex cursor-pointer items-center justify-between rounded-2xl border-2 ${errors.date ? "border-red-300" : "border-blue-100/80"} bg-white/90 px-5 py-3.5 transition-all duration-300 hover:border-blue-400`}
               onClick={() => setOpenDatePicker(!openDatePicker)}
             >
               <span
-                className={`text-md ${errors.date ? "text-red-400" : formData.date ? "text-gray-700" : "text-blue-300/90"}`}
+                className={`text-md ${errors.date ? "border-red-400" : formData.date ? "text-gray-700" : "text-blue-300/90"}`}
               >
                 {formData.date
                   ? formatDateInBookingCheckOut(formData.date)
@@ -238,7 +256,7 @@ const EventInquireForm = ({title} : { title: string }) => {
               <CalendarDays className="h-5 w-5 text-blue-600/80 transition-colors duration-300 group-hover:text-blue-500" />
             </div>
             {errors.date && (
-              <span className="absolute -bottom-5 left-0 text-sm text-red-500">
+              <span className="relative -top-5 left-0 text-sm text-red-500">
                 {errors.date?.toString()}
               </span>
             )}
@@ -247,7 +265,7 @@ const EventInquireForm = ({title} : { title: string }) => {
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="absolute z-10 mt-3 w-full"
+                className="absolute z-10 mt-3 -bottom-60 left-0"
               >
                 <DayPicker
                   selected={formData.date}

@@ -33,7 +33,6 @@ const RoomInformationPage = () => {
   const { showToast } = useToast();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showLightbox, setShowLightbox] = useState(false);
-  const [isFavorite, setIsFavorite] = useState(false);
 
   // Create a mapping of amenity names to icons
   const amenityIcons = {

@@ -22,6 +22,7 @@ const policies = {
     update_booking_status: isSuperAdminOrAdmin,
     cancel_any: isSuperAdmin,
     view_own: isSuperAdminOrAdminOrUser,
+    decline_request: isSuperAdminOrAdmin,
   },
 
   rooms: {
@@ -34,12 +35,34 @@ const policies = {
   payments: {
     view_all: isSuperAdminOrAdmin,
     update_payment_status: isSuperAdminOrAdmin,
-    approve_refund: isSuperAdmin, //todo: haven't created yet
+    approve_refund: isSuperAdmin,
   },
 
   reports: {
     view: isSuperAdminOrAdmin,
-    generate: isSuperAdminOrAdmin,
+    delete: isSuperAdmin,
+    generate: (req) => {
+      const { type } = req.body;
+
+      //! restrict with only superadmin able to generate
+      if (["financial", "revenue"].includes(type)) {
+        return isSuperAdmin(req);
+      }
+
+      //! "occupancy" and "cancellation" allow to generate by both administrator role
+      return isSuperAdminOrAdmin;
+    },
+    download: (req) => {
+      const { type } = req.query;
+
+      //! restrict with only superadmin able to generate
+      if (["financial", "revenue"].includes(type)) {
+        return isSuperAdmin(req);
+      }
+
+      //! "occupancy" and "cancellation" allow to generate by both administrator role
+      return isSuperAdminOrAdmin;
+    },
   },
 
   assignRole: {
@@ -66,7 +89,7 @@ const policies = {
   },
 
   OTP: {
-    view: isSuperAdmin,
+    view: isSuperAdminOrAdmin,
     update: isSuperAdmin,
     create: isSuperAdmin,
   },
@@ -74,6 +97,20 @@ const policies = {
     update: isSuperAdmin,
     create: isSuperAdmin,
     delete: isSuperAdmin,
+  },
+  settings: {
+    update: isSuperAdmin,
+    view_user_activity_tracking: isSuperAdmin,
+    view: isSuperAdminOrAdmin,
+    create_carousel: isSuperAdmin,
+    delete: isSuperAdmin
+  },
+  reservation: {
+    view: isSuperAdminOrAdmin,
+  },
+  suspiciousEvent: {
+    view: isSuperAdmin,
+    update: isSuperAdmin,
   }
 };
 

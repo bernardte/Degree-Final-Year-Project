@@ -7,10 +7,21 @@ interface BookingStore {
   bookings: Bookings[];
   cancelledBookings: CancelBookingRequest[];
   acceptCancelledBookingsRequest: CancelBookingRequest[];
+  statisticCount: {
+    total: number;
+    pendingBookings: number;
+    confirmedBookings: number;
+    cancelledBookings: number;
+    completedBookings: number;
+  };
   isLoading: boolean;
+  isAcceptCancelledBookingsRequestLoading: boolean;
+  isCancelBookingRequestLoading: boolean;
   totalPages: number;
   currentPage: number;
   error: string | null;
+  setUpdatePaymentStatus: (bookingId: string) => void;
+  setBookingStatus: (newStatus: "confirmed" | "pending") => void;
   updateCancelBookingRequest: (bookingId: string) => void;
   updateBookingStatus: (
     bookingId: string,
@@ -20,7 +31,11 @@ interface BookingStore {
   clearBookingInformation: () => void;
   fetchBooking: () => Promise<void>;
   fetchAllBookingViewInCalendar: () => Promise<void>;
-  fetchAllBooking: (page: number) => Promise<void>;
+  fetchAllBooking: (
+    page: number,
+    limit?: number,
+    searchTerm?: string,
+  ) => Promise<void>;
   removeBooking: (bookingId: string) => void;
   fetchAllCancelBookingRequest: () => Promise<void>;
   fetchAllAcceptCancelledBooking: () => Promise<void>;
@@ -32,19 +47,50 @@ const useBookingStore = create<BookingStore>((set) => ({
   bookings: [],
   cancelledBookings: [],
   acceptCancelledBookingsRequest: [],
+  statisticCount: {
+    total: 0,
+    pendingBookings: 0,
+    confirmedBookings: 0,
+    cancelledBookings: 0,
+    completedBookings: 0,
+  },
+  bookingSessions: [],
   totalPages: 1,
   currentPage: 1,
   isLoading: false,
+  isAcceptCancelledBookingsRequestLoading: false,
+  isCancelBookingRequestLoading: false,
   error: null,
+  setUpdatePaymentStatus: (bookingId: string) => {
+    set((prev) => ({
+      bookings: prev.bookings.map((booking) =>
+        bookingId === booking._id
+          ? { ...booking, paymentStatus: "refund" }
+          : booking,
+      ),
+    }));
+  },
+  setBookingStatus: (newStatus: "confirmed" | "pending") => {
+    set((prev) => ({
+      bookings: prev.bookings.map((booking) =>
+        booking.status === "pending"
+          ? { ...booking, status: newStatus }
+          : booking,
+      ),
+    }));
+  },
   handleDeleteAllAcceptCancelledBooking: async () => {
     try {
-        const response = await axiosInstance.delete("/api/bookings/deleteAllCancellationBookingRequest");
-        if(response?.data){
-          set({acceptCancelledBookingsRequest: []})
-        }
-
+      const response = await axiosInstance.delete(
+        "/api/bookings/deleteAllCancellationBookingRequest",
+      );
+      if (response?.data) {
+        set({ acceptCancelledBookingsRequest: [] });
+      }
     } catch (error: any) {
-      set({ error: error?.response?.data?.error || error?.response?.data?.message})
+      set({
+        error: error?.response?.data?.error || error?.response?.data?.message,
+      });
     }
   },
   clearBookingInformation: () => {
@@ -77,7 +123,7 @@ const useBookingStore = create<BookingStore>((set) => ({
     }));
   },
   fetchAllAcceptCancelledBooking: async () => {
-    set({ isLoading: true, error: null });
+    set({ isCancelBookingRequestLoading: true, error: null });
     try {
       const response = await axiosInstance.get(
         "/api/admin/get-all-accept-cancelled-bookings-request",
@@ -99,6 +145,8 @@ const useBookingStore = create<BookingStore>((set) => ({
         );
         set({ error: error.message });
       }
+    } finally {
+      set({ isCancelBookingRequestLoading: false });
     }
   },
 
@@ -120,10 +168,13 @@ const useBookingStore = create<BookingStore>((set) => ({
       .finally(() => set({ isLoading: false }));
   },
 
-  fetchAllBooking: async (page: number, limit = 10) => {
+  fetchAllBooking: async (page: number, limit = 10, searchTerm = "") => {
     set({ isLoading: true, error: null });
+    console.log("Fetching all bookings with search term: ", searchTerm);
     axiosInstance
-      .get(`/api/admin/get-all-bookings?page=${page}&limit=${limit}`)
+      .get(
+        `/api/admin/get-all-bookings?page=${page}&limit=${limit}&search=${searchTerm}`,
+      )
       .then((response) => {
         const { bookings, totalPages, currentPage } = response.data;
         set({ bookings, totalPages, currentPage });
@@ -142,10 +193,18 @@ const useBookingStore = create<BookingStore>((set) => ({
     axiosInstance
       .get("/api/admin/get-all-bookings-view-in-calendar")
       .then((response) => {
-        set({ bookings: response.data, error: null });
-      }).catch((error: any) => {
-        set({error: error?.response?.data?.error || error?.response?.data?.message})
-      }).finally(() => set({ isLoading: false }))
+        set({
+          bookings: response.data.mappedBookings,
+          statisticCount: response.data.statisticCount,
+          error: null,
+        });
+      })
+      .catch((error: any) => {
+        set({
+          error: error?.response?.data?.error || error?.response?.data?.message,
+        });
+      })
+      .finally(() => set({ isLoading: false }));
   },
 
   removeBooking: (bookingId: string) => {
@@ -165,7 +224,7 @@ const useBookingStore = create<BookingStore>((set) => ({
   },
 
   fetchAllCancelBookingRequest: async () => {
-    set({ isLoading: true, error: null });
+    set({ isAcceptCancelledBookingsRequestLoading: true, error: null });
     try {
       const response = await axiosInstance.get(
         "/api/admin/get-all-cancelled-bookings-request",
@@ -179,8 +238,12 @@ const useBookingStore = create<BookingStore>((set) => ({
       set({
         error: error?.response?.data?.error || error?.response?.data?.message,
       });
+    } finally {
+      set({ isAcceptCancelledBookingsRequestLoading: false });
     }
   },
+
+ 
 }));
 
 export default useBookingStore;

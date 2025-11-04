@@ -22,6 +22,7 @@ const accessControl = (resource, actions) => {
     for (let action of actionsToCheck) {
       // 1. Permission Check
       if (!hasPermission(role, resource, action)) {
+        res.locals.errorMessage = "Access denied insufficien permission";
         return res
           .status(403)
           .send({
@@ -32,6 +33,7 @@ const accessControl = (resource, actions) => {
       // 2. Policy Resource Exists
       const resourcePolicy = policies[resource];
       if (!resourcePolicy) {
+        res.locals.errorMessage = `No policy defined for resource "${resource}"`;
         return res
           .status(404)
           .send({
@@ -42,6 +44,7 @@ const accessControl = (resource, actions) => {
       // 3. Policy Action Exists
       const actionPolicy = resourcePolicy[action];
       if (!actionPolicy) {
+        res.locals.errorMessage = `No policy defined found on action="${action}" with this "${resources}"`;
         return res
           .status(404)
           .send({
@@ -52,6 +55,7 @@ const accessControl = (resource, actions) => {
       // 4. Run Policy
       const allowed = actionPolicy(req);
       if (!allowed) {
+        res.locals.errorMessage = `Policy check failed: action=${action}, resource=${resource}`;
         return res
           .status(403)
           .send({
@@ -59,7 +63,6 @@ const accessControl = (resource, actions) => {
           });
       }
     }
-
     // All actions passed
     next();
   };

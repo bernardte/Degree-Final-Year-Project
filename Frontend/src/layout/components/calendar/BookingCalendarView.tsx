@@ -59,8 +59,15 @@ interface CalendarViewProps {
   events: EventInput[];
   bookings: Bookings[];
   isLoading: boolean;
+  statisticCount: {
+    total: number;
+    pendingBookings: number;
+    confirmedBookings: number;
+    cancelledBookings: number;
+    completedBookings: number;
+  };
   error: null | string;
-  onRefresh: () => Promise<void>
+  onRefresh: () => Promise<void>;
 }
 
 interface BookingTooltipProps {
@@ -184,7 +191,13 @@ const BookingTooltip = ({ booking, children }: BookingTooltipProps) => {
  * CalendarView Component - Premium hotel booking calendar with filters
  * @param events - Array of booking events
  */
-const BookingCalendarView = ({ events, bookings, isLoading, error, onRefresh }: CalendarViewProps) => {
+const BookingCalendarView = ({
+  events,
+  isLoading,
+  error,
+  onRefresh,
+  statisticCount,
+}: CalendarViewProps) => {
   const [activeEvent, setActiveEvent] = useState<string | null>(null);
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
   const [statusFilters, setStatusFilters] = useState<BookingStatus[]>([]);
@@ -197,7 +210,7 @@ const BookingCalendarView = ({ events, bookings, isLoading, error, onRefresh }: 
     start: null,
     end: null,
   });
-  const [filterByName, setFilterByName]= useState("");
+  const [filterByName, setFilterByName] = useState("");
 
   // Extract unique room types from events
   const roomTypes = useMemo(() => {
@@ -228,8 +241,6 @@ const BookingCalendarView = ({ events, bookings, isLoading, error, onRefresh }: 
       };
     });
   }, [events]);
-
-
 
   // Filter events based on selected filters
   const filteredEvents = useMemo(() => {
@@ -263,7 +274,12 @@ const BookingCalendarView = ({ events, bookings, isLoading, error, onRefresh }: 
       }
 
       // Apply filter by name
-      if(filterByName.length > 0 && !filterByName.toLowerCase().includes(event.extendedProps.contactName.toLowerCase())){
+      if (
+        filterByName.length > 0 &&
+        !filterByName
+          .toLowerCase()
+          .includes(event.extendedProps.contactName.toLowerCase())
+      ) {
         return false;
       }
 
@@ -345,7 +361,6 @@ const BookingCalendarView = ({ events, bookings, isLoading, error, onRefresh }: 
     roomTypeFilters.length > 0 ||
     dateRange.start ||
     dateRange.end;
-
 
   return (
     <div className="rounded-2xl bg-white p-4 shadow-xl">
@@ -681,35 +696,35 @@ const BookingCalendarView = ({ events, bookings, isLoading, error, onRefresh }: 
       <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-5">
         {[
           {
-            count: bookings.length,
+            count: statisticCount.total ?? 0,
             label: "Total Bookings",
             bg: "bg-indigo-50",
             border: "border-indigo-100",
             text: "text-indigo-700",
           },
           {
-            count: bookings.filter((b) => b.status === "pending").length,
+            count: statisticCount.pendingBookings ?? 0,
             label: "Pending",
             bg: "bg-amber-50",
             border: "border-amber-100",
             text: "text-amber-700",
           },
           {
-            count: bookings.filter((b) => b.status === "confirmed").length,
+            count: statisticCount.confirmedBookings ?? 0,
             label: "Confirmed",
             bg: "bg-blue-50",
             border: "border-blue-100",
             text: "text-blue-700",
           },
           {
-            count: bookings.filter((b) => b.status === "cancelled").length,
+            count: statisticCount.cancelledBookings ?? 0,
             label: "Cancelled",
             bg: "bg-rose-50",
             border: "border-rose-100",
             text: "text-rose-700",
           },
           {
-            count: bookings.filter((b) => b.status === "completed").length,
+            count: statisticCount.completedBookings ?? 0,
             label: "Completed",
             bg: "bg-emerald-50",
             border: "border-emerald-100",
@@ -723,7 +738,9 @@ const BookingCalendarView = ({ events, bookings, isLoading, error, onRefresh }: 
             transition={{ delay: 0.05 * idx }}
             className={`rounded-lg ${stat.border} ${stat.bg} p-3 text-center`}
           >
-            <div className={`text-lg font-bold ${stat.text}`}>{stat.count}</div>
+            <div className={`text-lg font-bold ${stat.text}`}>
+              {stat.count.toString()}
+            </div>
             <div className={`text-xs ${stat.text.replace("700", "600")}`}>
               {stat.label}
             </div>

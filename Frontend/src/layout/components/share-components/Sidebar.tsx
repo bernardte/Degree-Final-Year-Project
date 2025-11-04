@@ -9,6 +9,8 @@ import {
   LayoutGrid,
   CalendarRange,
   MessageCircleMore,
+  Settings2,
+  Radar,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -16,6 +18,8 @@ import useHandleLogout from "@/hooks/useHandleLogout";
 import { Link, useNavigate } from "react-router-dom";
 import useAuthStore from "@/stores/useAuthStore";
 import useNotificationStore from "@/stores/useNotificationStore";
+import RequireRole from "@/permission/RequireRole";
+import { ROLE } from "@/constant/roleList";
 
 const Sidebar = () => {
   const [open, setOpen] = useState<boolean>(() => {
@@ -31,7 +35,7 @@ const Sidebar = () => {
   return (
     <motion.nav
       layout
-      className="flex h-screen shrink-0 flex-col border-r border-slate-300 bg-white p-2 overflow-y-auto z-100"
+      className="z-100 flex h-screen shrink-0 flex-col overflow-y-auto border-r border-slate-300 bg-white p-2"
       style={{
         width: open ? "225px" : "fit-content",
       }}
@@ -90,16 +94,20 @@ const Sidebar = () => {
           setSelected={setSelected}
           items={[
             {
-              label: "Reservation Calendar",
+              label: "Booking Reservation",
               path: "/admin-booking-calendar",
             },
             {
-              label: "Room Deactivation Calendar",
+              label: "Room Deactivation",
               path: "/admin-deactivation-room-calendar",
             },
             {
-              label: "Event Booking Calendar",
+              label: "Event Booking",
               path: "/admin-event-request-calendar",
+            },
+            {
+              label: "Restaurant Reservation",
+              path: "/admin-reservation-calendar",
             },
           ]}
         />
@@ -137,7 +145,6 @@ const Sidebar = () => {
           link={() => navigate("/admin-chat")}
           open={open}
         />
-
         <Option
           Icon={Bell}
           title="Notification"
@@ -149,14 +156,35 @@ const Sidebar = () => {
           open={open}
           notify={unreadNotification}
         />
-
+        <RequireRole allowedRoles={[ROLE.SuperAdmin]}>
+          <Option
+            Icon={Radar}
+            title="Monitoring"
+            selected={selected}
+            titleColor="text-stone-400"
+            IconColor="text-stone-400"
+            setSelected={setSelected}
+            link={() => navigate("/admin-suspicious-event")}
+            open={open}
+          />
+        </RequireRole>
+        <Option
+          Icon={Settings2}
+          title="Setting"
+          selected={selected}
+          titleColor="text-stone-500"
+          IconColor="text-stone-500"
+          setSelected={setSelected}
+          link={() => navigate("/admin-setting")}
+          open={open}
+        />
         <Option
           Icon={LogOut}
           title="Logout"
           selected={selected}
           setSelected={setSelected}
-          titleColor="text-rose-500"
-          IconColor="text-rose-500"
+          titleColor="text-rose-700"
+          IconColor="text-rose-700"
           link={handleLogout}
           open={open}
         />
@@ -289,23 +317,25 @@ const Option = ({
             exit={{ scale: 0, opacity: 0 }}
             transition={{ duration: 0.3 }}
             style={{ transform: "translateY(-50%)" }}
-            className="absolute right-4 size-5 rounded bg-rose-400 text-center text-sm text-white"
+            className="absolute right-4 size-7 rounded bg-rose-400 pt-1 text-center text-sm text-white"
           >
             {notify}
           </motion.span>
-        ): (notify ?? 0) > 0 && (
-          <motion.span
-            key="notify-badge"
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0, opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            style={{ transform: "translateY(-50%)" }}
-            className="absolute right-6 top-1 size-5 rounded-full bg-rose-400 text-center text-sm text-white"
+        ) : (
+          (notify ?? 0) > 0 && (
+            <motion.span
+              key="notify-badge"
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0, opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              style={{ transform: "translateY(-50%)" }}
+              className="absolute top-0 right-3 size-7 rounded-full bg-rose-400 p-1 text-center text-sm text-white"
             >
               {notify}
             </motion.span>
-        ) }
+          )
+        )}
       </AnimatePresence>
     </motion.button>
   );

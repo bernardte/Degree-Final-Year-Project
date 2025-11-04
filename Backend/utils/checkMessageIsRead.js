@@ -8,11 +8,11 @@ export const checkIsRead = async (conversation, senderType) => {
   let recipientKey;
 
   if (senderType === "user" || senderType === "guest") {
-    // 发给 lockedBy 的 admin 或 superAdmin
+    // send to locked by admin or super admin
     recipientId = conversation.lockedBy?.toString();
     recipientKey = recipientId ? `user:${recipientId}` : null;
   } else if (senderType === "admin" || senderType === "superAdmin") {
-    // 发给 user 或 guest
+    // send to guest or user
     const userCode = conversation.userCode;
     if (userCode?.startsWith("user_")) {
       recipientId = userCode.replace("user_", "");

@@ -8,7 +8,6 @@ import CancellationRequest from "../models/cancellationRequest.model.js";
 import Event from "../models/event.model.js";
 import User from "../models/user.model.js";
 import sendEventResponseEmail from "../utils/sendEventResponseEmail.js";
-import OTP from "../models/adminOTP.model.js";
 import stripe from "../config/stripe.js";
 import { normalizeToArray } from "../logic function/normalizeToArray.js";
 import { emitBookingStatusUpdate, emitToSpecificUser } from "../socket/socketUtils.js";
@@ -20,10 +19,24 @@ const getUser = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 5;
     const skip = (page - 1) * limit;
+    const searchTerm = req.query.search || "";
+    console.log("searchTerm: ", searchTerm);
+
+    let query = {};
+    if (searchTerm) {
+      query = {
+        $or: [
+          { username: { $regex: searchTerm, $options: "i" } },
+          { role: { $regex: searchTerm, $options: "i" } },
+          { userEmail: { $regex: searchTerm, $options: "i" } },
+        ],
+      };
+    }
+
 
     const [users, totalCount] = await Promise.all([
-      User.find().skip(skip).limit(limit).select("-password"),
-      User.countDocuments(),
+      User.find(query).skip(skip).limit(limit).select("-password"),
+      User.countDocuments(query),
     ]);
 
     if (!users) {
@@ -67,7 +80,7 @@ const updateUserRole = async (req, res) => {
         .json({ error: "New role is the same as the current role" });
     }
 
-    if (newRole === "superAdmin" || req.user.role === newRole) {
+    if (newRole === "superAdmin") {
       return res.status(403).json({
         error:
           "Access denied: You do not have sufficient permission to assign the 'Super Admin' role.",
@@ -93,43 +106,32 @@ const updateUserRole = async (req, res) => {
   }
 };
 
-//OTP update
-const changeOTPVerificationCode = async (req, res) => {
-  const { newOTP } = req.body;
-  const superAdminId = req.user._id;
-
-  if (!newOTP) {
-    return res.status(400).json({ error: "OTP cannot be empty" });
+const suspendUser = async (req, res) => {
+  const { userId, status } = req.body;
+  console.log(userId, status);
+  if (!userId || typeof status !== "boolean") {
+    return res.status(400).json({ error: "UserId and status are required" });
   }
 
   try {
-    const updatedOTP = await OTP.findOneAndUpdate(
-      { superAdminId }, //filter
-      { otpCode: newOTP }, //update otp
-      { new: true, upsert: true } //if not found then create
-    );
-
-    //* Notify all admins
-    const allAdmins = await User.find({
-      role: { $in: ["admin", "superAdmin"] },
-    });
-    const adminIds = allAdmins.map((admin) => admin._id);
-
-    await notifyUsers(
-      adminIds,
-      `Admin portal access OTP has been updated to ${newOTP} by ${req.user.name}`,
-      "system"
-    );
-
-    res.status(200).json({
-      message: "OTP updated successfully",
-      updatedOTP,
-    });
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    user.suspended = status;
+    await user.save();
+    return res
+      .status(200)
+      .json({
+        message: `User has been ${
+          status ? "suspended" : "reactivated"
+        } successfully`,
+      });
   } catch (error) {
-    console.log("Error in changeOTPVerificationCode", error.message);
-    res.status(500).json({ error: "Internal Server Error" });
+    return res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
 
 // create room by admin panel
 const addRoom = async (req, res) => {
@@ -191,7 +193,7 @@ const addRoom = async (req, res) => {
       roomNumber,
     });
     if (existingRoom) {
-      return res.status(400).json({ message: "Room number already exists." });
+      return res.status(400).json({ error: "Room number already exists." });
     }
 
     // Upload images in parallel
@@ -270,10 +272,20 @@ const updateRoom = async (req, res) => {
     const isValid = validateRoomAmenities(amenities);
     if (!isValid) return res.status(400).json({ error: "Invalid amenities" });
 
+    const existingRoom = await Room.findOne({
+      roomNumber,
+      _id: { $ne: roomId },
+    });
+    
+    if (existingRoom) {
+      return res.status(400).json({ error: "Room number already exists" });
+    }
+
     const room = await Room.findById(roomId);
     if (!room) return res.status(404).json({ error: "Room not found" });
 
     let newImages = [...room.images]; // Default: keep existing
+
 
     // If a new cover image was uploaded
     if (coverImages.length > 0) {
@@ -508,7 +520,7 @@ const deleteRoom = async (req, res) => {
       return res.status(404).json({ error: "Room not found" });
     }
 
-    // Optional: Check if this room is associated with any booking
+    // Check if this room is associated with any booking
     const existingBooking = await Booking.findOne({ room: room._id });
     if (existingBooking) {
       return res
@@ -570,6 +582,8 @@ const getAllBookings = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 5;
+    const searchTerm = req.query.search || "";
+    console.log("search: ", searchTerm);
     //* If page = 1, then skip = 0, meaning no records skipped, start from the first record.
     //* If page = 2 and limit = 10, then skip = 10, meaning skip the first 10 records, start from the 11th record.
     //* If page = 3 and limit = 10, then skip = 20, skip the first 20 records, start from the 21st.
@@ -584,14 +598,25 @@ const getAllBookings = async (req, res) => {
         { $set: { status: "completed" }}
       )
 
+      let query = {};
+      if (searchTerm) {
+        query = {
+          $or: [
+            { userEmail: { $regex: searchTerm, $options: "i" } },
+            { contactEmail: { $regex: searchTerm, $options: "i" } },
+            { bookingReference: { $regex: searchTerm, $options: "i" } },
+          ],
+        };
+      }
+
     const [bookings, totalCount] = await Promise.all([
-      Booking.find()
+      Booking.find(query)
         .skip(skip) // skip first 5 bookings
         .limit(limit) // get next 5 bookings
         .populate("room", "roomType pricePerNight")
         .populate("bookingCreatedByUser", "name email")
         .sort({ createdAt: -1 }),
-      Booking.countDocuments(),
+      Booking.countDocuments(query),
     ]);
 
     if (!bookings || bookings.length === 0) {
@@ -618,6 +643,20 @@ const getAllBookingsViewInCalendar = async (req, res) => {
         "bookingReference contactEmail contactName contactNumber startDate endDate status bookingCreatedByUser room totalGuests totalPrice"
       );
 
+      const counts = await Booking.aggregate([
+        { $group: { _id: "$status", count: { $sum: 1 }}}
+      ])
+
+
+
+      const statisticCount = {
+        total: bookings.length,
+        pendingBookings: counts.find((stat) => stat._id === "pending")?.count || 0,
+        confirmedBookings: counts.find((stat) => stat._id === "confirmed")?.count || 0,
+        cancelledBookings: counts.find((stat) => stat._id === "cancelled")?.count || 0,
+        completedBookings: counts.find((stat) => stat._id === "completed")?.count || 0,
+      }
+
       const mappedBookings = bookings.flatMap((booking) => {
         const fallbackUser = booking.bookingCreatedByUser || {};
         console.log(booking.startDate);
@@ -640,7 +679,9 @@ const getAllBookingsViewInCalendar = async (req, res) => {
         }));
       });
       
-    res.status(200).json(mappedBookings);
+    res
+      .status(200)
+      .json({ mappedBookings: mappedBookings, statisticCount: statisticCount });
   } catch (error) {
     console.error(
       "Error fetching getAllBookingsViewInCalendar: ",
@@ -796,6 +837,24 @@ const updateBookingStatus = async (req, res) => {
   }
 };
 
+const updateAllPendingBookingStatusToConfirmed =  async (req, res) => {
+  try {
+    const result = await Booking.updateMany(
+      { status: "pending"},
+      { $set: { status: "confirmed"} }
+    )
+
+    await emitBookingStatusUpdate();
+    res.status(201).json({
+      message: `${result.modifiedCount} pending bookings updated to confirmed`,
+      newStatus: "confirmed",
+    });
+  } catch (error) {
+    console.log("Error in updateAllPendingBookingStatusToConfirmed: ", error.message);
+    res.status(500).json({ "error": "Internal Server Error" })
+  }
+}
+
 const getAllCancelledBookings = async (req, res) => {
   try {
     const cancelledBookings = await CancellationRequest.find().sort({
@@ -833,6 +892,7 @@ const getAllAcceptCancelledBookings = async (req, res) => {
   }
 };
 
+// update the cancellation request from the table of booking cancellation request in admin dashboard
 const updateCancellationRequest = async (req, res) => {
   const { requestId } = req.params;
   const { status } = req.body;
@@ -852,7 +912,7 @@ const updateCancellationRequest = async (req, res) => {
       return res.status(404).json({ error: "Cancellation request not found" });
     }
 
-    const booking = request.bookingId;
+    const booking = await Booking.findById(request.bookingId);
     if (!booking)
       return res.status(404).json({ error: "Related booking not found" });
 
@@ -900,6 +960,8 @@ const updateCancellationRequest = async (req, res) => {
         booking.paymentStatus = "refund"; // Update payment status to refunded
         booking.refundAmount = refundAmount; // Update total price to the refund amount
         console.log("Refund amount1: ", refundAmount);
+
+        //remove booking from the room model collection bookings array
         for (const roomId of booking.room) {
           const room = await Room.findById(roomId);
           if (!room) {
@@ -914,6 +976,10 @@ const updateCancellationRequest = async (req, res) => {
         await booking.save(); // Save the updated booking status
       }
       console.log("Refund amount2: ", refundAmount);
+
+      //real-time update booking status
+      await emitBookingStatusUpdate();
+
       return res.status(200).json({
         message: `Cancellation approved. ${policyNote}`,
         refund: refundAmount,
@@ -1185,7 +1251,7 @@ const rejectEvents = async (req, res) => {
 export default {
   getUser,
   updateUserRole,
-  changeOTPVerificationCode,
+  suspendUser,
   addRoom,
   updateRoom,
   updateRoomStatus,
@@ -1197,6 +1263,7 @@ export default {
   getAllBookings,
   getAllBookingsViewInCalendar,
   updateBookingStatus,
+  updateAllPendingBookingStatusToConfirmed,
   getAllCancelledBookings,
   getAllAcceptCancelledBookings,
   updateCancellationRequest,

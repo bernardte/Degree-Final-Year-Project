@@ -12,13 +12,9 @@ export const sendBookingConfirmationEmail = async (userEmail, bookingData) => {
           subject: "Booking Confirmation",
           html: generateBookingEmailHTML(bookingData),
         };
-        transporter.sendMail(mailOptions, (error, info) => {
-          if (error) {
-            console.error("Error sending email:", error);
-          } else {
-            console.log("Email sent:", info.response);
-          }
-        });
+       await transporter.sendMail(mailOptions);
+       console.log("Booking confirmation email sent to:", userEmail);
+
 
     } catch (error) {
         console.error('Error sending email:', error);

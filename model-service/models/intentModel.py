@@ -1,14 +1,17 @@
-# model-service/intent_model.py
 import torch
 import numpy as np
 import pickle
 from torch import nn
+import os
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # directory of intentModel.py
+vectorizer_path = os.path.join(BASE_DIR, "load_dict", "vectorizer.pkl")
 
 # ----- Load encoders -----
-with open("models/load_dict/vectorizer.pkl", "rb") as f:
+with open("models/load_dict/intent-classifier/vectorizer.pkl", "rb") as f:
     vectorizer = pickle.load(f)
 
-with open("models/load_dict/label_encoder.pkl", "rb") as f:
+with open("models/load_dict/intent-classifier/label_encoder.pkl", "rb") as f:
     label_encoder = pickle.load(f)
 
 # ----- Model class -----
@@ -31,7 +34,7 @@ input_dim = len(vectorizer.get_feature_names_out())
 output_dim = len(label_encoder.classes_)
 
 model = IntentClassifier(input_dim, output_dim).to(device)
-model.load_state_dict(torch.load("models/load_dict/intent_classifier.pth", map_location=device))
+model.load_state_dict(torch.load("models/load_dict/intent-classifier/intent_classifier.pth", map_location=device))
 model.eval()
 
 # ----- Prediction -----

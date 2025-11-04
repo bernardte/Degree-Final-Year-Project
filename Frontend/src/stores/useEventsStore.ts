@@ -8,6 +8,7 @@ interface eventStore {
   error: string | null;
   currentPage: number;
   totalPages: number;
+  totalEvents: number;
   fetchAllEvents: (page: number) => Promise<void>;
   updateEventsStatus: (eventId: string, newStatus: string) => void;
   fetchEventsForCalendarView: () => Promise<void>;
@@ -18,6 +19,7 @@ const useEventsStore = create<eventStore>((set) => ({
   isLoading: false,
   currentPage: 1,
   totalPages: 1,
+  totalEvents: 0,
   error: null,
   updateEventsStatus: (eventId: String, newStatus: string) => {
     set((prevState) => ({
@@ -52,7 +54,7 @@ const useEventsStore = create<eventStore>((set) => ({
       .get("/api/event/get-all-event-request-for-calendar-view")
       .then((response) => {
         console.log(response?.data);
-        set({ events: response?.data });
+        set({ events: response?.data?.event, totalEvents: response?.data?.totalEvents });
       })
       .catch((error) => set({ error: error?.response?.data?.error }))
       .finally(() => set({ isLoading: false }));

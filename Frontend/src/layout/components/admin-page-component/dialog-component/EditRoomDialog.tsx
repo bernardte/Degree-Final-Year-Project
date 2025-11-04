@@ -403,6 +403,7 @@ const EditRoomDialog = ({
                         onChange={handleEditChange}
                         placeholder="0.00"
                         type="number"
+                        min={0}
                         prefix="RM"
                       />
                       <CapacityInputs
@@ -682,6 +683,7 @@ const FormField = ({
   prefix,
   suffix,
   customInput,
+  min,
 }: {
   icon: React.ReactNode;
   label: string;
@@ -693,6 +695,7 @@ const FormField = ({
   prefix?: string;
   suffix?: string;
   customInput?: React.ReactNode;
+  min?: number
 }) => (
   <motion.div
     className="space-y-2"
@@ -717,6 +720,7 @@ const FormField = ({
           onChange={onChange}
           type={type}
           placeholder={placeholder}
+          min={min}
           className={`border-blue-200 focus:border-blue-400 ${prefix ? "pl-10" : ""} ${suffix ? "pr-10" : ""}`}
         />
         {suffix && (

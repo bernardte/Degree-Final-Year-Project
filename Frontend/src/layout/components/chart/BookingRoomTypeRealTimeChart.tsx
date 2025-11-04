@@ -33,7 +33,7 @@ ChartJS.register(
 const BookingRoomTypeRealTimeChart = () => {
   const [stats, setStats] = useState<{ _id: string; count: number }[]>([]);
   const [loading, setLoading] = useState(true);
-  const socket = useSocket();
+  const { socket } = useSocket();
   const { showToast } = useToast();
 
   const labels = stats.map((s) => s._id);
@@ -133,60 +133,58 @@ const BookingRoomTypeRealTimeChart = () => {
   };
 
   return (
-    <div className="flex flex-col gap-6">
-        {/* Bar Chart Card */}
-        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-          <div className="flex flex-col gap-2 border-b border-slate-100 px-5 pt-5 pb-3">
-            <div className="flex flex-row items-center space-x-2">
-              <BarChart3 className="h-5 w-5 text-indigo-600" />
-              <h3 className="text-xl font-bold text-slate-800">
-                Room Type Booking Statistics
-              </h3>
-            </div>
-            <p className="flex items-center gap-1 text-slate-600">
-              <Info className="h-4 w-4" />
-              Real-time updates on popular room types
-            </p>
+    <div className="flex h-full flex-col gap-6">
+      {/* Bar Chart Card */}
+      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+        <div className="flex flex-col gap-2 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-indigo-50 px-5 pt-5 pb-3">
+          <div className="flex flex-row items-center space-x-2">
+            <BarChart3 className="h-5 w-5 text-indigo-600" />
+            <h3 className="text-xl font-bold text-slate-800">
+              Room Type Booking Statistics
+            </h3>
           </div>
+          <p className="flex items-center gap-1 text-slate-600">
+            <Info className="h-4 w-4" />
+            Real-time updates on popular room types
+          </p>
+        </div>
 
-          <div className="p-4">
-            <div className="h-80">
-              {loading ? (
-                <div className="flex h-full items-center justify-center">
-                  <div className="flex animate-pulse flex-col items-center">
-                    <div className="mb-4 h-16 w-16 rounded-full bg-slate-200"></div>
-                    <div className="text-slate-500">
-                      Loading booking data...
-                    </div>
-                  </div>
+        <div className="p-4">
+          <div className="h-80">
+            {loading ? (
+              <div className="flex h-full items-center justify-center">
+                <div className="flex animate-pulse flex-col items-center">
+                  <div className="mb-4 h-16 w-16 rounded-full bg-slate-200"></div>
+                  <div className="text-slate-500">Loading booking data...</div>
                 </div>
-              ) : stats.length > 0 ? (
-                <Bar
-                  data={{
-                    labels,
-                    datasets: [
-                      {
-                        label: "Bookings",
-                        data: dataCounts,
-                        backgroundColor: colors,
-                        borderRadius: 6,
-                        borderSkipped: false,
-                      },
-                    ],
-                  }}
-                  options={barOptions}
-                />
-              ) : (
-                <div className="flex h-full flex-col items-center justify-center gap-3 text-slate-500">
-                  <div className="rounded-full bg-slate-100 p-4">
-                    <Hotel className="h-10 w-10" />
-                  </div>
-                  <p>No booking data available</p>
+              </div>
+            ) : stats.length > 0 ? (
+              <Bar
+                data={{
+                  labels,
+                  datasets: [
+                    {
+                      label: "Bookings",
+                      data: dataCounts,
+                      backgroundColor: colors,
+                      borderRadius: 6,
+                      borderSkipped: false,
+                    },
+                  ],
+                }}
+                options={barOptions}
+              />
+            ) : (
+              <div className="flex h-full flex-col items-center justify-center gap-3 text-slate-500">
+                <div className="rounded-full bg-slate-100 p-4">
+                  <Hotel className="h-10 w-10" />
                 </div>
-              )}
-            </div>
+                <p>No booking data available</p>
+              </div>
+            )}
           </div>
         </div>
+      </div>
     </div>
   );
 };

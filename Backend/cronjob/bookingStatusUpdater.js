@@ -22,7 +22,7 @@ const bookingStatusUpdater = cron.schedule(
     }
   },
   {
-    scheduled: true,
+    schedule: true,
     timezone: "Asia/Kuala_Lumpur",
   }
 );

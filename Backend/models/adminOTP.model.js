@@ -2,15 +2,27 @@ import mongoose from "mongoose";
 
 const adminOTPSchema = mongoose.Schema(
   {
-    superAdminId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "user",
-        required: true
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "user",
+      required: true,
     },
     otpCode: {
-        type: String,
-        required: true
+      type: String,
+      required: true,
     },
+    expiresAt: { 
+      type: Date, 
+      required: true 
+    },
+    attempts: {
+      type: Number,
+      default: 0
+    },
+    maxAttempts: {
+      type: Number,
+      default: 3
+    }
 
   },
   { timestamps: true }

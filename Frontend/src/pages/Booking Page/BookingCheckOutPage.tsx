@@ -29,6 +29,8 @@ import { formatDateInBookingCheckOut } from "@/utils/formatDate";
 import axiosInstance from "@/lib/axios";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import { Room } from "@/types/interface.type";
+import useAuthStore from "@/stores/useAuthStore";
 
 const BookingCheckOutPage = () => {
   const { sessionId } = useParams();
@@ -39,18 +41,17 @@ const BookingCheckOutPage = () => {
   const { rooms, fetchRooms, updateSelectedRoomBreakfast } = useRoomStore();
   const { showToast } = useToast();
   const [loadingTarget, setLoadingTarget] = useState<string | null>(null);
-  const localStorageSearchParams =
-    localStorage.getItem("searchParams") || "{}";
+  const localStorageSearchParams = localStorage.getItem("searchParams") || "{}";
   const parse = JSON.parse(localStorageSearchParams) || {};
   const [appliedReward, setAppliedReward] = useState<{
     code: string;
     discount: number;
   } | null>(null);
 
-  const user = localStorage.getItem("user")
-  const isLoggedIn = !!user; 
+  const { user } = useAuthStore();
+  const isLoggedIn = !!user;
   const [loading, setLoading] = useState(false);
-
+  console.log("sessionId: ", sessionId);
   useEffect(() => {
     if (sessionId) fetchBookingSession(sessionId);
     fetchRooms();
@@ -59,14 +60,16 @@ const BookingCheckOutPage = () => {
   useEffect(() => {
     if (sessionId) {
       fetchBookingSession(sessionId);
-      console.log("reach on  added refresh")
+      console.log("reach on  added refresh");
     }
 
-    fetchRooms()
+    fetchRooms();
   }, [bookingSession?.breakfastIncluded, sessionId]);
 
   if (error) {
     showToast("error", error);
+    navigate("/");
+    return;
   }
 
   const handleDeleteBookingSession = async (sessionId: string) => {
@@ -104,20 +107,37 @@ const BookingCheckOutPage = () => {
   };
 
   const handleApplyReward = async (code: string) => {
+    const metadata = {
+      page: "http://localhost:3000/booking/confirm/" + sessionId,
+      actionId: "apply reward code",
+      params: { code },
+      extra: {},
+    };
+
     try {
-      const response = await axiosInstance.post("/api/reward/reward-code-used", { code });
-      if(response.data?.success){
+      const response = await axiosInstance.post(
+        "/api/reward/reward-code-used",
+        { code },
+        {
+          params: {
+            type: "action",
+            action: "user applying reward code",
+            metadata: JSON.stringify(metadata),
+          },
+        },
+      );
+      if (response.data?.success) {
         setAppliedReward({ code, discount: response?.data?.discount });
         return {
           success: true,
           discount: response?.data?.discount,
-          message: response.data.message
-        }
-      }else{
+          message: response.data.message,
+        };
+      } else {
         return {
           success: false,
-          message: response.data.error
-        }
+          message: response.data.error,
+        };
       }
     } catch (error: any) {
       return {
@@ -127,15 +147,29 @@ const BookingCheckOutPage = () => {
           "Something went wrong applying reward code",
       };
     }
-   
   };
 
   const handleRemoveReward = async (code: string) => {
+    const metadata = {
+      page: "http://localhost:3000/checkout",
+      actionId: "remove reward code",
+      params: { code },
+      extra: {},
+    };
+
     try {
       const response = await axiosInstance.post(
-        "/api/reward/remove-reward-code", { code }
+        "/api/reward/remove-reward-code",
+        { code },
+        {
+          params: {
+            type: "action",
+            action: "user removing reward code",
+            metadata: JSON.stringify(metadata),
+          },
+        },
       );
-      if(response.data?.success){
+      if (response.data?.success) {
         setAppliedReward(null);
         showToast("info", `Reward ${code} removed!`);
       }
@@ -153,7 +187,13 @@ const BookingCheckOutPage = () => {
     }, 1000);
   };
 
-  const breakfastCount = rooms.filter((r) => r.breakfastIncluded).length;
+  const getRoomIds = (roomIdField: string[] | Room[]): string[] => {
+    if (Array.isArray(roomIdField) && typeof roomIdField[0] === "object") {
+      return (roomIdField as { _id: string }[]).map((r) => r._id);
+    }
+    return roomIdField as string[];
+  };
+  const roomIds = bookingSession ? getRoomIds(bookingSession.roomId) : [];
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-gradient-to-tr from-blue-100 via-white to-blue-50">
@@ -171,17 +211,16 @@ const BookingCheckOutPage = () => {
                       e.preventDefault();
                       setOpenDialog(true);
                     }}
-                    className={
-                      loadingTarget === "/"
-                        ? "font-bold text-gray-700"
-                        : "text-blue-600 hover:underline"
-                    }
+                    className="flex items-center text-blue-600 transition-colors hover:text-blue-800"
                   >
-                    {loadingTarget === "/" ? (
-                      <span className="animate-caret-blink">Loading...</span>
-                    ) : (
-                      "Home"
-                    )}
+                    <div className="flex items-center justify-center">
+                      <Home className="mr-2 h-4 w-4" />
+                      {loadingTarget === "/" ? (
+                        <span className="animate-pulse">Loading...</span>
+                      ) : (
+                        "Home"
+                      )}
+                    </div>
                   </BreadcrumbLink>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
@@ -253,11 +292,15 @@ const BookingCheckOutPage = () => {
           <Loader2 className="h-12 w-12 animate-spin text-blue-600" />
         </div>
       ) : bookingSession &&
-        rooms.some((room) =>
-          Array.isArray(bookingSession.roomId)
-            ? bookingSession.roomId.includes(room._id)
-            : bookingSession.roomId === room._id,
-        ) ? (
+        rooms.some((room) => {
+          if (Array.isArray(bookingSession.roomId)) {
+            return (bookingSession.roomId as string[]).includes(
+              String(room._id),
+            );
+          } else {
+            return String(bookingSession.roomId) === String(room._id);
+          }
+        }) ? (
         <div className="relative flex flex-1 flex-col md:flex-row">
           <BookingDetails
             bookingSession={bookingSession}
@@ -274,7 +317,7 @@ const BookingCheckOutPage = () => {
             checkOutDate={formatDateInBookingCheckOut(
               bookingSession.checkOutDate,
             )}
-            roomId={bookingSession.roomId}
+            roomId={roomIds}
             breakfastIncluded={bookingSession?.breakfastIncluded}
             appliedReward={appliedReward}
           />
@@ -321,8 +364,8 @@ const BookingCheckOutPage = () => {
                 >
                   Back to Home
                 </Button>
-                <Button onClick={() => navigate(-1)} className="cursor-pointer">
-                  Back to Previous Page
+                <Button onClick={() => navigate("/filter-room")} className="cursor-pointer">
+                  Back to room Selection Page 
                 </Button>
               </div>
             </div>

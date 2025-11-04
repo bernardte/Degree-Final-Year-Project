@@ -42,6 +42,15 @@ import NotificationProvider from "./provider/NotificationProvider";
 import AdminChatPage from "./pages/Admin chat page/AdminChatPage";
 import InvoiceDetail from "./layout/components/invoice-component/InvoiceDetail";
 import ImageGalleryPage from "./pages/image galery page/ImageGalleryPage";
+import FAQPage from "./pages/FAQ page/FAQPage";
+import FacilityDetailPage from "./pages/Facilities page/FacilityDetail";
+import AdminSettingPage from "./pages/Admin Setting Page/AdminSettingPage";
+import ReservationCalendarView from "./layout/components/calendar/ReservationCalendarView";
+import ForgetPassword from "./pages/Authentication page/ForgetPassword";
+import ResetPassword from "./pages/Authentication page/ResetPassword";
+import PrivacyPolicyPage from "./pages/Privacy policy page/PrivacyPolicyPage";
+import TermAndConditionPage from "./pages/Term and condition page/TermAndConditionPage";
+import AdminSuspeciousDashboardPage from "./pages/Admin suspecious detect page/AdminSuspeciousDashboardPage";
 
 const App = () => {
   const { user, showLoginPopup, showSignupPopup } = useAuthStore();
@@ -59,6 +68,8 @@ const App = () => {
 
         {/* Public routes */}
         <Route path="/filter-room" element={<FilteredRoomsPage />} />
+        <Route path="/forget-password" element={<ForgetPassword />} />
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
         <Route
           path="/booking/confirm/:sessionId"
           element={<BookingCheckOutPage />}
@@ -74,13 +85,23 @@ const App = () => {
             element={<RoomInformationPage />}
           />
           <Route path="facilities" element={<FacilitiesPage />} />
+          <Route
+            path="facilities/facility/:facilityId"
+            element={<FacilityDetailPage />}
+          />
           <Route path="event" element={<EventPage />} />
           <Route path="contact-us" element={<ContactUsPage />} />
           <Route
             path="cancelled-booking-policy"
             element={<CancelBookingPage />}
           />
+          <Route path="privacy-policy" element={<PrivacyPolicyPage />} />
+          <Route path="terms-condition" element={<TermAndConditionPage />} />
           <Route path="image-gallery" element={<ImageGalleryPage />} />
+          <Route path="faq" element={<FAQPage />} />
+          <Route path="profile" element={<ProfilePage />} />
+          <Route path="pending-booking" element={<PendingBookingPage />} />
+          <Route path="reward-redemption" element={<RewardRedemptionPage />} />
         </Route>
 
         {/* User Login Route */}
@@ -88,9 +109,6 @@ const App = () => {
           <Route path="/loading" element={<LoadingScreen />} />
           <Route path="/display-booking" element={<BookingDisplayPage />} />
           <Route path="/invoice/:id" element={<InvoiceDetail />} />
-          <Route path="profile" element={<ProfilePage />} />
-          <Route path="pending-booking" element={<PendingBookingPage />} />
-          <Route path="reward-redemption" element={<RewardRedemptionPage />} />
         </Route>
 
         {/* Admin and SuperAdmin Routes */}
@@ -122,6 +140,10 @@ const App = () => {
               path="/admin-event-request-calendar"
               element={<AdminEventCalendarPage />}
             />
+            <Route
+              path="/admin-reservation-calendar"
+              element={<ReservationCalendarView />}
+            />
             <Route path="/admin-room" element={<AdminRoomPage />} />
             <Route path="/admin-event" element={<AdminEventsPage />} />
             <Route
@@ -141,6 +163,8 @@ const App = () => {
               path="/admin-notification"
               element={<AdminNotificationPage />}
             />
+            <Route path="/admin-suspicious-event" element={<AdminSuspeciousDashboardPage />} />
+            <Route path="/admin-setting" element={<AdminSettingPage />} />
           </Route>
         </Route>
 

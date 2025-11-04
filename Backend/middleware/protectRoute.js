@@ -12,7 +12,7 @@ const protectRoute = async (req, res, next) => {
       return res.status(401).json({ message: "Unauthorized" });
     }
     const decoded = jwt.verify(token, process.env.JWT_ACCESS_TOKEN);
-    console.log("🔹 Decoded Token:", decoded); // Debuggin
+    console.log("🔹 Decoded Token:", decoded); // Debugging
 
     const user = await User.findById(decoded.userId).select("-password");
 

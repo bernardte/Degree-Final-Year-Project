@@ -1,6 +1,15 @@
 import { Mail, Phone, MapPin } from "lucide-react";
+import useSystemSettingStore from "@/stores/useSystemSettingStore";
+import { useEffect } from "react";
 
 const ContactUsPage = () => {
+  const { fetchAllHotelInformationInCustomerSide, hotelInformation } =
+    useSystemSettingStore();
+
+  useEffect(() => {
+    fetchAllHotelInformationInCustomerSide();
+  }, [fetchAllHotelInformationInCustomerSide]);
+
   return (
     <section className="min-h-screen bg-gradient-to-b from-blue-300 via-sky-200 to-white px-4 py-12 md:px-20">
       <div className="mx-auto max-w-6xl rounded-3xl bg-white p-10 shadow-2xl">
@@ -21,15 +30,15 @@ const ContactUsPage = () => {
             <ul className="space-y-4 text-gray-700">
               <li className="flex items-center gap-3">
                 <Mail className="text-blue-600" />
-                <span>support@theSeraphineHotel@gmail.com</span>
+                <span>{hotelInformation?.email}</span>
               </li>
               <li className="flex items-center gap-3">
                 <Phone className="text-blue-600" />
-                <span>+60 123-456-789</span>
+                <span>{hotelInformation?.phone}</span>
               </li>
               <li className="flex items-center gap-3">
                 <MapPin className="text-blue-600" />
-                <span>George Town, Penang, Malaysia</span>
+                <span>{hotelInformation?.address}</span>
               </li>
             </ul>
 
@@ -47,14 +56,21 @@ const ContactUsPage = () => {
           </div>
 
           {/* Contact Form */}
-          <form className="space-y-6">
+          <form
+          //! Using getform for serverless contact us
+            className="space-y-6"
+            method="POST"
+            action={"https://getform.io/f/awnywqkb"}
+            encType="multipart/form-data"
+          >
             <div>
               <label className="block text-sm font-semibold text-gray-700">
                 Your Name
               </label>
               <input
                 type="text"
-                placeholder="John Doe"
+                name="customer-name"
+                placeholder="Your Name..."
                 className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-3 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
               />
             </div>
@@ -64,7 +80,8 @@ const ContactUsPage = () => {
               </label>
               <input
                 type="email"
-                placeholder="you@example.com"
+                name="email"
+                placeholder="Email..."
                 className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-3 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
               />
             </div>
@@ -74,6 +91,7 @@ const ContactUsPage = () => {
               </label>
               <input
                 type="text"
+                name="subject"
                 placeholder="Subject of your message"
                 className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-3 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
               />
@@ -85,6 +103,7 @@ const ContactUsPage = () => {
               <textarea
                 rows={5}
                 placeholder="Write your message..."
+                name="message"
                 className="mt-1 w-full resize-none rounded-lg border border-gray-300 px-4 py-3 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
               ></textarea>
             </div>

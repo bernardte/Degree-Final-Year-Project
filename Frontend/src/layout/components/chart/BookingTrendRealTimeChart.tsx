@@ -53,7 +53,7 @@ const BookingTrendRealtimeChart = () => {
   const [timeRange, setTimeRange] = useState<string>("7d");
   const [trendPercentage, setTrendPercentage] = useState<number>(0);
   const [showInfo, setShowInfo] = useState(false);
-  const socket = useSocket();
+  const { socket } = useSocket();
 
 //  format Diagram
   const formatChartData = (data: BookingDataPoint[]) => {
@@ -149,7 +149,7 @@ const BookingTrendRealtimeChart = () => {
   };
 
   return (
-    <div className="w-full overflow-hidden rounded-xl bg-white shadow-lg">
+    <div className="w-full flex flex-col overflow-hidden rounded-xl bg-white shadow-lg">
       {/* header */}
       <div className="border-b border-gray-100 p-5">
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
@@ -337,7 +337,7 @@ const BookingTrendRealtimeChart = () => {
       </div>
 
       {/* Bottom Status Area */}
-      <div className="flex items-center justify-between border-t border-gray-100 bg-gray-50 p-4 text-sm text-gray-500">
+      <div className="flex flex-1 items-center justify-between border-t border-gray-100 bg-gray-50 p-4 text-sm text-gray-500">
         <div>
           <span className="inline-flex items-center">
             <div className="mr-2 h-3 w-3 rounded-full bg-blue-500"></div>

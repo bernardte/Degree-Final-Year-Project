@@ -10,7 +10,7 @@ const NotificationProvider = ({ children } : { children: React.ReactNode}) => {
     setUnreadNotificationsCount,
     addNotification,
   } = useNotificationStore((state) => state);
-  const socket = useSocket();
+  const { socket } = useSocket();
   const location = useLocation();
 
   useEffect(() => {

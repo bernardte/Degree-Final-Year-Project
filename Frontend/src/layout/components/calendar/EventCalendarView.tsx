@@ -27,12 +27,14 @@ interface EventCalendarViewProps {
   events: Event[];
   isLoading: boolean;
   error: string | null;
+  totalEvents: number;
 }
 
 const EventCalendarView: React.FC<EventCalendarViewProps> = ({
   events,
   isLoading,
   error,
+  totalEvents,
 }) => {
   const calendarRef = useRef<FullCalendar>(null);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
@@ -76,6 +78,10 @@ const EventCalendarView: React.FC<EventCalendarViewProps> = ({
             <h1 className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-3xl font-bold text-transparent">
               Event Booking Calendar
             </h1>
+            <p className="mb-5 text-gray-600">
+              {events.length} {events.length === 1 ? "event" : "events"}{" "}
+              scheduled
+            </p>
           </div>
         </div>
 
@@ -100,7 +106,7 @@ const EventCalendarView: React.FC<EventCalendarViewProps> = ({
                   className={`cursor-pointer rounded-lg px-4 py-2 transition-all ${
                     viewType === "dayGridMonth"
                       ? "bg-blue-600 text-white shadow-md"
-                      : "bg-white text-slate-700 hover:bg-slate-100 border-2"
+                      : "border-2 bg-white text-slate-700 hover:bg-slate-100"
                   }`}
                 >
                   <span className="flex items-center">
@@ -113,7 +119,7 @@ const EventCalendarView: React.FC<EventCalendarViewProps> = ({
                   className={`cursor-pointer rounded-lg px-4 py-2 transition-all ${
                     viewType === "dayGridWeek"
                       ? "bg-blue-600 text-white shadow-md"
-                      : "bg-white text-slate-700 hover:bg-slate-100 border-2"
+                      : "border-2 bg-white text-slate-700 hover:bg-slate-100"
                   }`}
                 >
                   <span className="flex items-center">
@@ -165,7 +171,7 @@ const EventCalendarView: React.FC<EventCalendarViewProps> = ({
               <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-2">
                 {[
                   {
-                    count: events.length,
+                    count: totalEvents,
                     label: "Total Events",
                     bg: "bg-indigo-50",
                     border: "border-indigo-100",

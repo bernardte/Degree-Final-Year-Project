@@ -97,6 +97,8 @@ const handleSearch = async () => {
     checkOutDate: checkOut,
     adults: adults,
     children: children,
+    type: "search",
+    action: "Click search button to filter room"
   };
 
   const params = new URLSearchParams();

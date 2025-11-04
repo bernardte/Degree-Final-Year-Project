@@ -3,7 +3,6 @@ import SearchBar from "@/layout/components/search-bar/SearchBar";
 import HomepageAboutUs from "@/layout/components/introduction/HomepageAboutUs";
 import HoverCard from "@/layout/components/grid-section/HoverCard";
 import GridList from "@/layout/components/grid-section/GridList";
-import images from "@/constant/carouselImageList";
 import service from "../constant/serviceList";
 import breakfastList from "@/constant/breakfastList";
 import LocationSection from "@/layout/components/map/LocationSection";
@@ -14,7 +13,7 @@ const Homepage = () => {
   const [direction, setDirection] = useState<string[]>([]);
   return (
     <div>
-      <Carousel images={images} />
+      <Carousel category="homepage" />
       <div className="h-50 bg-gradient-to-b from-cyan-500/20">
           <SearchBar />
       </div>

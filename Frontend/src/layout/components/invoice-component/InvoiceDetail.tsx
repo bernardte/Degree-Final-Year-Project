@@ -1,4 +1,3 @@
-// src/components/InvoiceDetail.js
 import { useEffect, useRef } from "react";
 import {
   Hotel,
@@ -23,11 +22,11 @@ import {
 } from "@/types/interface.type";
 import { formatDate, formatDateInBookingCheckOut } from "@/utils/formatDate";
 import { differenceInCalendarDays } from "date-fns";
-import { useReactToPrint } from "react-to-print"
+import { useReactToPrint } from "react-to-print";
 import useToast from "@/hooks/useToast";
 
 const InvoiceDetail = () => {
-  // Hotel invoice data
+  // Hotel invoice base data
   const invoiceData = {
     invoiceNumber: "HOTEL-INV-2023-00142",
     issueDate: "2023-11-15",
@@ -54,7 +53,7 @@ const InvoiceDetail = () => {
   const navigate = useNavigate();
   const contentRef = useRef<HTMLDivElement>(null);
   const { showToast } = useToast();
-  
+
   useEffect(() => {
     if (id) {
       fetchCurrentUserInvoice(id);
@@ -83,9 +82,9 @@ const InvoiceDetail = () => {
   const handlePrint = useReactToPrint({
     contentRef,
     documentTitle: "Invoice",
-    onPrintError: (error) => showToast("info", error)
-  })
-  
+    onPrintError: (error) => showToast("info", error),
+  });
+
   return (
     <>
       {/* Back to previous page */}
@@ -95,7 +94,7 @@ const InvoiceDetail = () => {
       >
         Back
       </button>
-      <div className="p-6 print:p-0 print:mx-10 print:my-4" ref={contentRef}>
+      <div className="p-6 print:mx-10 print:my-4 print:p-0" ref={contentRef}>
         {/* Header with hotel branding */}
         <div className="mb-8 flex flex-col items-start justify-between border-b border-gray-200 pb-6 md:flex-row md:items-center">
           <div className="flex items-center">
@@ -186,10 +185,12 @@ const InvoiceDetail = () => {
                 {invoice?.billingPhoneNumber}
               </div>
             )}
-            <div className="mt-2 flex items-center text-gray-600 capitalize">
-              <Gift className="mr-2 text-gray-500" size={16} />
-              Loyalty Member: {invoice?.loyaltyTier}
-            </div>
+            {invoice?.loyaltyTier && (
+              <div className="mt-2 flex items-center text-gray-600 capitalize">
+                <Gift className="mr-2 text-gray-500" size={16} />
+                Loyalty Member: {invoice?.loyaltyTier}
+              </div>
+            )}
           </div>
         </div>
 
@@ -321,10 +322,10 @@ const InvoiceDetail = () => {
                 {totalBreakfastVoucher > 0 && (
                   <tr>
                     <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-800 capitalize">
-                      Breakfast Voucher ( {totalBreakfastVoucher} x RM 30.00 )
+                      Breakfast Voucher ( {totalBreakfastVoucher} x RM 30.00 x {nights} {nights > 1 ? "nights" : "night" } )
                     </td>
                     <td className="px-6 py-4 text-right text-sm font-medium whitespace-nowrap text-gray-800">
-                      RM {(30 * totalBreakfastVoucher).toFixed(2)}
+                      RM {(30 * totalBreakfastVoucher * nights).toFixed(2)}
                     </td>
                   </tr>
                 )}

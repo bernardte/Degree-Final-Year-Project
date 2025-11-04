@@ -51,7 +51,6 @@ const deleteFacility = async (req, res) => {
 
     try {
         const facility = await Facility.findByIdAndDelete(facilityId);
-        console.log(user);
 
         if (!facility) {
             return res.status(404).json({ error: "Facility not found" });
@@ -103,11 +102,9 @@ const updateFacility = async (req, res) => {
 
     // Upload new image if provided
     if (image) {
-      const imageUrl = await uploadToCloudinary(image); // path or buffer depending on your cloudinary helper
-      facility.image = imageUrl; // imageUrl should include { url, public_id }
+      const imageUrl = await uploadToCloudinary(image); 
+      facility.image = imageUrl; // imageUrl include { url, public_id }
     }
-    console.log("old icon", facility.icon)
-    console.log("old icon color", facility.iconColor)
 
     facility.facilitiesName = facilitiesName;
     facility.description = description;
@@ -229,6 +226,21 @@ const createFacility = async (req, res) => {
   }
 };
 
+const getCertainFacility = async (req, res) => {
+  const { facilityId } = req.params
+  try {
+    const facility = await Facility.findById(facilityId);
+    if (!facility) {
+     return res.status(401).json({ error: "facility not found" });
+    }
+    res.status(200).json(facility);
+  } catch (error) {
+    console.error("Error in getCertainFacility:", error.message);
+    res.status(500).json({ error: error.message });
+  }
+}
+
+
 export default {
   getFacility,
   getAdminPageFacility,
@@ -236,4 +248,5 @@ export default {
   updateFacility,
   updateFacilityStatus,
   createFacility,
+  getCertainFacility,
 };

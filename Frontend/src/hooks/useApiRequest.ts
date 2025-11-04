@@ -28,7 +28,7 @@ const useRequest = () => {
       const response = await axiosInstance.request({
         method,
         url: "/api" + url,
-        ...(method !== "get" && method !== "delete" ? { data } : {}),
+        ...(method === "get" || method === "delete" ? { params: data } : { data }),
         ...config,
       });
 

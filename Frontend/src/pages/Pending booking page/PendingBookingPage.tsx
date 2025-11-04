@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, Variants } from "framer-motion";
 import {
   CalendarDays,
   Clock,
@@ -22,7 +22,7 @@ import useToast from "@/hooks/useToast";
 import axiosInstance from "@/lib/axios";
 
 // Animation configurations
-const cardVariants= {
+const cardVariants: Variants = {
   hidden: { opacity: 0, y: 20 },
   visible: {
     opacity: 1,

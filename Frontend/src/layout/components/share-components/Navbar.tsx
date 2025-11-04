@@ -22,6 +22,8 @@ import useAuthStore from "@/stores/useAuthStore";
 import { useEffect, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import useHandleLogout from "@/hooks/useHandleLogout";
+import useSystemSettingStore from "@/stores/useSystemSettingStore";
+import { useSocket } from "@/context/SocketContext";
 
 const Navbar = () => {
   const { setOpenLoginPopup } = useAuthStore();
@@ -31,7 +33,9 @@ const Navbar = () => {
   const userDetails = userData ? JSON.parse(userData) : {};
   const [navbar, setNavbar] = useState(false);
   const { handleLogout, isLoading } = useHandleLogout();
-
+  const { logo, fetchAllHotelInformationInCustomerSide } =
+    useSystemSettingStore((state) => state);
+  const { activeUsers } = useSocket();
   const scrollHeader = () => {
     setNavbar(window.scrollY > 10);
   };
@@ -41,6 +45,10 @@ const Navbar = () => {
     return () => window.removeEventListener("scroll", scrollHeader);
   }, []);
 
+  useEffect(() => {
+    fetchAllHotelInformationInCustomerSide();
+  }, [fetchAllHotelInformationInCustomerSide]);
+
   if (isLoading) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -49,7 +57,6 @@ const Navbar = () => {
     );
   }
 
-
   return (
     <nav
       className={`fixed top-0 z-50 w-full p-4 transition-all duration-600 ${navbar ? "animate-fadeInDown bg-[#3d60ca] shadow-md" : "bg-transparent"}`}
@@ -57,7 +64,7 @@ const Navbar = () => {
       <div className="mx-auto flex max-w-7xl items-center justify-between">
         <Link to={"/"}>
           <img
-            src="/Logo 2.png"
+            src={logo}
             alt="Logo"
             className="fixed top-0 left-0 h-[60px] w-[100px] object-contain transition-all duration-500 ease-in-out hover:scale-110"
           />
@@ -103,9 +110,15 @@ const Navbar = () => {
                       </AvatarFallback>
                     </Avatar>
                     {/* Indicator */}
-                    <div className="absolute -right-1 -bottom-1 rounded-full bg-green-400 p-1.5">
-                      <div className="h-2 w-2 animate-pulse rounded-full bg-green-200"></div>
-                    </div>
+                    {activeUsers.includes(user._id) ? (
+                      <div className="absolute -right-1 -bottom-1 rounded-full bg-green-400 p-1.5">
+                        <div className="h-2 w-2 animate-pulse rounded-full bg-green-200"></div>
+                      </div>
+                    ) : (
+                      <div className="absolute -right-1 -bottom-1 rounded-full bg-gray-400 p-1.5">
+                        <div className="h-2 w-2 rounded-full bg-gray-200" />
+                      </div>
+                    )}
                   </div>
                   <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-lg font-semibold text-transparent">
                     {userDetails?.state?.user?.username}

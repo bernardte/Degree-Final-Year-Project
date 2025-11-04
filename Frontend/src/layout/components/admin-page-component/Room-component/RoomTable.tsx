@@ -176,7 +176,7 @@ const RoomTable = ({
         { isActivate: !roomStatus },
       );
       if (response?.data) {
-        showToast("success", `${response?.data?.roomName} status ${response?.data?.isActivate === true ? " activate " : " deactivate "} successfully`);
+        showToast("success", `Room ${response?.data?.roomNumber} status ${response?.data?.isActivate === true ? " activate " : " deactivate "} successfully`);
         useRoomStore
           .getState()
           .updateRoomById(roomId, response?.data);

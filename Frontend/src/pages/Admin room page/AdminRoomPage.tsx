@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { motion, Variants } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { DoorClosed, PlusCircle } from "lucide-react";
 import RoomTable from "@/layout/components/admin-page-component/Room-component/RoomTable";
@@ -11,17 +11,17 @@ import { ROLE } from "@/constant/roleList";
 
 
 // Animation constants
-const containerVariants = {
+const containerVariants: Variants = {
   hidden: { opacity: 0 },
   visible: { opacity: 1, transition: { duration: 0.5 } },
 };
 
-const headerVariants = {
+const headerVariants: Variants = {
   hidden: { y: -20, opacity: 0 },
   visible: { y: 0, opacity: 1, transition: { duration: 0.4 } },
 };
 
-const cardVariants = {
+const cardVariants: Variants = {
   hidden: { scale: 0.95, opacity: 0 },
   visible: {
     scale: 1,

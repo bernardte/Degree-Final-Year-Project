@@ -42,7 +42,7 @@ const facilitiesSchema = mongoose.Schema({
     default: "",
     required: true,
   }
-}, { timeStamps: true }
+}, { timestamps: true }
 );
 
 const Facility = mongoose.model("facility", facilitiesSchema);
