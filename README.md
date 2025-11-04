@@ -1,5 +1,5 @@
 ## Degree Final Year Project
-This is a web-based hotel booking system developed using React.js, TypeScript, Node.js, and MongoDB.
+This is a web-based hotel booking system developed using React.js, TypeScript, Node.js, Python and MongoDB.
 It allows users to book rooms online, check real-time availability, and receive email confirmations.
 Admins can manage rooms, bookings, users, system setting and reports.
 
