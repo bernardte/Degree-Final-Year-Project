@@ -113,7 +113,7 @@ const Profile = () => {
     fetchCurrentLoginUser().finally(() => setIsLoading(false));
   }, [fetchCurrentLoginUser]);
 
-  // 更新表单数据
+  //update data
   useEffect(() => {
     if (currentLoginUser) {
       setFormData({
@@ -127,14 +127,14 @@ const Profile = () => {
     }
   }, [currentLoginUser]);
 
-  // 切换密码可见性
+  // change password visibility
   const togglePasswordVisibility = (
     field: "confirmPassword" | "currentPassword" | "newPassword",
   ) => {
     setShowPassword((prev) => ({ ...prev, [field]: !prev[field] }));
   };
 
-  // 处理头像更改
+  // change avatar
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -147,7 +147,7 @@ const Profile = () => {
     }
   };
 
-  // 表单验证
+  // form validation
   const validateForm = () => {
     const newErrors: FormErrors = {};
     if (!formData.username) newErrors.username = "Username is required";
@@ -218,7 +218,7 @@ const Profile = () => {
         } },
         
       );
-
+      setErrors({});
       showToast("success", "Profile updated successfully!");
       setCurrentLoginUser(data);
       setFormData((prev) => ({
@@ -227,9 +227,10 @@ const Profile = () => {
         newPassword: "",
         confirmPassword: "",
       }));
+
       setAvatar(null);
     } catch (error: any) {
-      showToast("error", error?.data?.error || "Update failed");
+      showToast("error", error?.response?.data?.error || "Update failed");
     } finally {
       setIsLoading(false);
     }
@@ -243,9 +244,9 @@ const Profile = () => {
         transition={{ duration: 0.5 }}
         className={`mx-auto max-w-2xl rounded-2xl bg-white p-8 shadow-xl transition-all duration-300 hover:shadow-2xl ${tierConfig.glowClass}`}
       >
-        {/* 个人资料头部 - 徽章部分 */}
+        {/* badges */}
         <div className="relative mb-10 text-center">
-          {/* 忠诚度等级徽章 - 固定在顶部 */}
+          {/* loyalty tier level */}
           <div
             className={`absolute top-20 left-1/2 -translate-x-1/2 transform rounded-full px-4 py-2 font-bold text-white ${tierConfig.badgeClass} z-10 flex items-center gap-2`}
           >
