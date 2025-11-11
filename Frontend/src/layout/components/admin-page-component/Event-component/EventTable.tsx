@@ -77,6 +77,7 @@ const EventTable = ({
 
       if (response?.data) {
         showToast("success", response?.data?.message);
+        console.log("eventID: ", eventId);
         updateEventsStatus(eventId, "Decline");
       }
 

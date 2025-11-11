@@ -14,7 +14,6 @@ feature_names = joblib.load("models/load_dict/anomaly-detection-booking-session/
 scaler = joblib.load("models/load_dict/anomaly-detection-booking-session/scaler.pkl")
 
 def anomaly_detection_booking_session(session: BookingSession) -> tuple[int, float, str]:
-    # ---- 构建输入 DataFrame ----
     df = pd.DataFrame([{
         "totalPrice": session.totalPrice,
         "adults": session.adults,
@@ -23,25 +22,25 @@ def anomaly_detection_booking_session(session: BookingSession) -> tuple[int, flo
         "roomNum": len(session.roomId)
     }])
     
-    # ---- 保护防止除零 ----
+    # ---- prevent divided 0----
     df["nights"] = df["nights"].replace(0, 1)
     total_people = df["adults"] + df["children"]
     total_people = total_people.replace(0, 1)
 
-    # ---- 衍生特征 ----
+    # ---- features creation ----
     df["price_per_night"] = df["totalPrice"] / df["nights"]
     df["price_per_person"] = df["totalPrice"] / total_people
     df["children_ratio"] = df["children"] / total_people
     df["price_per_night_per_person"] = df["totalPrice"] / (df["nights"] * total_people)
 
-    # ---- 对数变换 ----
+    # ---- logarithm ----
     df["log_nights"] = np.log1p(df["nights"])
     df["log_totalPrice"] = np.log1p(df["totalPrice"])
     df["log_price_per_night"] = np.log1p(df["price_per_night"])
     df["log_price_per_person"] = np.log1p(df["price_per_person"])
     df["log_price_per_night_per_person"] = np.log1p(df["price_per_night_per_person"])
 
-    # ---- 特征选择 & 标准化 ----
+    # ---- features selection and normalization ----
     feature_names = [
         "log_nights",
         "log_totalPrice",
@@ -57,7 +56,7 @@ def anomaly_detection_booking_session(session: BookingSession) -> tuple[int, flo
     X = df[feature_names]
     X_scaled = scaler.transform(X)
 
-    # ---- 模型预测 ----
+    # ---- model prediction ----
     prediction = bookingSession_anomaly_detection_model.predict(X_scaled)[0]
     score = bookingSession_anomaly_detection_model.decision_function(X_scaled)[0]
     print(f"prediction: {prediction}, score: {score}")
@@ -91,7 +90,6 @@ def anomaly_detection_booking_session(session: BookingSession) -> tuple[int, flo
 
     reason = "; ".join(readable_reasons)
 
-    # ---- 返回完整结果 ----
     return prediction, score, reason
 
 async def anomaly_detection_booking():

@@ -122,6 +122,7 @@ export const activityLogger = (req, res, next) => {
         } = req.query || {};
         const page = req.originalUrl;
         const actionId = bodyRest.buttonId || queryRest.buttonId || logAction;
+        console.log("action: ", logAction);
         const params = { ...bodyRest, ...queryRest };
         const extra = {
           rawBody: req.body || {},

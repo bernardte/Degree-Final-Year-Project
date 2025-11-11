@@ -3,9 +3,10 @@ import protectRoute from "../middleware/protectRoute.js";
 import adminControllers from "../controllers/admin.controller.js";
 import verifyRoles from "../middleware/verifyRoles.js";
 import accessControl from "../middleware/accessControl.js";
+import { rateLimiter } from "../middleware/rateLimiter.js";
 const router = express.Router();
 
-router.use(protectRoute, verifyRoles); // Protect all routes with authentication middleware
+router.use(rateLimiter("admin_global", 20, 60), protectRoute, verifyRoles); // Protect all routes with authentication middleware
 
 //users
 router.get(
@@ -15,11 +16,13 @@ router.get(
 );
 router.patch(
   "/update-user-role",
+  rateLimiter("admin_update_user_role", 10, 60),
   accessControl("assignRole", "update"),
   adminControllers.updateUserRole
 );
 router.patch(
   "/toggle-suspend-user",
+  rateLimiter("admin_suspend_user", 10, 60),
   accessControl("assignRole", "update"),
   adminControllers.suspendUser
 );
@@ -27,36 +30,43 @@ router.patch(
 // room
 router.post(
   "/add-room",
+  rateLimiter("admin_add_room", 10, 60),
   accessControl("rooms", "create_room", "view_all"),
   adminControllers.addRoom
 );
 router.put(
   "/update-room/:roomId",
+  rateLimiter("admin_update_room", 10, 60),
   accessControl("rooms", "update_room"),
   adminControllers.updateRoom
 );
 router.patch(
   "/schedule-deactivation/:roomId",
+  rateLimiter("admin_update_schedule", 10, 60),
   accessControl("rooms", "update_room"),
   adminControllers.updateScheduleRoomStatus
 );
 router.patch(
   "/update-room-status/:roomId",
+  rateLimiter("admin_update_room_status", 10, 60),
   accessControl("rooms", "update_room"),
   adminControllers.updateRoomStatus
 ); //update room status
 router.patch(
   "/updateImageGallery/:roomId",
+  rateLimiter("admin_update_image_gallery", 10, 60),
   accessControl("rooms", "update_room"),
   adminControllers.updateImageGallery
 );
 router.delete(
   "/delete-room-image-gallery/:roomId",
+  rateLimiter("admin_delete_gallery", 3, 60),
   accessControl("rooms", "delete_room"),
   adminControllers.deleteRoomImageGallery
 );
 router.delete(
   "/delete-room/:roomId",
+  rateLimiter("admin_delete_room", 3, 60),
   accessControl("rooms", "delete_room"),
   adminControllers.deleteRoom
 );
@@ -64,6 +74,7 @@ router.delete(
 //booking
 router.delete(
   "/delete-booking/:bookingId",
+  rateLimiter("admin_delete_booking", 3, 60),
   accessControl("booking", "cancel_any"),
   adminControllers.deleteBooking
 ); // Delete a booking by ID
@@ -102,27 +113,32 @@ router.get(
 ); //get accept cancelled bookings
 router.patch(
   "/update-cancellation-request/:requestId",
+  rateLimiter("admin_update_cancel_request", 10, 60),
   accessControl("booking", "cancel_any"),
   adminControllers.updateCancellationRequest
 ); // Update cancellation request status
 router.patch(
   "/update-pending-status-to-confirm",
+  rateLimiter("admin_confirm_pending_booking", 10, 60),
   accessControl("booking", "update_booking_status"),
   adminControllers.updateAllPendingBookingStatusToConfirmed
 );
 router.delete(
   "/delete-cancellation-request/:requestId",
+  rateLimiter("admin_delete_cancel_request", 3, 60),
   accessControl("booking", "decline_request"),
   adminControllers.deleteCancellationRequest
 ); // Delete cancellation request
 
 router.patch(
   "/update-event-status/:eventId",
+  rateLimiter("admin_update_event_status", 10, 60),
   accessControl("events", "update_event_status"),
   adminControllers.acceptEvents
 );
 router.delete(
   "/delete-event-status/:eventId",
+  rateLimiter("admin_delete_event_status", 3, 60),
   accessControl("events", "reject_event_status"),
   adminControllers.rejectEvents
 );
@@ -133,11 +149,13 @@ router.get(
 );
 router.patch(
   "/update-booking/:bookingId",
+  rateLimiter("admin_update_booking", 10, 60),
   accessControl("booking", "update_booking_status"),
   adminControllers.updateBookingStatus
 ); // Update booking status by ID
 router.patch(
   "/update-paymentStatus",
+  rateLimiter("admin_update_payment", 10, 60),
   accessControl("payments", "update_payment_status"),
   adminControllers.updatePaymentStatus
 ); // Update payment status by ID

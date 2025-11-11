@@ -10,7 +10,7 @@ interface eventStore {
   totalPages: number;
   totalEvents: number;
   fetchAllEvents: (page: number) => Promise<void>;
-  updateEventsStatus: (eventId: string, newStatus: string) => void;
+  updateEventsStatus: (eventId: string, newStatus: "Accept" | "Decline") => void;
   fetchEventsForCalendarView: () => Promise<void>;
 }
 
@@ -21,12 +21,20 @@ const useEventsStore = create<eventStore>((set) => ({
   totalPages: 1,
   totalEvents: 0,
   error: null,
-  updateEventsStatus: (eventId: String, newStatus: string) => {
-    set((prevState) => ({
-      events: prevState.events.map((event) =>
-        eventId === event._id ? { ...event, status: newStatus } : event,
-      ),
-    }));
+  updateEventsStatus: (eventId: String, newStatus: "Accept" | "Decline") => {
+    set((prevState) => {
+      if(newStatus === "Decline"){
+        return {
+          events: prevState.events.filter((event) => eventId !== event._id)
+        }
+      }
+
+      return {
+        events: prevState.events.map((event) =>
+          eventId === event._id ? { ...event, status: newStatus } : event,
+        ),
+      }
+    });
   },
   fetchAllEvents: async (page: number, limit = 10) => {
     set({ isLoading: true, error: null });

@@ -8,6 +8,8 @@ dotenv.config();
 const RATE_LIMIT_COUNT = 5; // Number of requests allowed in one minute
 const FAILED_LOGIN_LIMIT = 5; // The number of failed login attempts allowed within five minutes
 
+const rateDetectStore = {}; // Memory store for rate-limit detection only
+
 const createSuspiciousEvent = async ({
   userId,
   guestId,
@@ -45,34 +47,35 @@ export const anomalyDetector = async (activityLog) => {
     if(!activityLog) return;
 
     const { ip, action, userId, sessionId, type, metadata, device, guestId } = activityLog;
+    const key = `detect_${ip}_${action}`;
+    const now = Date.now();
+    const window = 60000; // 1 min
 
-    const identifierQuery = process.env.NODE_ENV === "production" 
-                            ? { ip, action } 
-                            : { $or: [{ sessionId }, { userId }, { guestId }], action };
-    
-    // Rate Limiting detection
-    const oneMinuteAgo = new Date(Date.now() - 60 * 1000);
-    const recentLogs = await ActivityLog.countDocuments({
-      ...identifierQuery,
-      createdAt: { $gte: oneMinuteAgo },
-    })
+    if(!rateDetectStore[key]){
+      rateDetectStore[key] = { count: 1, time: now };
+    }else{
+      if(now - rateDetectStore[key].time > window){
+        rateDetectStore[key].count = 1;
+        rateDetectStore[key].time = now;
+      }else{
+        rateDetectStore[key].count++;
+      }
+    }
 
-    if(recentLogs > RATE_LIMIT_COUNT){
-     const rateLimit = await createSuspiciousEvent({
+    if(rateDetectStore[key].count > RATE_LIMIT_COUNT){
+      await createSuspiciousEvent({
         userId,
         guestId,
-        reason: "Rate Limit Exceeded",
+        reason: "Rate limit exceed abnormal behavior",
         type,
+        severity: "high",
         ip,
         action,
         sessionId,
-        metadata,
+        metadata: metadata,
         device,
-        count: recentLogs,
-        severity: "high",
+        count: rateDetectStore[key].count,
       });
-
-      console.log("rate limit exceed", rateLimit);
     }
 
     // login failed attempts
