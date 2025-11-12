@@ -63,22 +63,33 @@ const deleteReward = async (req, res) => {
   const { rewardId } = req.params;
   const user = req.user;
   try {
-    const reward = await Reward.findByIdAndDelete(rewardId);
+    // Find the reward first (do NOT delete yet)
+    const reward = await Reward.findById(rewardId);
     if (!reward) {
       return res.status(404).json({ error: "Reward not found" });
     }
 
-    //* notify all admins 
+    await ClaimedReward.deleteMany({
+      reward: rewardId,
+    });
+
+    const rewardDeleted = await Reward.findByIdAndDelete(rewardId);
+    
+    if (!reward) {
+      return res.status(404).json({ error: "Reward not found" });
+    }
+
+    //* notify all admins
     const allAdmins = await User.find({
       role: { $in: ["admin", "superAdmin"] },
     });
     const adminIds = allAdmins.map((admin) => admin._id);
     await notifyUsers(
       adminIds,
-      `Existing reward ${reward.name}, have been deleted by ${user.name}`,
+      `Existing reward ${rewardDeleted.name}, have been deleted by ${user.name}`,
       "reward"
     );
-    
+
     res.status(200).json({ message: "Reward deleted successfully" });
   } catch (error) {
     console.log("Error in deleteReward: ", error.message);
@@ -134,7 +145,7 @@ const editReward = async (req, res) => {
     reward.icon = icon || reward.icon;
 
     // Handle discountPercentage
-    if (icon === "Percent") {
+    if (icon === "Percent" && category === "Membership") {
       if (discountPercentage == null || discountPercentage <= 0) {
         return res
           .status(400)

@@ -20,7 +20,6 @@ const RewardSchema = new mongoose.Schema(
     },
     discountPercentage: {
       type: Number,
-      min: 1,
       max: 100,
       default: null,
       validate: {

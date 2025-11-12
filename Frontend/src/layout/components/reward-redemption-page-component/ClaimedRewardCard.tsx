@@ -12,6 +12,7 @@ import {
   Sparkles,
   Mountain,
   Info,
+  Percent,
 } from "lucide-react";
 import { QRCodeCanvas } from "qrcode.react";
 import { ClaimedReward } from "@/types/interface.type";
@@ -30,6 +31,7 @@ const iconComponents = {
   dining: Utensils,
   experience: Sparkles,
   travel: Mountain,
+  percent: Percent,
 };
 
 interface ClaimedRewardCardProps {
@@ -38,9 +40,13 @@ interface ClaimedRewardCardProps {
 
 const ClaimedRewardCard = ({ claimedReward }: ClaimedRewardCardProps) => {
   const reward = claimedReward.reward;
+
   const IconComponent =
-    iconComponents[reward.icon.toLowerCase() as keyof typeof iconComponents] ||
-    Gift;
+    reward && reward.icon
+      ? iconComponents[
+          reward.icon.toLowerCase() as keyof typeof iconComponents
+        ] || Gift
+      : Gift;
 
   const daysLeft = differenceInCalendarDays(
     new Date(claimedReward.expiredAt),
@@ -73,6 +79,14 @@ const ClaimedRewardCard = ({ claimedReward }: ClaimedRewardCardProps) => {
       link.click();
     }
   };
+
+  if (!reward) {
+    return (
+      <div className="p-4 text-center text-gray-500">
+        ⚠️ Reward data not available
+      </div>
+    );
+  }
 
   return (
     <div className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-lg">
