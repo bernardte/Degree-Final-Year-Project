@@ -252,7 +252,7 @@ const updateRoom = async (req, res) => {
   const adults = parseInt(adultsRaw, 10);
   const children = parseInt(childrenRaw, 10);
   const { roomId } = req.params;
-  const breakfastIncluded = req.body.breakfastIncluded === "true";
+  const breakfastIncluded = req.body.breakfastIncluded;
   console.log("breakfastIncluded: ", req.body.breakfastIncluded);
 
   const files = req.files || {};

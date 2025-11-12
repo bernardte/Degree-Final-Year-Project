@@ -37,7 +37,7 @@ const createBooking = async (req, res) => {
       sessionId: bookingSessionId,
     });
 
-    console.log("your session: ", session)
+    console.log("your session: ", session);
 
     if (!session)
       return res.status(404).json({ error: "Booking session not found" });
@@ -77,17 +77,17 @@ const createBooking = async (req, res) => {
     const guestUserId = guestId;
     const bookingReference = uuidv4();
 
-    for (let room of rooms) {
-      const overlapping = await Booking.findOne({
-        room: room._id,
-        startDate: { $lt: new Date(checkOutDate) },
-        endDate: { $gt: new Date(checkInDate) },
-      });
-      if (overlapping)
-        return res
-          .status(400)
-          .json({ error: `Room ${room.roomNumber} is already booked` });
-    }
+    // for (let room of rooms) {
+    //   const overlapping = await Booking.findOne({
+    //     room: room._id,
+    //     startDate: { $lt: new Date(checkOutDate) },
+    //     endDate: { $gt: new Date(checkInDate) },
+    //   });
+    //   if (overlapping)
+    //     return res
+    //       .status(400)
+    //       .json({ error: `Room ${room.roomNumber} is already booked` });
+    // }
 
     const newBooking = new Booking({
       userEmail: contactEmail || user?.email || null,
@@ -133,9 +133,12 @@ const createBooking = async (req, res) => {
       qrCodeData
     );
 
-    console.log("generated QR code: " ,qrCodePublicURLfromCloudinary)
+    console.log("generated QR code: ", qrCodePublicURLfromCloudinary);
     newBooking.qrCodeImageURL = qrCodePublicURLfromCloudinary;
     await newBooking.save();
+
+    // delete current booking session
+    await BookingSession.deleteOne({ sessionId: bookingSessionId });
 
     // handle reward points
     if (user)
@@ -147,9 +150,9 @@ const createBooking = async (req, res) => {
         rooms
       );
 
-     const hotelInfoDoc = await SystemSetting.findOne({
-       key: "Hotel Information",
-     }).select("value");
+    const hotelInfoDoc = await SystemSetting.findOne({
+      key: "Hotel Information",
+    }).select("value");
 
     const hotelInfo = hotelInfoDoc?.value;
     const emailTo = user?.email || contactEmail || guestDetails?.contactEmail;
@@ -168,7 +171,6 @@ const createBooking = async (req, res) => {
         qrCodeImageURL: qrCodePublicURLfromCloudinary,
       });
     }
-
     const allAdmins = await User.find({
       role: { $in: ["admin", "superAdmin"] },
     });
@@ -190,11 +192,13 @@ const createBooking = async (req, res) => {
       emitBookingTrendsUpdate(),
       emitRoomTypeUpdate(),
       emitBookingStatusUpdate(),
-    ]).then(result => console.log("Socket updates emitted successfully: ", result));
+    ]).then((result) =>
+      console.log("Socket updates emitted successfully: ", result)
+    );
 
     const invoiceNumber = generateInvoiceNumber();
-    const loyaltyTier = user ? user.loyaltyTier : null
-    
+    const loyaltyTier = user ? user.loyaltyTier : null;
+
     const newInvoice = new Invoice({
       bookingReference,
       invoiceNumber,
@@ -212,42 +216,41 @@ const createBooking = async (req, res) => {
       billingPhoneNumber: contactNumber,
       rewardDiscount: rewardDiscount,
     });
-      await newInvoice.save();
+    await newInvoice.save();
 
-      const rewardClaimed = await ClaimedReward.findOne({ rewardCode: newBooking.rewardCode }).select("_id");
-      let reward = null;
-      if (rewardClaimed) {
-        reward = await Reward.findOne({ _id: rewardClaimed._id }).select(
-          "description discountPercentage"
-        );
-      }
+    const rewardClaimed = await ClaimedReward.findOne({
+      rewardCode: newBooking.rewardCode,
+    }).select("_id");
+    let reward = null;
+    if (rewardClaimed) {
+      reward = await Reward.findOne({ _id: rewardClaimed._id }).select(
+        "description discountPercentage"
+      );
+    }
 
-      if(newInvoice){
-        await sendInvoiceEmail(
-          emailTo,
-          {
-            username: user?.username || newBooking.contactName,
-            bookingReference,
-            roomDetail: roomDetails,
-            checkInDate,
-            checkOutDate,
-            breakfastIncluded: newBooking.breakfastIncluded,
-            adults: totalGuest.adults,
-            children: totalGuest.children,
-            totalPrice: totalPrice,
-            paymentStatus,
-            paymentIntentId,
-            paymentMethod,
-          },
-          reward,
-          loyaltyTier,
-          invoiceNumber,
-          hotelInfo,
-        );
-      }
-    
-    // delete current booking session 
-    await BookingSession.deleteOne({ sessionId: bookingSessionId });
+    if (newInvoice) {
+      await sendInvoiceEmail(
+        emailTo,
+        {
+          username: user?.username || newBooking.contactName,
+          bookingReference,
+          roomDetail: roomDetails,
+          checkInDate,
+          checkOutDate,
+          breakfastIncluded: newBooking.breakfastIncluded,
+          adults: totalGuest.adults,
+          children: totalGuest.children,
+          totalPrice: totalPrice,
+          paymentStatus,
+          paymentIntentId,
+          paymentMethod,
+        },
+        reward,
+        loyaltyTier,
+        invoiceNumber,
+        hotelInfo
+      );
+    }
 
     return res.status(201).json({ newBooking, qrCodePublicURLfromCloudinary });
   } catch (error) {
