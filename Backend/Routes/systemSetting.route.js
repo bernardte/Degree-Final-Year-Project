@@ -6,7 +6,6 @@ import accessControl from "../middleware/accessControl.js";
 import { rateLimiter } from "../middleware/rateLimiter.js";
 
 const router = express.Router();
-router.use(rateLimiter("system_global", 30, 60)); // 30 requests per 60 seconds
 
 router.get(
   "/get-all-hotel-information",
@@ -19,6 +18,7 @@ router.get(
 );
 
 //update reward point
+router.use(rateLimiter("system_global", 30, 60)); // 30 requests per 60 seconds
 router.use(protectRoute, verifyRoles);
 router
   .route("/reward-points")

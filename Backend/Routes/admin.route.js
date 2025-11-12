@@ -5,8 +5,8 @@ import verifyRoles from "../middleware/verifyRoles.js";
 import accessControl from "../middleware/accessControl.js";
 import { rateLimiter } from "../middleware/rateLimiter.js";
 const router = express.Router();
-
-router.use(rateLimiter("admin_global", 20, 60), protectRoute, verifyRoles); // Protect all routes with authentication middleware
+router.use(rateLimiter("admin_global", 30, 60))
+router.use(protectRoute, verifyRoles); // Protect all routes with authentication middleware
 
 //users
 router.get(
@@ -60,7 +60,7 @@ router.patch(
 );
 router.delete(
   "/delete-room-image-gallery/:roomId",
-  rateLimiter("admin_delete_gallery", 3, 60),
+  rateLimiter("admin_delete_gallery", 10, 60),
   accessControl("rooms", "delete_room"),
   adminControllers.deleteRoomImageGallery
 );

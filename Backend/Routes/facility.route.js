@@ -15,8 +15,8 @@ router.get(
   "/facility/:facilityId",
   facilityController.getCertainFacility
 );
-
-router.use(rateLimiter("facility_protected_global", 30, 60), protectRoute, verifyRole);
+router.use(rateLimiter("facility_protected_global", 30, 60))
+router.use( protectRoute, verifyRole);
 router.get("/paginated", facilityController.getAdminPageFacility);
 router.post(
   "/create-facility",

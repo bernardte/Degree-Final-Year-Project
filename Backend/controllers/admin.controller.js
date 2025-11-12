@@ -238,6 +238,7 @@ const addRoom = async (req, res) => {
 
 const updateRoom = async (req, res) => {
   const {
+    roomName, 
     roomNumber,
     roomType,
     roomDetails,
@@ -268,6 +269,11 @@ const updateRoom = async (req, res) => {
       return res
         .status(400)
         .json({ error: "Adults count must be between 1 and 5" });
+
+      if (!Array.isArray(amenities) || amenities.length === 0) {
+        return res.status(400).json({ error: "Amenities cannot be empty" });
+      }
+
 
     const isValid = validateRoomAmenities(amenities);
     if (!isValid) return res.status(400).json({ error: "Invalid amenities" });
@@ -317,6 +323,7 @@ const updateRoom = async (req, res) => {
     }
 
     // ✅ Update fields
+    room.roomName = roomName || room.roomName;
     room.roomNumber = roomNumber || room.roomNumber;
     room.roomType = roomType || room.roomType;
     room.roomDetails = roomDetails || room.roomDetails;
