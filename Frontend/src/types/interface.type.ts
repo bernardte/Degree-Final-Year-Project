@@ -255,6 +255,7 @@ export interface Reward {
   name: string;
   description: string;
   points: number;
+  discountPercentage?: number;
   category: string;
   status: "active" | "inactive";
   icon: string;

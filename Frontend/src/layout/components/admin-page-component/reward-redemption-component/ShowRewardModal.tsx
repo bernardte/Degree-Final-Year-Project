@@ -166,7 +166,8 @@ const ShowRewardModal = ({
                 </select>
               </div>
 
-              {formData.icon === "Percent" && (
+              {(formData.icon === "Percent" &&
+                formData.category === "Membership") && (
                 <div className="md:col-span-1">
                   <label
                     htmlFor="discountPercentage"
@@ -181,6 +182,10 @@ const ShowRewardModal = ({
                     min="1"
                     max="100"
                     required
+                    disabled={
+                      formData.icon !== "Percent" ||
+                      formData.category !== "Membership"
+                    }
                     className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-indigo-500 focus:ring-indigo-500"
                     value={formData.discountPercentage ?? ""}
                     onChange={handleChange}

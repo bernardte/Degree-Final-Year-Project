@@ -30,6 +30,7 @@ const RewardManagement = () => {
     description: "",
     points: 0,
     category: "Accommodation",
+    discountPercentage: 0,
     status: "active",
     icon: "Bed",
   });
@@ -61,10 +62,15 @@ const RewardManagement = () => {
     >,
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: name === "points" || name === "discountPercentage" ? Number(value) : value,
-    }));
+    setFormData((prev) => {
+      const updated = { ...prev, [name]: value };
+      if(name === "icon" || name === "category"){
+        if(!(updated.icon === "Percent" && updated.category === "Membership")){
+          updated.discountPercentage = 0;
+        } 
+      }
+      return updated;
+    });
   };
 
   // Handle form submission
@@ -131,6 +137,7 @@ const RewardManagement = () => {
       name: "",
       description: "",
       points: 0,
+      discountPercentage: 0,
       category: "Accommodation",
       status: "active",
       icon: "Bed",

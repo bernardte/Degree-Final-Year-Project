@@ -97,7 +97,7 @@ const RoomTable = ({
     try {
       setEditLoading(true);
       const formData = new FormData();
-
+      formData.append("roomName", selectedRoom.roomName);
       formData.append("roomNumber", selectedRoom.roomNumber);
       formData.append("roomType", selectedRoom.roomType);
       formData.append("description", selectedRoom.description);
