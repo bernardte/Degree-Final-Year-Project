@@ -10,7 +10,6 @@
     "seed:facilitiesList": "node seeds/facility.js",
     "seed:faq": "node seeds/faq.js",
     "seed:user": "node seeds/user.js"
-    
   },
   "keywords": [],
   "author": "",
@@ -26,12 +25,14 @@
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "crypto": "^1.0.1",
+    "csv-parser": "^3.2.0",
     "date-fns": "^4.1.0",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
     "express-fileupload": "^1.5.1",
     "geoip-lite": "^1.4.10",
     "html-pdf-node": "^1.0.8",
+    "iconv-lite": "^0.7.0",
     "json2csv": "^6.0.0-alpha.2",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.13.2",

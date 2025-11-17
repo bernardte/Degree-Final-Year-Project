@@ -13,6 +13,11 @@ import { normalizeToArray } from "../logic function/normalizeToArray.js";
 import { emitBookingStatusUpdate, emitToSpecificUser } from "../socket/socketUtils.js";
 import Notification from "../models/notification.model.js";;
 import notifyUsers from "../utils/notificationSender.js";
+import path from "node:path";
+import fs from "fs";
+import csvParser from "csv-parser";
+import iconv from "iconv-lite"; 
+import { amenityMapping } from "../utils/constant/amenitiesMap.js";
 
 const getUser = async (req, res) => {
   try {
@@ -235,6 +240,162 @@ const addRoom = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+const cleanText = (text) => {
+  return text
+    ?.replace(/\uFEFF/g, "")
+    ?.replace(/\u200B/g, "")
+    ?.replace(/[^\x20-\x7E\u00A0-\uFFFF]/g, "")
+    ?.trim();
+};
+
+const addMultipleRoomInOnce = (req, res) => {
+  try {
+    if (!req.files ) {
+      return res.status(400).json({ error: "File required" });
+    }
+
+    console.log("req file: ", req.files);
+    const user = req.user;
+    const csvFile = req.files.csvFile;
+    const filePath = csvFile.tempFilePath;
+    let imageFiles = req.files.csvFile || [];
+    if (!Array.isArray(imageFiles)) {
+      imageFiles = [imageFiles];
+    }
+    // Use originalname to get extension
+    const fileExtensionName = path.extname(csvFile.name).toLowerCase();
+    const allowedExtensions = [".csv"];
+    if (!allowedExtensions.includes(fileExtensionName)) {
+      return res
+        .status(400)
+        .json({ error: "Only accept csv and excel files" });
+    }
+    
+
+    const rooms = [];
+    const invalidRows = [];
+
+    fs.createReadStream(filePath, { encoding: "utf8" })
+      .pipe(csvParser())
+      .on("data", async (row) => {
+        if (
+          row.roomNumber &&
+          row.roomName &&
+          row.roomType &&
+          row.roomDetails &&
+          row.pricePerNight
+        ) {
+          // URL image split
+          const imageNames = row.images
+            ? row.images.split(",").map((i) => i.trim())
+            : [];
+          console.log("imageName: ", imageNames);
+          rooms.push({
+            roomNumber: cleanText(row.roomNumber),
+            roomName: cleanText(row.roomName),
+            roomType: cleanText(row.roomType),
+            description: cleanText(row.description.toString("utf8")),
+            roomDetails: cleanText(row.roomDetails.toString("utf8")),
+            pricePerNight: Number(row.pricePerNight),
+            amenities: row.amenities
+              ? row.amenities.split(",").map((a) => cleanText(a.toLowerCase()))
+              : [],
+            bedType: cleanText(row.bedType),
+            images: imageNames,
+            capacity: {
+              adults: row.adults ? Number(row.adults) : 1,
+              children: row.children ? Number(row.children) : 0,
+            },
+          });
+        } else {
+          invalidRows.push(row);
+        }
+      })
+      .on("end", async () => {
+        try {
+          if (rooms.length === 0) {
+            return res.json({
+              message: "No valid rooms to import.",
+              invalidRowsCount: invalidRows.length,
+              invalidRows,
+            });
+          }
+
+          // Extract roomNumbers from parsed rooms
+          const roomNumbers = rooms.map((room) => room.roomNumber);
+
+          // Find existing rooms in DB with these roomNumbers
+          const existingRooms = await Room.find({
+            roomNumber: { $in: roomNumbers },
+          }).select("roomNumber");
+
+          const existingRoomNumbers = existingRooms.map((r) => r.roomNumber);
+
+          // Filter rooms to exclude duplicates
+          const newRooms = rooms.filter(
+            (room) => !existingRoomNumbers.includes(room.roomNumber)
+          );
+
+          if (existingRoomNumbers.length > 0) {
+            return res.status(400).json({
+              error: `Duplicate room number(s): '${existingRoomNumbers}' found.`,
+            });
+          }
+
+          if (newRooms.length === 0) {
+            return res.json({
+              error: "All rooms already exist, no new rooms imported.",
+              invalidRowsCount: invalidRows.length,
+              invalidRows,
+            });
+          }
+
+          await Room.insertMany(rooms);
+
+          if (csvFile.tempFilePath) {
+            fs.unlink(csvFile.tempFilePath, () => {});
+          }
+
+          imageFiles.forEach((file) => {
+            if (file.tempFilePath) {
+              fs.unlink(file.tempFilePath, () => {});
+            }
+          });
+
+          //* notify all admins
+          const allAdmins = await User.find({
+            role: { $in: ["admin", "superAdmin"] },
+          });
+          const adminIds = allAdmins.map((admin) => admin._id);
+          for (const room of newRooms) {
+            await notifyUsers(
+              adminIds,
+              `New room ${room.roomNumber} has been created by ${user.name}`,
+              "room"
+            );
+          }
+          res.json({
+            message: `${rooms.length} rooms imported with images.`,
+            invalidRowsCount: invalidRows.length,
+            invalidRows,
+          });
+        } catch (error) {
+          res
+            .status(500)
+            .json({ error: `Error importing rooms: ${error.message}` });
+        }
+      })
+      .on("error", (error) => {
+        // error handling
+        console.error("Stream error:", error);
+        res.status(500).json({ error: "Error processing CSV stream." });
+      });;
+  } catch (error) {
+    console.log("Error in addMultipleRoomInOnce: ", error.message);
+    res.status(500).json({ error: error.message });
+  }
+}
 
 const updateRoom = async (req, res) => {
   const {
@@ -1260,6 +1421,7 @@ export default {
   updateUserRole,
   suspendUser,
   addRoom,
+  addMultipleRoomInOnce,
   updateRoom,
   updateRoomStatus,
   updateScheduleRoomStatus,

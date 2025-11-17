@@ -10,7 +10,7 @@ export const generateFinancialReport = async (startDate, endDate) => {
     // get refund with cancelled booking
     const cancelledBookings = await Booking.find({
       status: "cancelled",
-      paymentStatus: "refund", // 假设 refund 表示已退款
+      paymentStatus: "refund", // Assuming "refund" means a refund has been issued.
       startDate: { $gte: startDate, $lte: endDate },
     });
 

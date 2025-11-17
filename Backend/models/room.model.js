@@ -28,6 +28,7 @@ const roomSchema = mongoose.Schema(
     pricePerNight: {
       type: Number,
       required: true,
+      min: 0,
     },
     breakfastIncluded: {
       type: Boolean,

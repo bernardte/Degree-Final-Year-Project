@@ -149,7 +149,7 @@ const AdminChatPage = () => {
   useEffect(() => {
     if (!activeConversation) return;
 
-    // 在 store 的 conversations 里找最新的那个
+    // Find the most recent one in the store's conversations.
     const latest = conversations.find((c) => c._id === activeConversation._id);
 
     if (latest && latest.status !== activeConversation.status) {

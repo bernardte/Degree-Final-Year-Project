@@ -34,6 +34,12 @@ router.post(
   accessControl("rooms", "create_room", "view_all"),
   adminControllers.addRoom
 );
+router.post(
+  "/add-multiple-room-once",
+  rateLimiter("admin_add_room", 10, 60),
+  accessControl("rooms", "create_room", "view_all"),
+  adminControllers.addMultipleRoomInOnce
+);
 router.put(
   "/update-room/:roomId",
   rateLimiter("admin_update_room", 10, 60),
@@ -66,7 +72,7 @@ router.delete(
 );
 router.delete(
   "/delete-room/:roomId",
-  rateLimiter("admin_delete_room", 3, 60),
+  rateLimiter("admin_delete_room", 5, 60),
   accessControl("rooms", "delete_room"),
   adminControllers.deleteRoom
 );

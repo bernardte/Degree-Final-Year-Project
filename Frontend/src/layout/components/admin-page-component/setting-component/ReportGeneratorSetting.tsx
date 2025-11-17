@@ -105,7 +105,7 @@ const ReportGeneratorSetting = ({
         </h2>
       </div>
 
-      {/* 错误提示 */}
+      {/* Error display */}
       {error && (
         <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">
           <p className="font-medium">Error: {error}</p>

@@ -1,13 +1,15 @@
 import { motion, Variants } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { DoorClosed, PlusCircle } from "lucide-react";
+import { CloudUpload, DoorClosed, PlusCircle } from "lucide-react";
 import RoomTable from "@/layout/components/admin-page-component/Room-component/RoomTable";
 import useRoomStore from "@/stores/useRoomStore";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import AddNewRoomDialog from "@/layout/components/admin-page-component/dialog-component/AddNewRoomDialog";
 import Pagination from "@/layout/components/share-components/Pagination";
 import RequireRole from "@/permission/RequireRole";
 import { ROLE } from "@/constant/roleList";
+import axiosInstance from "@/lib/axios";
+import useToast from "@/hooks/useToast";
 
 
 // Animation constants
@@ -37,6 +39,10 @@ const cardVariants: Variants = {
 const AdminRoomPage = () => {
     const { fetchPaginatedRooms, isLoading, error, rooms, totalPages, currentPage } = useRoomStore(state => state);
     const [ openDialog, setOpenDialog ] = useState<boolean>(false);
+    const fileInputRef = useRef<HTMLInputElement | null>(null);
+    const [uploading, setUploading] = useState(false);
+    const { showToast } = useToast();
+
     useEffect(() => {
       fetchPaginatedRooms(1);
     }, [fetchPaginatedRooms]);
@@ -44,6 +50,51 @@ const AdminRoomPage = () => {
     const handlePageChange = (page: number) => {
       fetchPaginatedRooms(page);
     }
+
+     const handleFileChange = async (
+       event: React.ChangeEvent<HTMLInputElement>,
+     ) => {
+       if (!event.target.files?.length) return;
+       const file = event.target.files[0];
+
+       // Optional: Validate file type here (ensure CSV)
+       if (!file.name.endsWith(".csv")) {
+         alert("Please upload a valid CSV file.");
+         return;
+       }
+
+       setUploading(true);
+
+       const formData = new FormData();
+       formData.append("csvFile", file);
+
+       try {
+         const response = await axiosInstance.post(
+           "/api/admin/add-multiple-room-once",
+           formData,
+           {
+             headers: {
+               "Content-Type": "multipart/form-data",
+             },
+           },
+         );
+
+         if (response) {
+           showToast("success", `Upload success: ${response.data.message}`);
+         }
+
+         // fresh rooms list after upload
+          fetchPaginatedRooms(currentPage);
+       } catch (error: any) {
+         showToast("error",`Error file upload: ${error?.response?.data?.error}`);
+         console.error(error);
+       } finally {
+         setUploading(false);
+         if (fileInputRef.current) fileInputRef.current.value = ""; // reset input
+       }
+     };
+
+
     return (
       <motion.div
         initial="hidden"
@@ -73,25 +124,54 @@ const AdminRoomPage = () => {
               Manage room listings, availability, and configurations
             </motion.p>
           </div>
-
-          <RequireRole allowedRoles={[ROLE.SuperAdmin]}>
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Button
-                variant="default"
-                className="flex items-center gap-2 transition-all hover:shadow-md"
-                onClick={() => setOpenDialog(true)}
+          <div className="flex items-center space-x-5">
+            <RequireRole allowedRoles={[ROLE.SuperAdmin]}>
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
               >
-                <motion.span
-                  animate={{ rotate: 0 }}
-                  whileHover={{ rotate: 90 }}
-                  transition={{ type: "spring" }}
+                <Button
+                  variant="default"
+                  className="flex items-center gap-2 transition-all hover:shadow-md"
+                  onClick={() => setOpenDialog(true)}
                 >
-                  <PlusCircle className="h-5 w-5" />
-                </motion.span>
-                <span className="font-semibold">Add New Room</span>
-              </Button>
-            </motion.div>
-          </RequireRole>
+                  <motion.span
+                    animate={{ rotate: 0 }}
+                    whileHover={{ rotate: 90 }}
+                    transition={{ type: "spring" }}
+                  >
+                    <PlusCircle className="h-5 w-5" />
+                  </motion.span>
+                  <span className="font-semibold">Add New Room</span>
+                </Button>
+              </motion.div>
+            </RequireRole>
+
+            <RequireRole allowedRoles={[ROLE.SuperAdmin]}>
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Button
+                  variant="outline"
+                  className="flex cursor-pointer items-center gap-2 bg-emerald-500 text-emerald-50"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                >
+                  <CloudUpload fontSize={15}/>
+                  Upload CSV File
+                </Button>
+                <input
+                  type="file"
+                  accept=".csv"
+                  ref={fileInputRef}
+                  className="hidden"
+                  onChange={handleFileChange}
+                  disabled={uploading}
+                />
+              </motion.div>
+            </RequireRole>
+          </div>
         </motion.div>
 
         {/* Table card */}
