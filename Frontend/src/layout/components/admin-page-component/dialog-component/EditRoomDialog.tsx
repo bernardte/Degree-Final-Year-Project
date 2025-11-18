@@ -498,7 +498,7 @@ const EditRoomDialog = ({
                           if (files.length > 0) {
                             setGalleryImages((prev) => [...prev, ...files]);
                           }
-                          e.target.value = ""; // ✅ 清空 input
+                          e.target.value = ""; // ✅ clear input
                         }}
                       />
                       <p className="text-sm text-blue-600">

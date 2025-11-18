@@ -145,16 +145,14 @@ const AdminRoomPage = () => {
                   <span className="font-semibold">Add New Room</span>
                 </Button>
               </motion.div>
-            </RequireRole>
 
-            <RequireRole allowedRoles={[ROLE.SuperAdmin]}>
               <motion.div
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
                 <Button
                   variant="outline"
-                  className="flex cursor-pointer items-center gap-2 bg-emerald-500 text-emerald-50"
+                  className={`flex cursor-pointer items-center gap-2 bg-emerald-500 text-emerald-50 ${uploading ? "cursor-not-allowed opacity-50" : "hover:shadow-md hover:bg-emerald-100 hover:text-emerald-700"} transition-all`}
                   onClick={() => fileInputRef.current?.click()}
                   disabled={uploading}
                 >
@@ -171,6 +169,7 @@ const AdminRoomPage = () => {
                 />
               </motion.div>
             </RequireRole>
+
           </div>
         </motion.div>
 
