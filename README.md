@@ -19,7 +19,7 @@ Admins can manage rooms, bookings, users, system setting and reports.
    2. Run file: python app.py
    3. Open cli(command prompt) and use wsl (if using windows) or use docker to run linux 
    4. run redis-server 
-   5. run redis-cli ping to make redis running with response pong
+   5. run redis-cli ping to make sure redis running with response pong
    
 
 
