@@ -17,6 +17,12 @@ import ActivityLog from "../models/activityLog.model.js";
 
 dotenv.config();
 
+const getGuestId = (req, res) => {
+  const guestId = req.cookies?.guestId;
+  console.log(guestId);
+  res.json({ guestId });
+};
+
 const signupUser = async (req, res) => {
   const { name, username, email, password } = req.body;
 
@@ -575,6 +581,7 @@ const unauthorizedAccess = async (req, res) => {
 
 
 export default {
+  getGuestId,
   getUserProfile,
   getUserRewardPoints,
   signupUser,

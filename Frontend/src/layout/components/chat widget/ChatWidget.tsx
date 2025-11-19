@@ -77,7 +77,7 @@ const ChatWidget = () => {
       if (isFinal) {
         const finalMessage: Message = {
           ...(msg as Message),
-          content: streamBuffer.current[conversationId], // 用缓存的完整内容
+          content: streamBuffer.current[conversationId], // Use the full cached content
         };
         pushMessage(conversationId, finalMessage);
 

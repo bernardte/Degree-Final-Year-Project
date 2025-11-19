@@ -1,4 +1,4 @@
-import { Send, Smile } from "lucide-react";
+import { Send, Smile, X } from "lucide-react";
 import { SetStateAction, useEffect, useRef, useState } from "react";
 import PaperClickDocumentPopover from "../admin-page-component/chat-component/Chat-component/PaperClickDocumentPopover";
 import data from "@emoji-mart/data";
@@ -26,6 +26,7 @@ const ChatWigetInputArea = ({
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const emojiPickerRef = useRef<HTMLDivElement | null>(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
 
   const handleEmojiSelect = (emoji: any) => {
     const emojiSymbol = emoji.native || emoji?.unified || emoji?.emoji;
@@ -70,10 +71,44 @@ const ChatWigetInputArea = ({
     };
   }, [showEmojiPicker]);
 
+  // preview image effect
+  useEffect(() => {
+    if (uploadImage) {
+      const url = URL.createObjectURL(uploadImage);
+      setImagePreviewUrl(url);
+
+      // Cleanup to avoid memory leaks
+      return () => URL.revokeObjectURL(url);
+    } else {
+      setImagePreviewUrl(null);
+    }
+  }, [uploadImage]);
+
   return (
-    <div className="border-t border-gray-200 bg-white p-3">
+    <div className="space-y-2 border-t border-gray-200 bg-white p-3">
+      {/* Image preview */}
+      {imagePreviewUrl && (
+        <> 
+          <div className="group relative mt-2 inline-block gap-2 overflow-hidden rounded-md border bg-gray-100 p-1 shadow-md">
+            <img
+              src={imagePreviewUrl}
+              alt="Preview"
+              className="max-h-40 max-w-40 rounded-md object-contain"
+            />
+            <button
+              className="absolute top-1 right-1 z-50 cursor-pointer rounded-full text-red-500 opacity-0 shadow group-hover:opacity-100 hover:text-red-700 font-extrabold"
+              onClick={() => setUploadImage(null)}
+              aria-label="Remove image"
+            >
+              <X  />
+            </button>
+          </div>
+          <div className="border-t-2 border-stone-300"/>
+        </>
+      )}
+
       <div className="flex items-center">
-        <div className="flex gap-2">
+        <div className="flex gap-1 space-x-2">
           <PaperClickDocumentPopover setUploadImage={setUploadImage} />
           <button
             onClick={() => setShowEmojiPicker((prev) => !prev)}

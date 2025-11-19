@@ -29,6 +29,7 @@ import { createServer } from "http"; //http server
 import { initAISocket } from "./websocket/websocket.js";
 import { activityLogger } from "./middleware/activityLogger.js";
 import deleteTempfileScheduler from "./cronjob/deleteTempfileScheduler.js";
+import { attachGuestId } from "./middleware/attachGuestId.js";
 import { attachUser } from "./middleware/attachUser.js";
 import bookingAnomalyDetectorScheduler from "./cronjob/bookingAnomalyDetectorScheduler.js"
 import { nosqlDetectionMiddleware } from "./utils/Nosql injection detection/injectionDetection.js";
@@ -88,7 +89,7 @@ app.use(
   })
 );
 
-
+app.use(attachGuestId);
 app.use(attachUser); //* catch login user
 app.use(activityLogger); //* Use activity logger middleware, to keep track of user recent activities
 

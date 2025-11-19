@@ -4,6 +4,7 @@ import protectRoute from "../middleware/protectRoute.js";
 
 const router = express.Router();
 
+router.get("/get-guest-id", userControllers.getGuestId);
 router.get("/initialize-guest", userControllers.generateGuestId);
 router.get("/getUserProfile", protectRoute, userControllers.getUserProfile);
 router.get("/getCurrentLoginUser", protectRoute, userControllers.getCurrentLoginUser);
@@ -17,4 +18,5 @@ router.post("/login", userControllers.loginUser);
 router.post("/logout", userControllers.logoutUser);
 router.post("/unauthorized", userControllers.unauthorizedAccess);
 router.put("/updateProfile/:userId", protectRoute, userControllers.updateUserProfile);
+
 export default router;

@@ -53,9 +53,9 @@ df["userId"] = df.apply(
   lambda row: row["bookingCreatedByUser"] if row["userType"] == "user" else row["guestId"], axis=1
 )
 
-df["nights"] = (df["checkOutDate"] - df["checkInDate"]).dt.days
+df["nights"] = (df["checkOutDate"] - df["checkInDate"]).dt.days #type: ignore
 df["nights"] = df["nights"].fillna(0).clip(lower=0)
-df["advanceBookingDays"] = (df["checkInDate"] - df["bookingDate"]).dt.days
+df["advanceBookingDays"] = (df["checkInDate"] - df["bookingDate"]).dt.days#type: ignore
 df["advanceBookingDays"] = df["advanceBookingDays"].fillna(0).clip(lower=0)
 
 df = df.sort_values(["userId", "bookingDate"])
@@ -65,7 +65,7 @@ df["adults"] = df["totalGuests"].apply(lambda x: x.get("adults", 0) if isinstanc
 df["children"] = df["totalGuests"].apply(lambda x: x.get("children", 0) if isinstance(x, dict) else 0)
 df["totalGuestsNum"] = df["adults"] + df["children"]
 
-df["bookingInterval"] = df.groupby("userId")["bookingDate"].diff().dt.total_seconds()
+df["bookingInterval"] = df.groupby("userId")["bookingDate"].diff().dt.total_seconds() #type: ignore
 df["bookingInterval"] = df["bookingInterval"].fillna(0)
 
 le = LabelEncoder()
@@ -89,14 +89,14 @@ for i, f in enumerate(features):
 
 df_scaled["features"] = df_scaled[features].values.tolist()
 
-def create_Sequence(user_df, seq_len=SEQ_LEN):
-  values = user_df["features"].values
-  sequences = []
+# def create_Sequence(user_df, seq_len=SEQ_LEN):
+#   values = user_df["features"].values
+#   sequences = []
 
-  for i in range(len(values) - seq_len):
-    sequences.append(values[i: i+seq_len])
+#   for i in range(len(values) - seq_len):
+#     sequences.append(values[i: i+seq_len])
   
-  return np.array(sequences, dtype=np.float32)
+#   return np.array(sequences, dtype=np.float32)
 
 def build_sequences(df, seq_len=SEQ_LEN):
   all_sequences = []
@@ -120,7 +120,7 @@ def detect_possible_reason(row, df, features):
     user_mean = user_df[features].mean()
 
     price_diff = row["totalPrice"] - user_mean["totalPrice"]
-    if abs(price_diff) > user_mean["totalPrice"] * 0.5:  # 超过50%偏差
+    if abs(price_diff) > user_mean["totalPrice"] * 0.5:  # More than 50% deviation
         if price_diff > 0:
             reasons.append("Unusually high total price")
         else:
