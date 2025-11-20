@@ -299,6 +299,36 @@ const updateUserProfile = async (req, res) => {
         .json({ error: "You can only update your own profile" });
     }
 
+    // Check duplicate email
+    if (email && email !== user.email) {
+      const existingEmailUser = await User.findOne({ email });
+      if (
+        existingEmailUser &&
+        existingEmailUser._id.toString() !== user._id.toString()
+      ) {
+        return res
+          .status(400)
+          .json({ error: "Email already in use by another user." });
+      }
+    }
+
+    // Check duplicate username
+    if (username && username !== user.username) {
+      const existingUsernameUser = await User.findOne({ username });
+      if (
+        existingUsernameUser &&
+        existingUsernameUser._id.toString() !== user._id.toString()
+      ) {
+        return res.status(400).json({ error: "Username already taken." });
+      }
+    }
+
+    if (user.email === email) {
+      return res
+        .status(400)
+        .json({ error: "The new email is the same as the current email." });
+    }
+
     if (newPassword === currentPassword) {
       return res.status(400).json({
         error: "New password must be different from the current password.",
