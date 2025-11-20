@@ -88,7 +88,7 @@ const MessageInput = ({
               className="absolute -top-2 -right-2 rounded-full bg-red-500 p-1 hover:bg-red-600"
               aria-label="Remove image"
             >
-              <X className="h-3 w-3 text-white" strokeWidth={3} />
+              <X className="h-3 w-3 text-white cursor-pointer" strokeWidth={3} />
             </button>
           </div>
           <div className="flex flex-col truncate text-sm text-gray-700">

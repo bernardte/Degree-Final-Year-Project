@@ -92,6 +92,7 @@ const AdminChatPage = () => {
           headers: { "Content-Type": "multipart/form-data" },
         },
       );
+      
       setNewMessage("");
       setUploadImage(null);
     } catch (error: any) {
@@ -110,9 +111,10 @@ const AdminChatPage = () => {
       console.log("New Message: ", message);
       if(activeConversation?._id){
         pushMessage(message.conversationId, message);
+        console.log("Active conversation ID: ", activeConversation?._id);
+        console.log("Message: ", message);
+        updateConversation(message.conversationId, message.content, new Date(message.createdAt));
       }
-
-      updateConversation(message.conversationId, message.content, new Date(message.createdAt))
     })
 
     socket?.on("new-conversation", (conversation) => {
@@ -124,7 +126,7 @@ const AdminChatPage = () => {
       socket?.off("new-conversation");
     }
 
-  }, [socket, activeConversation?._id])
+  }, [socket]);
 
   useEffect(() => {
     const markAsRead = async () => {

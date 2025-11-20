@@ -66,19 +66,25 @@ const useConversationStore = create<conversationStore>()((set) => ({
       set({ isLoading: false });
     }
   },
-  handleCloseSession: async (conversationId: string, newStatus: "open"| "closed") => {
+  handleCloseSession: async (
+    conversationId: string,
+    newStatus: "open" | "closed",
+  ) => {
     try {
       await axiosInstance.patch(
         `/api/conversations/update-conversation-status/${conversationId}`,
         { status: newStatus },
       );
-       set((prevState) => ({
-         conversations: prevState.conversations.map((conv) =>
-           conv._id === conversationId ? { ...conv, status: newStatus} : conv,
-         ),
-       }));
+      set((prevState) => ({
+        conversations: prevState.conversations.map((conv) =>
+          conv._id === conversationId ? { ...conv, status: newStatus } : conv,
+        ),
+      }));
     } catch (error: any) {
-      console.log("Error in handle close session", error?.response?.data?.error);
+      console.log(
+        "Error in handle close session",
+        error?.response?.data?.error,
+      );
     }
   },
 }));

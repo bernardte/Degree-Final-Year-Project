@@ -158,6 +158,7 @@ const sendMessage = async (req, res) => {
     await conversation.save();
     getIO().to(conversationId).emit("new-message", message);
     getIO().emit("new-conversation", updateConversation);
+
     return res.status(201).json(message);
   } catch (error) {
     console.log("Error in sendMessage:", error.message);

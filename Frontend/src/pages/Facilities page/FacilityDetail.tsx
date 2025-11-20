@@ -54,7 +54,7 @@ const scaleUp = {
 const FacilityDetailPage = () => {
   const [reservationDate, setReservationDate] = useState<string>("");
   const [reservationTime, setReservationTime] = useState<string>("");
-  const [partySize, setPartySize] = useState(2);
+  const [partySize, setPartySize] = useState(1);
   const [reservationName, setReservationName] = useState<string>("");
   const [reservationEmail, setReservationEmail] = useState<string>("");
   const [reservationPhone, setReservationPhone] = useState<string>("");

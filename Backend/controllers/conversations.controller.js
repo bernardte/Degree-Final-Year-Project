@@ -1,3 +1,4 @@
+import { getIO } from "../config/socket.js";
 import Conversation from "../models/conversation.model.js";
 import User from "../models/user.model.js";
 import { assignConversationToAdmin } from "../utils/assignmentAdmin.js";
@@ -120,7 +121,7 @@ const claimConversation = async (req, res) => {
     if (!conversation) {
       return res.status(404).json({ error: "Conversation not found" });
     }
-    if (conv.isLock) {
+    if (conversation.isLock) {
       return res.status(400).json({ message: "Already claimed" });
     }
 
