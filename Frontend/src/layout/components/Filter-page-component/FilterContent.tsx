@@ -7,9 +7,8 @@ import {
   BreadcrumbList,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import useQueryParams from "@/hooks/useQueryParams";
 import {
   Loader2,
   Home,
@@ -38,17 +37,8 @@ const FilterContent = ({
   const [loading, setLoading] = useState(false);
   const localStorageSearchParams = localStorage.getItem("searchParams") || "{}";
   const parse = JSON.parse(localStorageSearchParams) || {};
-  const location = useLocation();
   const navigate = useNavigate();
-  const { allParams } = useQueryParams();
 
-  const isActive = (url: string) => {
-    const breadcrumbUrl = new URL(url, window.location.origin);
-    return (
-      breadcrumbUrl.pathname === location.pathname &&
-      breadcrumbUrl.search === location.search
-    );
-  };
 
   const handleHomeClick = () => {
     setLoading(true);

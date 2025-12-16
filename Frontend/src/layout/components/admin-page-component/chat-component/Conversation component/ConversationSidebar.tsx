@@ -35,7 +35,7 @@ const ConversationSidebar = ({
 
     return (
       <div
-        className={`flex h-[100vh] w-full flex-col overflow-y-auto rounded-xl bg-white shadow-md md:mr-4 md:h-auto md:w-1/3 `}
+        className={`flex h-[100vh] w-full flex-col overflow-y-auto rounded-xl bg-white shadow-md md:mr-4 md:h-auto md:w-1/3`}
       >
         <div className="border-b border-gray-200 p-4">
           <div className="mb-4 flex items-center justify-between">
@@ -68,72 +68,77 @@ const ConversationSidebar = ({
               <p>No conversations found</p>
             </div>
           ) : (
-            filteredConversations.map((conv) => (
-              <div
-                key={conv._id}
-                className={`cursor-pointer border-b-1 border-blue-300/50 p-4 transition-colors ${
-                  activeConversation?._id === conv._id
-                    ? "bg-blue-50"
-                    : "hover:bg-gray-50"  
-                }`}
-                onClick={() => setActiveConversation(conv)}
-              >
-                <div className="flex items-start">
-                  <div className="relative mr-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-200">
-                      <User className="h-6 w-6 text-gray-600" />
-                    </div>
-                    {conv.unreadCount > 0 && (
-                      <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs text-white">
-                        {conv.unreadCount}
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="min-w-0 flex-grow">
-                    <div className="flex items-start justify-between">
-                      <h3 className="truncate font-semibold text-gray-900">
-                        {conv.userCode} {/* Using anonymized code */}
-                      </h3>
-                      <span className="text-xs whitespace-nowrap text-gray-500">
-                        {formatDate(
-                          new Date(conv.lastMessageAt),
-                          "MMM d, yyyy h:mm a",
-                        )}{" "}
-                      </span>
-                    </div>
-
-                    <p className="mt-1 truncate text-sm text-gray-600">
-                      {conv.lastMessage}
-                    </p>
-
-                    <div className="mt-2 flex items-center">
-                      <span
-                        className={`rounded-full px-2 py-1 text-xs ${getStatusBadge(conv.status)}`}
-                      >
-                        {conv.status}
-                      </span>
-                    </div>
-                    {/* Admin assignment section */}
-                    <div className="mt-3 flex items-center md:justify-between">
-                      <div className="flex items-center text-xs text-gray-500">
-                        <span className="mr-2 text-gray-400">
-                          Processed by:
+            filteredConversations.map((conv) => 
+            {
+              console.log("lock by: ", conv.lockedBy)
+              return (
+                <div
+                  key={conv._id}
+                  className={`cursor-pointer border-b-1 border-blue-300/50 p-4 transition-colors ${
+                    activeConversation?._id === conv._id
+                      ? "bg-blue-50"
+                      : "hover:bg-gray-50"
+                  }`}
+                  onClick={() => setActiveConversation(conv)}
+                >
+                  <div className="flex items-start">
+                    <div className="relative mr-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-200">
+                        <User className="h-6 w-6 text-gray-600" />
+                      </div>
+                      {conv.unreadCount > 0 && (
+                        <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs text-white">
+                          {conv.unreadCount}
                         </span>
-                        <span className="font-medium text-gray-700">
-                          {conv?.lockedBy?.name || "Bot"}
+                      )}
+                    </div>
+
+                    <div className="min-w-0 flex-grow">
+                      <div className="flex items-start justify-between">
+                        <h3 className="truncate font-semibold text-gray-900">
+                          {conv.userCode} {/* Using anonymized code */}
+                        </h3>
+                        <span className="text-xs whitespace-nowrap text-gray-500">
+                          {formatDate(
+                            new Date(conv.lastMessageAt),
+                            "MMM d, yyyy h:mm a",
+                          )}{" "}
                         </span>
                       </div>
-                      <span className="rounded-full bg-gray-100 text-xs px-2 py-0.5 font-medium text-gray-600 capitalize">
-                        {conv?.lockedBy?.role === "superAdmin"
-                          ? "super admin"
-                          : conv?.lockedBy?.role}
-                      </span>
+
+                      <p className="mt-1 truncate text-sm text-gray-600">
+                        {conv.lastMessage}
+                      </p>
+
+                      <div className="mt-2 flex items-center">
+                        <span
+                          className={`rounded-full px-2 py-1 text-xs ${getStatusBadge(conv.status)}`}
+                        >
+                          {conv.status}
+                        </span>
+                      </div>
+                      {/* Admin assignment section */}
+                      <div className="mt-3 flex items-center md:justify-between">
+                        <div className="flex items-center text-xs text-gray-500">
+                          <span className="mr-2 text-gray-400">
+                            Processed by:
+                          </span>
+                          <span className="font-medium text-gray-700">
+                            {conv?.lockedBy?.name || ""}
+                          </span>
+                        </div>
+                        <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600 capitalize">
+                          {conv?.lockedBy?.role === "superAdmin"
+                            ? "super admin"
+                            : conv?.lockedBy?.role}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))
+              );
+            }
+             )
           )}
         </div>
       </div>

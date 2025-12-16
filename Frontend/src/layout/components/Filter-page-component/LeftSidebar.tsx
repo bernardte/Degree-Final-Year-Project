@@ -25,9 +25,11 @@ import useAuthStore from "@/stores/useAuthStore";
 const LeftSidebar = ({
   onFilterChange,
   selectedRoom,
+  resetFilteredRoom,
 }: {
   onFilterChange: (filters: any) => void;
   selectedRoom: Room[];
+  resetFilteredRoom: () => void;
 }) => {
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 10000]);
   const [date, setDate] = useState<DateRange | undefined>(undefined);
@@ -167,6 +169,7 @@ const LeftSidebar = ({
       };
       onFilterChange(filters);
       handleFilter(filters);
+      resetFilteredRoom();
     }, 0);
   };
 
@@ -303,7 +306,7 @@ const LeftSidebar = ({
 
         {/* Amenities */}
         <div>
-          <label className="mb-1 block text-sm font-semibold text-blue-900 border-b-2 border-blue-500">
+          <label className="mb-1 block border-b-2 border-blue-500 text-sm font-semibold text-blue-900">
             Amenities
           </label>
           <div className="flex flex-wrap gap-y-3 py-3">
@@ -335,7 +338,7 @@ const LeftSidebar = ({
         {user ? (
           <BookingButton selectedRoom={selectedRoom} />
         ) : (
-          <ContactInformation selectedRoom={selectedRoom}/>
+          <ContactInformation selectedRoom={selectedRoom} />
         )}
 
         {/* Reset Button */}

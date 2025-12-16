@@ -14,7 +14,10 @@ import {
   emitBookingTrendsUpdate,
   emitRoomTypeUpdate,
   emitBookingStatusUpdate,
+  emitUserTierLoyaltyAndTotalSpent,
 } from "../socket/socketUtils.js";
+import { tiersOrder } from "../utils/constant/tiersOrder.js";
+import { calculateLoyaltyTier } from "../logic function/calculatedLoyaltyTier.js";
 import notifyUsers from "../utils/notificationSender.js";
 import Invoice from "../models/invoice.model.js";
 import { generateInvoiceNumber } from "../utils/invoiceNumberGenerator.js";
@@ -23,9 +26,9 @@ import Reward from "../models/reward.model.js";
 import ClaimedReward from "../models/claimedReward.model.js";
 import SystemSetting from "../models/systemSetting.model.js";
 import { bookingSessionAbnormalDetection } from "../utils/httpRequest/bookingSessionAbnormalDetection.js";
-import { bookingAbnormalDetection } from "../utils/httpRequest/bookingSessionAbnormalDetection.js";
 import SuspiciousEvent from "../models/suspiciousEvent.model.js";
 import { bookingSessionUpdate } from "../utils/bookingStats.js";
+import { getIO } from "../config/socket.js";
 
 const createBooking = async (req, res) => {
   const { bookingSessionId, specialRequests } = req.body;
@@ -141,7 +144,7 @@ const createBooking = async (req, res) => {
     await BookingSession.deleteOne({ sessionId: bookingSessionId });
 
     // handle reward points
-    if (user)
+    if (user){
       await handleRewardPoints(
         user,
         newBooking,
@@ -149,6 +152,22 @@ const createBooking = async (req, res) => {
         checkOutDate,
         rooms
       );
+
+      // Update totalSpent by adding this booking's totalPrice
+      user.totalSpent = (user.totalSpent || 0) + totalPrice;
+
+      // Calculate the new loyalty tier based on updated totalSpent
+      const newTier = calculateLoyaltyTier(user.totalSpent);
+
+      // Upgrade loyaltyTier if newTier is higher than current tier
+      //! tiersOrder get from constant folder tierOrders file
+      if (tiersOrder.indexOf(newTier) > tiersOrder.indexOf(user.loyaltyTier)) {
+        user.loyaltyTier = newTier;
+      }
+
+      await user.save();
+      await emitUserTierLoyaltyAndTotalSpent(userId.toString(), user.loyaltyTier, user.totalSpent);
+    }
 
     const hotelInfoDoc = await SystemSetting.findOne({
       key: "Hotel Information",

@@ -38,6 +38,7 @@ interface roomStore {
   //! object structure with specific key and value types.
   //! It is defined as Record<K, T>, where K represents
   //! the type of the keys and T represents the type of the values.
+  resetFilteredRooms: () => void;
   fetchRoomsInFilter: (filter: Record<string, any>) => Promise<void>;
   fetchRoomRanking: () => Promise<void>;
   handleUpdateBreakfast: (
@@ -68,7 +69,9 @@ const useRoomStore = create<roomStore>((set, get) => ({
   fetchPaginatedRooms: async (page: number, limit = 10) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await axiosInstance.get(`/api/rooms/?page=${page}&limit=${limit}`);
+      const response = await axiosInstance.get(
+        `/api/rooms/?page=${page}&limit=${limit}`,
+      );
       const { rooms, totalPages, currentPage } = response?.data;
       set({ rooms, totalPages, currentPage });
     } catch (error: any) {
@@ -98,20 +101,22 @@ const useRoomStore = create<roomStore>((set, get) => ({
   fetchEachRoomsType: async () => {
     set({ isLoading: true, error: null });
     try {
-
       const metadata = {
         page: "http://localhost:3000/room-suite",
         actionId: "view each room type",
         params: {},
-        extra: {}
+        extra: {},
       };
 
-      const response = await axiosInstance.get(`/api/rooms/get-each-room-type`, {
-        params: {
-          type: "page view",
-          metadata: JSON.stringify(metadata)
-        }
-      });
+      const response = await axiosInstance.get(
+        `/api/rooms/get-each-room-type`,
+        {
+          params: {
+            type: "page view",
+            metadata: JSON.stringify(metadata),
+          },
+        },
+      );
       const data = response.data;
       set({ rooms: data });
     } catch (error: any) {
@@ -128,13 +133,13 @@ const useRoomStore = create<roomStore>((set, get) => ({
         page: `http://localhost:3000/room-suite/room/${id}`,
         actionId: "button view room",
         params: { roomId: id },
-        extra: {}
-      }
+        extra: {},
+      };
 
       const response = await axiosInstance.get(`/api/rooms/room/${id}`, {
         params: {
           type: "page view",
-          metadata: JSON.stringify(metadata)
+          metadata: JSON.stringify(metadata),
         },
       });
       const data = response.data;
@@ -151,7 +156,6 @@ const useRoomStore = create<roomStore>((set, get) => ({
     set({ isLoading: true, error: null });
 
     try {
-
       const metadata = {
         page: `http://localhost:3000/filter-room`,
         actionId: "filter rooms",
@@ -169,10 +173,12 @@ const useRoomStore = create<roomStore>((set, get) => ({
         }
       });
 
-     params.append("type", "action");
-     params.append("metadata", JSON.stringify(metadata));
+      params.append("type", "action");
+      params.append("metadata", JSON.stringify(metadata));
 
-      const response = await axiosInstance.get(`/api/rooms/filter?${params.toString()}`);
+      const response = await axiosInstance.get(
+        `/api/rooms/filter?${params.toString()}`,
+      );
       console.log("testing:", response.data);
       set({ filterRoom: response.data.filteredRooms });
       set({
@@ -189,6 +195,8 @@ const useRoomStore = create<roomStore>((set, get) => ({
       set({ isLoading: false });
     }
   },
+
+  resetFilteredRooms: () => set({ filterRoom: [] }),
 
   setRooms: (rooms) => {
     set({ filterRoom: rooms });
@@ -254,7 +262,7 @@ const useRoomStore = create<roomStore>((set, get) => ({
         actionId: "add breakfast",
         params: {
           bookingSessionId: sessionId,
-          breakfastCount: breakfastCount
+          breakfastCount: breakfastCount,
         },
       };
       const response = await axiosInstance.patch(
@@ -263,7 +271,6 @@ const useRoomStore = create<roomStore>((set, get) => ({
           breakfastCount,
           type: "action",
           metadata: JSON.stringify(metadata),
-
         },
       );
 
@@ -277,7 +284,7 @@ const useRoomStore = create<roomStore>((set, get) => ({
   },
 
   updateSelectedRoomBreakfast: async (roomId: string, sessionId: string) => {
-    let breakfastCount = 0
+    let breakfastCount = 0;
     set((prevState) => {
       const updatedRooms = prevState.rooms.map((room) =>
         room._id === roomId
@@ -286,21 +293,23 @@ const useRoomStore = create<roomStore>((set, get) => ({
       );
 
       // calculate breakfast
-       breakfastCount = updatedRooms.reduce((count, r) => {
-         if (!(r as RoomDefaultWithBreakfast).defaultBreakfast && r.breakfastIncluded) {
-           return count + 1;
-         }
-         return count;
-       }, 0);
+      breakfastCount = updatedRooms.reduce((count, r) => {
+        if (
+          !(r as RoomDefaultWithBreakfast).defaultBreakfast &&
+          r.breakfastIncluded
+        ) {
+          return count + 1;
+        }
+        return count;
+      }, 0);
 
+      useBookingSessionStore.getState().setBreakfastCount(breakfastCount);
 
-       useBookingSessionStore.getState().setBreakfastCount(breakfastCount);
-      
       return { ...prevState, rooms: updatedRooms };
     });
 
-      //send to backend and update booking session breakfast count
-      await get().handleUpdateBreakfast(breakfastCount, sessionId);
+    //send to backend and update booking session breakfast count
+    await get().handleUpdateBreakfast(breakfastCount, sessionId);
   },
 
   fetchRoomCalendarView: async () => {

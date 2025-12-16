@@ -13,40 +13,73 @@ import debounce from "lodash/debounce";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Room } from "@/types/interface.type";
 
+type RoomFilter = {
+  checkInDate?: string;
+  checkOutDate?: string;
+  adults?: number;
+  children?: number;
+  roomType?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  amenities?: string[];
+};
+
+
+
 const FilteredRoomsPage = () => {
   const isMobile = useIsSmallScreen();
-
   // Define the filters state
-  const [filters, setFilters] = useState({});
+  const [filters, setFilters] = useState<RoomFilter>({
+    checkInDate: "",
+    checkOutDate: "",
+    adults: 0,
+    children: 0,
+    roomType: "",
+    minPrice: 0,
+    maxPrice: 0,
+    amenities: [],
+  });
 
   // Access required methods and states from Zustand store
   const {
     fetchRoomsInFilter,
     error,
     filterRoom,
-    searchParams,
     isLoading,
     fetchRooms,
     mostPopularBookedRoom,
+    resetFilteredRooms
   } = useRoomStore();
   const { showToast } = useToast();
   const [selectedRoom, setSelectedRoom] = useState<Room[]>([]);
-  console.log(searchParams);
 
   const debouncedFetchRooms = debounce((filters) => {
     Promise.all([fetchRoomsInFilter(filters), fetchRooms()])
-  }, 500);
+  }, 100);
 
   // Effect to fetch filtered rooms when filters change
-  useEffect(() => {
-    if (Object.keys(filters).length > 0) {
-      debouncedFetchRooms(filters);
-    }
-    
-    return () => {
-      debouncedFetchRooms.cancel();
-    };
-  }, [filters]); // Trigger on filters change
+   useEffect(() => {
+     const { checkInDate, checkOutDate }  = filters;
+      console.log(checkInDate);
+      console.log(checkOutDate);
+      if (!checkInDate || !checkOutDate) {
+        resetFilteredRooms();
+        return;
+      }
+
+     // Validate dates: both must exist and checkOutDate after checkInDate
+     if (
+       checkInDate &&
+       checkOutDate &&
+       new Date(checkInDate) < new Date(checkOutDate)
+     ) {
+       debouncedFetchRooms(filters);
+     } 
+
+     return () => {
+       debouncedFetchRooms.cancel();
+     };
+   }, [filters]);
 
   if (error) {
     showToast("error", error);
@@ -68,6 +101,7 @@ const FilteredRoomsPage = () => {
               <LeftSidebar
                 onFilterChange={setFilters}
                 selectedRoom={selectedRoom}
+                resetFilteredRoom={resetFilteredRooms}
               />
             </ScrollArea>
           </div>

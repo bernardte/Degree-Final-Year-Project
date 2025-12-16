@@ -103,30 +103,40 @@ const AdminChatPage = () => {
   };
 
   useEffect(() => {
-    if(activeConversation?._id && socket){
-      socket.emit("join-room", activeConversation?._id);
+    if (socket && activeConversation?._id) {
+      socket.emit("join-room", activeConversation._id);
     }
+  }, [socket, activeConversation?._id]);
 
-    socket?.on("new-message", (message) => {
-      console.log("New Message: ", message);
-      if(activeConversation?._id){
-        pushMessage(message.conversationId, message);
-        console.log("Active conversation ID: ", activeConversation?._id);
-        console.log("Message: ", message);
-        updateConversation(message.conversationId, message.content, new Date(message.createdAt));
-      }
-    })
+  useEffect(() => {
+    if (!socket) return;
 
-    socket?.on("new-conversation", (conversation) => {
+
+    const handleNewMessage = (message: any) => {
+      console.log("new message", message);
+      pushMessage(message.conversationId, message);
+
+
+      updateConversation(
+        message.conversationId,
+        message.content,
+        new Date(message.createdAt),
+      );
+    };
+
+    const handleNewConversation = (conversation: Conversation) => {
+      console.log("new conversation: ", conversation);
       addNewConversation(conversation);
-    })
+    };
+
+    socket.on("new-message", handleNewMessage);
+    socket.on("new-conversation", handleNewConversation);
 
     return () => {
-      socket?.off("new-message");
-      socket?.off("new-conversation");
-    }
-
-  }, [socket]);
+      socket.off("new-message", handleNewMessage);
+      socket.off("new-conversation", handleNewConversation);
+    };
+  }, [socket, pushMessage, updateConversation, addNewConversation, activeConversation?._id]);
 
   useEffect(() => {
     const markAsRead = async () => {

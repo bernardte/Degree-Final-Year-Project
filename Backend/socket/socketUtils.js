@@ -41,6 +41,7 @@ export const emitBookingStatusUpdate = async () => {
   }
 }
 
+//! use for specific user which inform that user their role has been updated
 export const emitToSpecificUser = (userId, eventName, data = {}) => {
   if (!userId) return;
   const socketUserMap = getUserMap();
@@ -61,3 +62,20 @@ export const emitBookingSessionUpdate = async () => {
   }
 }
 
+export const emitUserTierLoyaltyAndTotalSpent = async (userId, loyaltyTier, totalSpent) => {
+   console.log("Emitting user-tier-updated event:", {
+     userId,
+     loyaltyTier,
+     totalSpent,
+   });
+
+  try {
+    getIO().emit("user-tier-updated", {
+      userId: userId,
+      totalSpent: totalSpent,
+      loyaltyTier: loyaltyTier
+    })
+  } catch (error) {
+      console.log("Error in emitUserTierLoyaltyAndTotalSpent: ", error.message);
+  }
+}

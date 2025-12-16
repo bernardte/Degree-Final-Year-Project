@@ -247,9 +247,10 @@ const getUserRewardPoints = async (req, res) => {
   }
 };
 
-const logoutUser = (req, res) => {
+const logoutUser = async (req, res) => {
   const token = req.cookies.accessToken || req.cookies.refreshToken;
-
+  const user = req.user;
+  console.log("user: ", user);
   if (!token) {
     return res.status(401).json({ message: "You're not logged in" });
   }
@@ -270,6 +271,8 @@ const logoutUser = (req, res) => {
       expires: new Date(Date.now()),
       maxAge: 1,
     });
+
+    await User.findByIdAndUpdate({ _id: user._id }, { isOnline: false });
 
     res.status(200).json({ message: "Logged out successfully" });
   } catch (error) {

@@ -17,6 +17,7 @@ const ChatWidgetHeader = ({
         <div>
           <h3 className="font-semibold">Customer Support</h3>
           <div className="flex items-center text-xs opacity-80">
+            {/* indicator */}
             <div className={`mr-1 h-2 w-2 rounded-full  ${adminReceipentId !== null ? "bg-green-400" : "bg-gray-300" }`}></div>
             <span>{adminReceipentId !== null ? "online" : "offline"}</span>
           </div>

@@ -5,7 +5,7 @@ const DashboardStatistic = () => {
   const statistics = getStatisticData();
 
   return (
-    <div className="mb-8 grid grid-cols-3 grid-rows-2 gap-4">
+    <div className="mb-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-0 md:gap-2 lg:gap-4">
       {statistics.map((stat, index) => {
         if (index === statistics.length - 1) {
           // 'e' takes full height of third column

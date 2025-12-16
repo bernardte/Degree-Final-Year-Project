@@ -30,7 +30,7 @@ interface authStore {
 const useAuthStore = create<authStore>()(
   devtools(
     persist(
-      (set) => ({
+      (set, get) => ({
         isAuthenticated: false,
         isAdmin: false,
         isAdminVerified: false,
@@ -52,12 +52,16 @@ const useAuthStore = create<authStore>()(
           set({ isAuthLoading: loading }, false, "SET_LOADING"),
 
         setIsAdminVerified: (verification) => {
-          set({ isAdminVerified: verification }, false, "SET_ADMIN_VERIFICATION")
+          set(
+            { isAdminVerified: verification },
+            false,
+            "SET_ADMIN_VERIFICATION",
+          );
           localStorage.setItem("admin-verified", String(verification));
         },
 
         setCurrentLoginUser: (user: User) => {
-          set({ user: user })
+          set({ user: user });
         },
 
         setIsAdmin: (verifyAdmin) =>
@@ -67,7 +71,13 @@ const useAuthStore = create<authStore>()(
           console.log("user", user);
           console.log("role", role);
           set(
-            { user, token, isAuthenticated: true, roles: role, profilePic: profilePic },
+            {
+              user,
+              token,
+              isAuthenticated: true,
+              roles: role,
+              profilePic: profilePic,
+            },
             false,
             "LOGIN",
           );
@@ -90,6 +100,10 @@ const useAuthStore = create<authStore>()(
             false,
             "LOGOUT",
           );
+
+          // Reset adminReceipentId here by calling the existing method
+          get().setCurrentAdminReceipentId(null);
+
           // Clear bookings state
           useBookingStore.getState().clearBookingInformation();
           localStorage.removeItem("admin-verified");

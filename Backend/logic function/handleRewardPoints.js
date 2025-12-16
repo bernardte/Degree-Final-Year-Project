@@ -15,8 +15,8 @@ export const handleRewardPoints = async (
   if (!rewardProgramActivate) return;
 
   // Get relevant parameters (with default values ​​to prevent errors)
-  const pointsPerBooking = setting?.value?.bookingRewardPoints || 0; // 每房每晚积分
-  const earnRatio = setting?.value?.earningRatio || 0; // 每RM获得多少积分
+  const pointsPerBooking = setting?.value?.bookingRewardPoints || 0; // How many points per room per night
+  const earnRatio = setting?.value?.earningRatio || 0; // How many point per RM earn
   const tierMultipliers =
     setting?.value?.tierMultipliers?.[user.loyaltyTier?.toLowerCase()] || 1;
 

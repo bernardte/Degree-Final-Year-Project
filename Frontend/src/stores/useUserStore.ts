@@ -13,6 +13,7 @@ interface userStore {
     userId: string,
     newRole: "superAdmin" | "admin" | "user",
   ) => void;
+  updateUserLoyaltyTierAndTotalSpend: (userId: string, loyaltyTier: string, totalSpent: number) => void;
   setUser: (user: User[]) => void;
   updateSuspended: (userId: string, newStatus: boolean) => void;
   fetchUser: (
@@ -31,6 +32,18 @@ const useUserStore = create<userStore>((set) => ({
   currentPage: 1,
   totalPages: 1,
   setUser: (user) => set({ user: user }),
+  updateUserLoyaltyTierAndTotalSpend: (
+    userId: string,
+    loyaltyTier: string,
+    totalSpent: number,
+  ) =>
+    set((prevState) => ({
+      user: prevState.user.map((u) =>
+        u._id === userId
+          ? { ...u, loyaltyTier, totalSpent } // update the matching user
+          : u,
+      ),
+    })),
   updateRole: (userId: string, newRole: "superAdmin" | "admin" | "user") => {
     set((prevState) => ({
       user: prevState.user.map((user) =>

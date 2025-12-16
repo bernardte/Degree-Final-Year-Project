@@ -11,7 +11,7 @@ import { motion } from "framer-motion";
 import useUserStore from "@/stores/useUserStore";
 import Pagination from "../../share-components/Pagination";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useSocket } from "@/context/SocketContext";
 
 const UserTabContent = ({
@@ -33,14 +33,46 @@ const UserTabContent = ({
   };
 
   const [searchTerm, setSearchTerm] = useState<string>("");
-  const { activeUsers } = useSocket();
+  const { activeUsers, socket } = useSocket();
+  const updateUserLoyaltyTierAndTotalSpend = useUserStore(
+    (state) => state.updateUserLoyaltyTierAndTotalSpend,
+  );
 
   const handleSearch = (page: number, limit: number, searchTerm: string) => {
-    if(searchTerm.trim() === "") return;
+    if (searchTerm.trim() === "") return;
     fetchUser(page, limit, searchTerm);
-  }
+  };
 
-  const userSupendedCount = users.filter(user => user.suspended === true).length;
+  const userSupendedCount = Array.isArray(users)
+    ? users.filter((user) => user.suspended === true).length
+    : 0;
+
+  useEffect(() => {
+    if (!socket) return;
+
+     const handleUpdateLoyaltyTierAndTotalSpent = ({
+       userId,
+       loyaltyTier,
+       totalSpent,
+     }: {
+       userId: string;
+       loyaltyTier: string;
+       totalSpent: number;
+     }) => {
+       console.log("Received user-tier-updated:", {
+         userId,
+         loyaltyTier,
+         totalSpent,
+       });
+       updateUserLoyaltyTierAndTotalSpend(userId, loyaltyTier, totalSpent);
+     };
+
+    socket.on("user-tier-updated", handleUpdateLoyaltyTierAndTotalSpent);
+
+    return () => {
+      socket.off("user-tier-updated", handleUpdateLoyaltyTierAndTotalSpent);
+    };
+  }, [socket, updateUserLoyaltyTierAndTotalSpend]);
 
   return (
     <motion.div

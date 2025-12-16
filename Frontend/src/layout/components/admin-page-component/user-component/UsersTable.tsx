@@ -203,6 +203,7 @@ const UsersTable = () => {
                   {user.loyaltyTier || "N/A"}
                 </span>
               </TableCell>
+
               <TableCell>
                 <span
                   className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold capitalize ${user.totalSpent} `}

@@ -156,6 +156,7 @@ const sendMessage = async (req, res) => {
     conversation.lastMessage = newMessage;
     conversation.lastMessageAt = new Date(lastMessageAt);
     await conversation.save();
+    console.log("new message: ", message);
     getIO().to(conversationId).emit("new-message", message);
     getIO().emit("new-conversation", updateConversation);
 

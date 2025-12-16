@@ -91,7 +91,7 @@ const createConversations = async (req, res) => {
     } else {
       // Otherwise, admin will be automatically assigned
       const assignedAdminId = await assignConversationToAdmin();
-      console.log("Your assign adminId: ", assignConversationToAdmin);
+      console.log("Your assign adminId: ", assignedAdminId);
       if (assignedAdminId) {
         conversationData.lockedBy = assignedAdminId;
         conversationData.isLock = true;

@@ -31,7 +31,7 @@ const ChatWidget = () => {
 
   const senderId = user?._id || localStorage.getItem("guestId");
   const senderType = user ? "user" : "guest";
-  const [mode, setMode] = useState<"bot" | "human">("bot");
+  const [mode, setMode] = useState<"bot" | "human">("human");
   const streamBuffer = useRef<Record<string, string>>({});
 
   type TempMessage = Partial<Message> & {
